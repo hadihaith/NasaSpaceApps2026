@@ -15,9 +15,9 @@ const display = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "Trend Detective",
+  title: "Operation: The Great Homecoming",
   description:
-    "Pick an Earth science variable and a place, then test whether it is really changing, using four decades of NASA data.",
+    "Join an alien crew, experiment with Earth's climate, and investigate the planet with real NASA data.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

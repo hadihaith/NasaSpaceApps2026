@@ -1,31 +1,37 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import "./crew.css";
 
 export const CREW = {
-  commander: { name: "Commander Zorvax", short: "Zorvax", file: "commander-zorvax.png", color: "#f7b0fc", mark: "CZ" },
-  scientist: { name: "Dr. Nyxen", short: "Nyxen", file: "dr-nyxen.png", color: "#8ce8f5", mark: "DN" },
-  cadet: { name: "Cadet B", short: "Cadet B", file: "cadet-b.png", color: "#ffcf75", mark: "CB" },
+  commander: { name: "Commander Zorvax", asset: "commander-zorvax", color: "#f7b0fc" },
+  scientist: { name: "Dr. Nyxen", asset: "dr-nyxen", color: "#8ce8f5" },
+  cadet: { name: "Cadet B", asset: "alien-student", color: "#ffcf75" },
 } as const;
 
 export type CrewId = keyof typeof CREW;
 
-export function CrewPortrait({ id, className = "" }: { id: CrewId; className?: string }) {
-  const { name, color, file, mark } = CREW[id];
-  const [loaded, setLoaded] = useState(false);
+export function CrewPortrait({ id, className = "", decorative = false }: {
+  id: CrewId; className?: string; decorative?: boolean;
+}) {
+  const { name, color, asset } = CREW[id];
   return (
     <div className={`hc-portrait ${className}`} style={{ "--crew": color } as CSSProperties}>
-      {!loaded && <div className="hc-placeholder" aria-label={`${name} placeholder, ${file}`}>
-        <div className="hc-placeholder-icon" aria-hidden>{mark}</div>
-        <strong>{name}</strong><small>{file}</small>
-      </div>}
-      {/* These public URLs are the character drop-in interface. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`/characters/${file}`} alt={name} className={loaded ? "is-loaded" : ""} onLoad={() => setLoaded(true)} onError={() => setLoaded(false)} />
+      <img className="hc-crew-image" src={`/homecoming/crew/${asset}.webp`} alt={decorative ? "" : name}
+        width={520} height={576} decoding="async" />
     </div>
   );
 }
 
 export function CrewLine({ id, children }: { id: CrewId; children: ReactNode }) {
-  return <div className="hc-line"><CrewPortrait id={id} className="hc-avatar" /><div><strong style={{ color: CREW[id].color }}>{CREW[id].name}</strong><p>{children}</p></div></div>;
+  return (
+    <div className="hc-line">
+      <CrewPortrait id={id} className="hc-avatar" decorative />
+      <div>
+        <strong style={{ color: CREW[id].color }}>{CREW[id].name}</strong>
+        <p>{children}</p>
+      </div>
+    </div>
+  );
 }

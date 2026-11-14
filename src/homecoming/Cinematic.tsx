@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
-import { CrewPortrait, CREW } from "./Crew";
-import type { Beat } from "./story";
+import dynamic from "next/dynamic";
+import { Component, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import type { Shot } from "./story";
 import type { Cue } from "./audio";
 
+const FilmStage = dynamic(() => import("./FilmStage").then((module) => module.FilmStage), { ssr: false });
 const CHIPS = ["#ffca68", "#ff83bc", "#7fe7f1", "#bbf5aa", "#b69aff"];
 
 export function Confetti({ kind = "fall" }: { kind?: "fall" | "burst" }) {
@@ -16,68 +17,105 @@ export function Confetti({ kind = "fall" }: { kind?: "fall" | "burst" }) {
   </div>;
 }
 
-export function Cinematic({ beats, complete, cue, sound }: { beats: Beat[]; complete: () => void; cue: (name: Cue) => void; sound: boolean }) {
+class FilmBoundary extends Component<{ children: ReactNode; onFailure: () => void }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch() { this.props.onFailure(); }
+  render() { return this.state.failed ? null : this.props.children; }
+}
+
+export function Cinematic({ shots, complete, cue, sound, toggleSound }: {
+  shots: Shot[]; complete: () => void; cue: (name: Cue) => void; sound: boolean; toggleSound: () => void;
+}) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const beat = beats[index];
-  const { shot, speaker, caption, label } = beat;
-  const next = () => index + 1 < beats.length ? setIndex(index + 1) : complete();
+  const [transcript, setTranscript] = useState(false);
+  const [reduced] = useState(() => typeof window !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const [playing, setPlaying] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const video = useRef<HTMLVideoElement>(null);
+  const time = useRef(0);
+  const bar = useRef<HTMLDivElement>(null);
+  const shot = shots[index];
+  const total = shots.reduce((sum, item) => sum + item.seconds, 0);
+  const pastTime = shots.slice(0, index).reduce((sum, item) => sum + item.seconds, 0);
 
   useEffect(() => {
-    if (beat.cue) cue(beat.cue);
-  }, [beat, cue]);
-
-  useEffect(() => {
-    if (paused) return;
-    const timeout = window.setTimeout(() => {
-      if (index + 1 < beats.length) setIndex(index + 1);
+    if (!playing && !failed) return;
+    const duration = shot.seconds;
+    let frame = 0;
+    let last = performance.now();
+    const advance = (now: number) => {
+      const before = time.current;
+      if (!paused && !transcript) {
+        time.current = Math.min(duration, before + Math.min((now - last) / 1000, .1));
+        for (const [at, name] of shot.cues ?? []) if (before < at && time.current >= at) cue(name);
+      }
+      last = now;
+      if (bar.current) bar.current.style.width = `${(pastTime + time.current) / total * 100}%`;
+      if (time.current < duration) frame = requestAnimationFrame(advance);
+      else if (index < shots.length - 1) { time.current = 0; setIndex(index + 1); }
       else complete();
-    }, beat.ms);
-    return () => window.clearTimeout(timeout);
-  }, [beat, beats.length, complete, index, paused]);
+    };
+    frame = requestAnimationFrame(advance);
+    return () => cancelAnimationFrame(frame);
+  }, [complete, cue, failed, index, pastTime, paused, playing, shot, shots.length, total, transcript]);
+
+  useEffect(() => {
+    const tape = video.current;
+    if (tape && shot.id === "apollo") tape.currentTime = 0;
+  }, [shot.id]);
+  useEffect(() => {
+    const tape = video.current;
+    if (!tape) return;
+    tape.muted = !sound || shot.id !== "apollo";
+    if ((!playing && !failed) || paused || transcript || !["apollo", "reveal"].includes(shot.id)) tape.pause();
+    else if (tape.paused) void tape.play().catch(() => { tape.muted = true; void tape.play().catch(() => {}); });
+  }, [failed, paused, playing, shot.id, sound, transcript]);
+
+  const setReady = useCallback(() => setPlaying(true), []);
+  const fail = useCallback(() => setFailed(true), []);
+  const next = () => {
+    if (index === shots.length - 1) complete();
+    else { time.current = 0; setIndex(index + 1); }
+  };
 
   useEffect(() => {
     function keydown(event: KeyboardEvent) {
-      if (event.key === "Escape") complete();
+      if (event.key === "Escape") {
+        if (transcript) setTranscript(false);
+        else complete();
+      }
       if (event.code !== "Space" || event.repeat || (event.target instanceof Element && event.target.closest("button, a"))) return;
       event.preventDefault();
       setPaused((value) => !value);
     }
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
-  }, [complete]);
+  }, [complete, transcript]);
 
-  const onBridge = ["bridge", "party", "dust", "artemis", "window", "button", "hearing"].includes(shot);
-  return (
-    <main className={`hc-film hc-shot-${shot} ${paused ? "hc-paused" : ""}`} aria-label="Story cinematic">
-      <div className="hc-film-picture" key={shot}>
-        {shot === "moon" && <div className="hc-film-moon" role="img" aria-label="The Moon, NASA imagery" />}
-        {shot === "apollo" && <div className="hc-apollo"><video key={String(paused)} src="/homecoming/apollo11.mp4" poster="/homecoming/apollo11.jpg" autoPlay={!paused} muted={!sound} playsInline /><div className="hc-scanlines" /></div>}
-        {onBridge && <div className="hc-bridge-plate" />}
-        {shot === "bridge" && <div className="hc-tv-feed"><video src="/homecoming/apollo11.mp4" poster="/homecoming/apollo11.jpg" autoPlay={!paused} playsInline muted /><div className="hc-scanlines" /></div>}
-        {shot === "artemis" && <div className="hc-tv-feed hc-artemis"><span>EARTH NEWS</span><b>ARTEMIS</b><small>HUMANS RETURNING TO THE MOON</small></div>}
-        {shot === "window" && <div className="hc-window-earth" />}
-        {shot === "dust" && <div className="hc-dust" />}
-        {shot === "button" && <div className="hc-red-button"><i /><b>DO NOT SLAM</b></div>}
-        {shot === "party" && <><div className="hc-party-banner">{label ?? "WELCOME HOME, HUMANS!"}</div><Confetti /></>}
-        {shot === "lab" && <><div className="hc-lab-plate" /><div className="hc-film-globe" /></>}
-        {shot === "hearing" && <div className="hc-hearing-stamp">OFFICIAL<br />GOVERNMENT<br />HEARING</div>}
-        {(["bridge", "party", "dust", "artemis", "window", "lab", "hearing"] as string[]).includes(shot) && <div className="hc-film-crew">
-          {(["commander", "scientist", "cadet"] as const).map((id) => <CrewPortrait key={id} id={id} className={`${speaker === id ? "hc-speaking" : ""} hc-film-${id}`} />)}
-        </div>}
-        {shot === "title" && <div className="hc-title-card"><span>Intergalactic Affection Department</span><h1>THE GREAT<br /><em>HOMECOMING</em></h1><p>{caption}</p><b>57 years behind schedule</b></div>}
-        {shot === "black" && <div className="hc-silent-card">{label}</div>}
+  const stage = ["apollo", "signal", "earth", "title", "deflate", "lab"].includes(shot.id) ? shot.id : "bridge";
+  return <main className={`hc-film hc-shot-${shot.id}`} aria-label="The Great Homecoming cinematic">
+    <div className={`hc-film-stage hc-film-set-${stage}`} aria-hidden>
+      <video className={`hc-film-video ${failed && shot.id === "apollo" ? "hc-film-video-visible" : ""}`} ref={video} src="/homecoming/apollo11.mp4" poster="/homecoming/apollo11.jpg" preload="auto" playsInline muted={!sound} />
+      {!failed && <FilmBoundary onFailure={fail}><FilmStage shot={shot} time={time} video={video} ready={setReady} reduced={reduced} failed={fail} /></FilmBoundary>}
+      {failed && shot.id === "signal" && <div className="hc-film-moon-fallback" />}
+      <div className="hc-film-grade" />
+    </div>
+    {shot.label && <div className="hc-film-date" key={shot.label}>{shot.label}</div>}
+    {shot.id === "title" && <div className="hc-title-card"><span>Operation</span><h1>THE GREAT<br /><em>HOMECOMING</em></h1></div>}
+    <p className="sr-only" aria-live="polite">{shot.description}</p>
+    {failed && <p className="hc-film-warning" role="status">3D is unavailable. You can read the story or skip to the game.</p>}
+    {transcript && <section className="hc-film-transcript" aria-label="Scene description"><p>{shot.description}</p>{shot.line && <p>{shot.line}</p>}</section>}
+    <div className="hc-film-controls">
+      <div className="hc-film-progress" aria-label={`Shot ${index + 1} of ${shots.length}`}><div ref={bar} /></div>
+      <div className="hc-row">
+        <button type="button" onClick={() => setPaused(!paused)}>{paused ? "Resume" : "Pause"}</button>
+        <button type="button" onClick={next}>Next <span aria-hidden>→</span></button>
+        <button type="button" aria-pressed={sound} onClick={toggleSound}>Sound {sound ? "on" : "off"}</button>
+        <button type="button" aria-pressed={transcript} onClick={() => setTranscript(!transcript)}>{transcript ? "Hide description" : "Scene description"}</button>
+        <button type="button" onClick={complete}>Skip cinematic</button>
       </div>
-      {label && !["title", "black", "party"].includes(shot) && <div className="hc-feed-label"><i />{label}</div>}
-      <div className="hc-film-bottom">
-        {caption && shot !== "title" && <div className="hc-subtitles" key={index} aria-live="polite">{speaker && <b style={{ color: CREW[speaker].color }}>{CREW[speaker].name}</b>}<p>{caption}</p></div>}
-        <div className="hc-film-controls">
-          <div className="hc-film-progress" aria-label={`Scene ${index + 1} of ${beats.length}`}>
-            {beats.map((_, i) => <i key={i} className={i <= index ? "is-past" : ""} />)}
-          </div>
-          <div className="hc-row"><button type="button" onClick={() => setPaused(!paused)}>{paused ? "Resume" : "Pause"}</button><button type="button" onClick={next}>Next <span aria-hidden>→</span></button><button type="button" onClick={complete}>Skip cinematic</button></div>
-        </div>
-      </div>
-    </main>
-  );
+    </div>
+  </main>;
 }

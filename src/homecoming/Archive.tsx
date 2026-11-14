@@ -69,17 +69,17 @@ export function Archive({ climate, initialRegion, initialVariable, investigation
     <div className="hc-archive-layout">
       <aside className="hc-panel hc-archive-controls">
         <h2>Set your investigation</h2>
-        <label>Region<select value={region} onChange={(event) => { setRegion(event.target.value); setStart(null); setEnd(null); }}>
+        <label>Region<select aria-label="Region" value={region} onChange={(event) => { setRegion(event.target.value); setStart(null); setEnd(null); }}>
           {EARTH_REGIONS.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select></label>
-        <label>Variable<select value={variable} onChange={(event) => { setVariable(event.target.value as WeatherKey); setStart(null); setEnd(null); }}>
+        <label>Variable<select aria-label="Variable" value={variable} onChange={(event) => { setVariable(event.target.value as WeatherKey); setStart(null); setEnd(null); }}>
           {Object.entries(VARIABLES).map(([key, value]) => <option value={key} key={key}>{value.label}</option>)}
         </select></label>
-        {variable === "rain" && region === "phoenix" && <label>Dataset<select value={actualSource} onChange={(event) => { setSource(event.target.value as typeof source); setStart(null); setEnd(null); }}><option value="power">NASA POWER reanalysis</option><option value="imerg">GPM IMERG satellite estimates</option></select></label>}
-        <div className="hc-range"><label>From<select value={from} onChange={(event) => setStart(+event.target.value)}>{yearOptions.filter((year) => year <= to).map((year) => <option key={year}>{year}</option>)}</select></label>
-        <label>To<select value={to} onChange={(event) => setEnd(+event.target.value)}>{yearOptions.filter((year) => year >= from).map((year) => <option key={year}>{year}</option>)}</select></label></div>
-        <label>Time view<select value={mode} onChange={(event) => setMode(event.target.value as ArchiveMode)}><option value="annual">Yearly means</option><option value="anomaly">Monthly anomalies</option></select></label>
-        <label>Compare a second variable<select value={compare} onChange={(event) => setCompare(event.target.value as typeof compare)}><option value="">None</option>{Object.entries(VARIABLES).filter(([key]) => key !== variable).map(([key, item]) => <option value={key} key={key}>{item.label}</option>)}</select></label>
+        {variable === "rain" && region === "phoenix" && <label>Dataset<select aria-label="Dataset" value={actualSource} onChange={(event) => { setSource(event.target.value as typeof source); setStart(null); setEnd(null); }}><option value="power">NASA POWER reanalysis</option><option value="imerg">GPM IMERG satellite estimates</option></select></label>}
+        <div className="hc-range"><label>From<select aria-label="From" value={from} onChange={(event) => setStart(+event.target.value)}>{yearOptions.filter((year) => year <= to).map((year) => <option key={year}>{year}</option>)}</select></label>
+        <label>To<select aria-label="To" value={to} onChange={(event) => setEnd(+event.target.value)}>{yearOptions.filter((year) => year >= from).map((year) => <option key={year}>{year}</option>)}</select></label></div>
+        <label>Time view<select aria-label="Time view" value={mode} onChange={(event) => setMode(event.target.value as ArchiveMode)}><option value="annual">Yearly means</option><option value="anomaly">Monthly anomalies</option></select></label>
+        <label>Compare a second variable<select aria-label="Compare a second variable" value={compare} onChange={(event) => setCompare(event.target.value as typeof compare)}><option value="">None</option>{Object.entries(VARIABLES).filter(([key]) => key !== variable).map(([key, item]) => <option value={key} key={key}>{item.label}</option>)}</select></label>
         <button type="button" className="hc-primary" disabled={!trend || saved} onClick={() => record({ region: place, dataset, variable: title, period, verdict, slope, test })}>{saved ? "Evidence filed ✓" : "File investigation"}</button>
       </aside>
       <div className="hc-archive-body">

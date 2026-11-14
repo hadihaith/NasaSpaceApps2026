@@ -1,0 +1,26 @@
+.hc-portrait {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--crew) 45%, transparent);
+  border-radius: 13px;
+  background: radial-gradient(
+    ellipse at 53% 39%,
+    color-mix(in srgb, var(--crew) 20%, #20182d),
+    #14101f 78%
+  );
+}
+
+.hc-portrait .hc-crew-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 28%;
+}
+
+.hc-portrait.hc-avatar {
+  border-radius: 8px;
+}

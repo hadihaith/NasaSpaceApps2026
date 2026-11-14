@@ -3,6 +3,7 @@ import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { MathUtils, Quaternion, SRGBColorSpace, TextureLoader, Vector3 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Atmosphere, EnvironmentEffects, regionDirection } from './EnvironmentEffects';
+import { KuExchangeEarth } from '../homecoming/FilmPlanets';
 import { RegionSelector } from './RegionSelector';
 import { EARTH_REGIONS, EARTH_TEXTURE_URL, normalizeEnvironment, toCoordinates } from './regions';
 import './earth-scene.css';
@@ -145,9 +146,11 @@ function GlobeMarkers({ region, onRegionSelect }) {
   ));
 }
 
-function Globe({ region, values, autoRotate, reducedMotion, onRegionSelect, onReady, onContextLost }) {
+function Globe({ region, values, autoRotate, reducedMotion, onRegionSelect, onReady, onContextLost, useKuGlobe }) {
   const basemap = useLoader(EarthTextureLoader, EARTH_TEXTURE_URL);
   const gl = useThree((state) => state.gl);
+  const time = useRef(0);
+  useFrame((_, delta) => { if (useKuGlobe && !reducedMotion) time.current += Math.min(delta, .05); });
 
   useEffect(() => {
     onReady(true);
@@ -162,8 +165,9 @@ function Globe({ region, values, autoRotate, reducedMotion, onRegionSelect, onRe
   return (
     <>
       <GlobeControls region={region} autoRotate={autoRotate} reducedMotion={reducedMotion} />
-      <EnvironmentEffects basemap={basemap} region={region} values={values} reducedMotion={reducedMotion} />
-      <Atmosphere />
+      {useKuGlobe && <KuExchangeEarth time={time} position={[0, 0, 0]} radius={1} interactive />}
+      <EnvironmentEffects basemap={basemap} region={region} values={values} reducedMotion={reducedMotion} overlay={useKuGlobe} />
+      {!useKuGlobe && <Atmosphere />}
       <GlobeMarkers region={region} onRegionSelect={onRegionSelect} />
     </>
   );
@@ -225,7 +229,7 @@ export function EarthScene({ regionId, environment, onRegionSelect, presentation
                 dpr={[1, 1.5]} flat gl={{ powerPreference: 'default', failIfMajorPerformanceCaveat: true }}>
                 <Suspense fallback={null}>
                   <Globe region={region} values={values} autoRotate={idleRotation} reducedMotion={reducedMotion}
-                    onRegionSelect={onRegionSelect} onReady={setReady} onContextLost={setContextLost} />
+                    onRegionSelect={onRegionSelect} onReady={setReady} onContextLost={setContextLost} useKuGlobe={presentation === "homecoming"} />
                 </Suspense>
               </Canvas>
             </GlobeErrorBoundary>

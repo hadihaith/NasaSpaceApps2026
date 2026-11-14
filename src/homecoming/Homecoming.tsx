@@ -5,10 +5,10 @@ import { EARTH_REGIONS } from "@/earth/regions";
 import { Archive } from "./Archive";
 import { Cinematic, Confetti } from "./Cinematic";
 import { CrewLine, CrewPortrait } from "./Crew";
-import { DiscoveryRecord, Lab, TrialSummary } from "./Lab";
+import { DiscoveryRecord, Lab, TrialSummary, type TrialPlayback } from "./Lab";
 import { makeAudio, type Cue } from "./audio";
 import { DISCOVERIES, DISCOVERY_BY_ID, REQUIRED_DISCOVERIES, newSave, recordTrial, runTrial, toNormals,
-  type ClimateCatalog, type Investigation, type Normals, type Save, type Trial, type WeatherKey } from "./model";
+  type ClimateCatalog, type Investigation, type Normals, type Save, type Trial, type TrialFrame, type WeatherKey } from "./model";
 import { ENDING, LAB_INTRO, PROLOGUE } from "./story";
 
 type Stage = "home" | "intro" | "recruit" | "lab-intro" | "lab" | "archive" | "book" | "report" | "ending" | "epilogue";
@@ -56,6 +56,7 @@ export function Homecoming() {
   const [dataError, setDataError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [playback, setPlayback] = useState<TrialPlayback | null>(null);
   const [reward, setReward] = useState<Trial | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<{ region: string; variable: WeatherKey }>({ region: "phoenix", variable: "temperature" });
   const [reset, setReset] = useState(false);
@@ -136,23 +137,37 @@ export function Homecoming() {
   }
   function run() {
     if (!save || !normals || busy || runTimer.current !== null) return;
-    const trial = runTrial(save, normals[save.region], save.duration);
+    const regionNormals = normals[save.region];
+    const frames: TrialFrame[] = [];
+    const trial = runTrial(save, regionNormals, save.duration, (frame) => frames.push(frame));
+    const previous = save.trials.findLast((entry) => entry.region === save.region);
+    frames.unshift({ state: trial.before, weather: previous?.weather ?? regionNormals[trial.before.elapsed % 12] });
     const first = Object.keys(save.discoveries).length === 0 && trial.discovered.length > 0;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const playbackStep = trial.duration === 1 ? 680 : trial.duration === 3 ? 840 : 425;
+    setPlayback({ trial, frames, month: reduced ? trial.duration : 0 });
     setBusy(true);
     cue("scan");
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    runTimer.current = window.setTimeout(() => {
+    const finish = () => {
       runTimer.current = null;
       const latest = parseSave(readSave());
       setBusy(false);
-      if (!latest || latest.name !== save.name || latest.trials.at(-1)?.number !== save.trials.at(-1)?.number) return;
+      if (!latest || latest.name !== save.name || latest.trials.at(-1)?.number !== save.trials.at(-1)?.number) {
+        setPlayback(null);
+        return;
+      }
       const next = recordTrial(latest, trial);
       writeSave(next);
       if (trial.discovered.length) { setReward(trial); cue("discover"); }
       else { cue(trial.outcome === "quiet" ? "quiet" : "change"); notify(save.guided ? trial.outcome === "quiet" ? "Experiment logged. No major event." : "Experiment logged. Conditions changed." : "Calibration complete. All controls online."); }
       if (first) setShowArchiveInvite(true);
       if (Object.keys(next.discoveries).length >= REQUIRED_DISCOVERIES && save.investigations.length && Object.keys(save.discoveries).length < REQUIRED_DISCOVERIES) notify("Zorvax says your evidence is ready to submit.");
-    }, reduced ? 140 : 1100);
+    };
+    const advance = (month: number) => {
+      setPlayback({ trial, frames, month });
+      runTimer.current = window.setTimeout(month === trial.duration ? finish : () => advance(month + 1), month === trial.duration ? 540 : playbackStep);
+    };
+    runTimer.current = window.setTimeout(reduced ? finish : () => advance(1), reduced ? 120 : 320);
   }
   function recordInvestigation(entry: Investigation) {
     const latest = parseSave(readSave());
@@ -172,6 +187,7 @@ export function Homecoming() {
     if (runTimer.current !== null) window.clearTimeout(runTimer.current);
     runTimer.current = null;
     writeSave(null);
+    setPlayback(null);
     setBusy(false); setReward(null); setReset(false); setShowArchiveInvite(false); setDesignation(""); setMessage("");
     setStage("home");
   }
@@ -196,23 +212,23 @@ export function Homecoming() {
         <div className="hc-landing-inner"><div className="hc-landing-copy">
           <p className="hc-kicker hc-transmission"><i /> SIGNAL INTERCEPTED · JULY 1969</p>
           <h1><span>THE GREAT</span><em>HOMECOMING</em></h1>
-          <p>One human went to the Moon. An alien welcome party made <em>several</em> assumptions.</p>
+          <p>One human reached the Moon. Three aliens set the table.</p>
           <div className="hc-home-actions"><button type="button" className="hc-primary" onClick={() => save ? navigate("lab") : begin(true)}><span aria-hidden>▶</span> {save ? "Return to the lab" : "Play transmission"}</button>
           <button type="button" className="hc-secondary" onClick={() => save ? begin(sound) : navigate("recruit")}>{save ? "Replay prologue" : "Skip to recruitment"} <span aria-hidden>→</span></button></div>
         </div><div className="hc-landing-bottom"><span>NASA SPACE APPS KUWAIT</span><span><i /> MISSION STATUS <b>57 YEARS BEHIND</b></span></div></div>
       </main>}
-      {stage === "intro" && <Cinematic beats={PROLOGUE} complete={save ? showLab : showRecruitment} cue={cue} sound={sound} />}
-      {stage === "lab-intro" && <Cinematic beats={LAB_INTRO} complete={showLab} cue={cue} sound={sound} />}
-      {stage === "ending" && <Cinematic beats={ENDING} complete={finishStory} cue={cue} sound={sound} />}
+      {stage === "intro" && <Cinematic shots={PROLOGUE} complete={save ? showLab : showRecruitment} cue={cue} sound={sound} toggleSound={soundToggle} />}
+      {stage === "lab-intro" && <Cinematic shots={LAB_INTRO} complete={showLab} cue={cue} sound={sound} toggleSound={soundToggle} />}
+      {stage === "ending" && <Cinematic shots={ENDING} complete={finishStory} cue={cue} sound={sound} toggleSound={soundToggle} />}
       {stage === "recruit" && <main className="hc-recruit hc-section"><div className="hc-panel hc-recruit-panel">
         <div className="hc-recruit-art"><CrewPortrait id="commander" /></div>
         <div className="hc-recruit-copy"><span className="hc-kicker"><i /> INCOMING TRANSMISSION</span><h1>Welcome aboard, recruit.</h1>
-          <p>“We love humans. Humans love Earth. This is a problem. Your job is to study what makes their planet so special and how we might make ours more appealing.”</p>
+          <p>“The party’s been on hold since 1969. Find out what Earth has that we don’t.”</p>
           <form onSubmit={recruit}><label htmlFor="designation">Recruit designation</label><input id="designation" required maxLength={28} value={designation} onChange={(event) => setDesignation(event.target.value)} placeholder="Enter your alien name" autoComplete="off" />
             <button type="submit" className="hc-primary" disabled={!designation.trim()}>Join the operation <span aria-hidden>→</span></button></form>
           <small>Progress saves in this browser. No account needed.</small></div>
       </div></main>}
-      {stage === "lab" && save && <main>{normals ? <Lab save={save} normals={normals} busy={busy} run={run} update={update} openArchive={archive} />
+      {stage === "lab" && save && <main>{normals ? <Lab save={save} normals={normals} busy={busy} playback={playback} run={run} update={update} openArchive={archive} />
         : <div className="hc-section hc-panel hc-loading" role="status">{dataError ? <>The climate records couldn’t load. <button className="hc-primary" onClick={() => setLoadAttempt((n) => n + 1)}>Retry</button></> : "Calibrating historical climate baselines…"}</div>}</main>}
       {stage === "archive" && save && climate && <main><Archive key={`${archiveTarget.region}/${archiveTarget.variable}`} climate={climate} initialRegion={archiveTarget.region} initialVariable={archiveTarget.variable} investigations={save.investigations} record={recordInvestigation} /></main>}
       {stage === "book" && save && <main className="hc-section">
@@ -238,7 +254,10 @@ export function Homecoming() {
       </main>}
       {stage === "epilogue" && <main className="hc-epilogue"><div><Insignia /><h1>The Great Homecoming</h1><p><i /> STATUS · STILL WAITING FOR HUMANITY</p><em>Better Together. Eventually.</em><div className="hc-row"><button className="hc-primary" onClick={showLab}>Continue experimenting</button><button className="hc-secondary" onClick={() => setReset(true)}>Start over</button></div></div></main>}
     </div>
-    {!inFilm && <footer className="hc-footer"><span>Intergalactic Affection Department</span><div><button onClick={() => setCredits(true)}>Credits & data</button>{save && <button disabled={busy} onClick={() => setReset(true)}>Start over</button>}</div></footer>}
+    {!inFilm && <footer className="hc-footer"><span>Intergalactic Affection Department</span><div>
+      <button onClick={() => setCredits(true)}>Credits & data</button>
+      {save && <><button disabled={busy} onClick={() => begin(sound)}>Replay prologue</button><button disabled={busy} onClick={() => setReset(true)}>Start over</button></>}
+    </div></footer>}
     {message && <div className="hc-toast" role="status">{message}</div>}
     <dialog className="hc-modal" ref={modal} onCancel={(event) => { event.preventDefault(); dismissModal(); }} aria-labelledby="homecoming-dialog-title">
       {reward ? <><Confetti kind="burst" /><span className="hc-kicker">✦ NEW DISCOVERY</span><h2 id="homecoming-dialog-title">{DISCOVERY_BY_ID[reward.discovered[0]].label}</h2>
@@ -253,7 +272,7 @@ export function Homecoming() {
       : reset ? <><h2 id="homecoming-dialog-title">Start a new operation?</h2><p>This clears the recruit and progress saved in this browser.</p><div className="hc-row"><button className="hc-primary" onClick={resetGame}>Start over</button><button className="hc-secondary" onClick={dismissModal}>Keep playing</button></div></>
       : credits ? <><span className="hc-kicker">NASA SPACE APPS KUWAIT</span><h2 id="homecoming-dialog-title">Credits & data</h2>
         <p>Historical records are NASA POWER MERRA-2 reanalysis and NASA GPM IMERG satellite precipitation estimates. Climate experiments use a simplified educational model.</p>
-        <ul><li><a href="https://power.larc.nasa.gov/" target="_blank" rel="noreferrer">NASA POWER climate data</a></li><li><a href="https://doi.org/10.5067/GPM/IMERG/3B-MONTH/07" target="_blank" rel="noreferrer">GPM IMERG Final Run V07</a></li><li><a href="https://www.nasa.gov/wp-content/uploads/static/history/alsj/a11/video11.html" target="_blank" rel="noreferrer">Apollo Lunar Surface Journal · archival television</a></li><li><a href="https://svs.gsfc.nasa.gov/5187/" target="_blank" rel="noreferrer">NASA GSFC · lunar imagery</a></li></ul>
+        <ul><li><a href="https://power.larc.nasa.gov/" target="_blank" rel="noreferrer">NASA POWER climate data</a></li><li><a href="https://doi.org/10.5067/GPM/IMERG/3B-MONTH/07" target="_blank" rel="noreferrer">GPM IMERG Final Run V07</a></li><li><a href="https://www.nasa.gov/wp-content/uploads/static/history/alsj/a11/video11.html" target="_blank" rel="noreferrer">Apollo Lunar Surface Journal · archival television</a></li><li><a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noreferrer">NASA GSFC · CGI Moon Kit</a></li></ul>
         <button className="hc-primary" onClick={dismissModal}>Close credits</button></> : null}
     </dialog>
   </div>;

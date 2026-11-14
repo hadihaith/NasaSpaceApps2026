@@ -29,6 +29,7 @@ const globeFragment = /* glsl */ `
   uniform float hasRegion;
   uniform vec3 environment;
   uniform float time;
+  uniform bool overlay;
   varying vec2 mapUv;
   varying vec3 surface;
 
@@ -66,7 +67,12 @@ const globeFragment = /* glsl */ `
       * (1.0 - smoothstep(regionEdge + 0.0018, regionEdge + 0.004, angle)) * hasRegion;
     color += (condition + vec3(0.16)) * border * 0.72;
 
-    gl_FragColor = vec4(color, 1.0);
+    if (overlay) {
+      vec3 highlighted = condition * (0.65 + 0.36 * sweep + 0.26 * stipple * healthy);
+      gl_FragColor = vec4(highlighted + border * 0.22, clamp(area * 0.64 + border * 0.45, 0.0, 0.92));
+    } else {
+      gl_FragColor = vec4(color, 1.0);
+    }
     #include <colorspace_fragment>
   }
 `;
@@ -91,7 +97,7 @@ export function Atmosphere() {
   );
 }
 
-export function EnvironmentEffects({ basemap, region, values, reducedMotion }) {
+export function EnvironmentEffects({ basemap, region, values, reducedMotion, overlay = false }) {
   const material = useRef(null);
   const [moisture, vegetation, drought] = values;
   const target = useMemo(() => new Vector3(moisture, vegetation, drought), [moisture, vegetation, drought]);
@@ -103,7 +109,8 @@ export function EnvironmentEffects({ basemap, region, values, reducedMotion }) {
     hasRegion: { value: 0 },
     environment: { value: new Vector3(0.5, 0.5, 0.5) },
     time: { value: 0 },
-  }), [basemap]);
+    overlay: { value: overlay },
+  }), [basemap, overlay]);
   const direction = useMemo(() => region ? regionDirection(region) : null, [region]);
 
   useFrame((_, delta) => {
@@ -123,8 +130,8 @@ export function EnvironmentEffects({ basemap, region, values, reducedMotion }) {
 
   return (
     <mesh onClick={(event) => event.stopPropagation()}>
-      <sphereGeometry args={[1, 64, 40]} />
-      <shaderMaterial ref={material} vertexShader={vertexShader} fragmentShader={globeFragment} uniforms={uniforms} />
+      <sphereGeometry args={[overlay ? 1.006 : 1, 64, 40]} />
+      <shaderMaterial ref={material} vertexShader={vertexShader} fragmentShader={globeFragment} uniforms={uniforms} transparent={overlay} depthWrite={!overlay} />
     </mesh>
   );
 }

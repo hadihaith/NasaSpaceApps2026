@@ -26,6 +26,7 @@ export interface Environment {
   fuelDryness: number;
 }
 export interface RegionState extends Environment { elapsed: number }
+export interface TrialFrame { state: RegionState; weather: Climate }
 export interface Discovery {
   id: string;
   label: string;
@@ -105,7 +106,17 @@ export const newSave = (name: string): Save => ({
 });
 export const REQUIRED_DISCOVERIES = 3;
 
-export function runTrial(save: Save, normals: Climate[], duration: Duration): Trial {
+export function applyWeather(base: Climate, settings: Settings): Climate {
+  return {
+    temperature: base.temperature + settings.heat,
+    rain: Math.max(0, base.rain * (1 + settings.rain / 100)),
+    humidity: clamp(base.humidity + settings.humidity, 0, 100),
+    wind: Math.max(0, base.wind + settings.wind),
+    soil: base.soil,
+  };
+}
+
+export function runTrial(save: Save, normals: Climate[], duration: Duration, onMonth?: (frame: TrialFrame) => void): Trial {
   const settings = { ...save.conditions };
   const before = save.regions[save.region] ?? initialState(normals);
   const after = { ...before };
@@ -113,13 +124,7 @@ export function runTrial(save: Save, normals: Climate[], duration: Duration): Tr
   let weather = normals[before.elapsed % 12];
   for (let i = 0; i < duration; i++) {
     const base = normals[(before.elapsed + i) % 12];
-    weather = {
-      temperature: base.temperature + settings.heat,
-      rain: Math.max(0, base.rain * (1 + settings.rain / 100)),
-      humidity: clamp(base.humidity + settings.humidity, 0, 100),
-      wind: Math.max(0, base.wind + settings.wind),
-      soil: base.soil,
-    };
+    weather = applyWeather(base, settings);
     const dryAir = -settings.humidity / 100;
     const evaporation = .012 * settings.heat + .10 * dryAir + .007 * settings.wind;
     const waterSupply = (weather.rain - base.rain) / (base.rain + 27);
@@ -144,6 +149,7 @@ export function runTrial(save: Save, normals: Climate[], duration: Duration): Tr
     if (coldStress > .38) months.cool++;
     if (evaporation > .10 && weather.humidity < 45) months.demand++;
     if (waterSupply > .48) months.surplus++;
+    onMonth?.({ state: { ...after }, weather });
   }
   const active = [
     months.drought >= 1 && after.droughtStressIndex > .36 && "drought",

@@ -51,12 +51,15 @@ namespace Homecoming.Field
             var selected = SelectArchiveTrend(record);
             if (showArchiveValues) DrawArchiveTable(record,selected);
             else if (selected?.points is { Length: > 1 }) DrawHistoricalChart(selected,Box(165,522,1319,124));
-            else if (record.years is { Length: > 1 }) DrawChart(record,Box(165,522,1319,124));
+            else if (selected == null && record.years is { Length: > 1 }) DrawChart(record,Box(165,522,1319,124));
+            else Text(Box(85,522,1319,50),"Too few values to plot this time view. Use Inspect values to see available dates.",21,Dim);
             var finding = Usable(record) ? MakeFinding(record,selected) : null;
             if (finding != null)
             {
                 Text(Box(85,690,1410,32),$"{finding.aggregation} · {finding.window} · {finding.count} values",19,Dim);
-                Text(Box(85,724,1132,32),FindingRate(finding)+" · "+SignificanceLabel(finding),19,White,bodyFont,TextAnchor.MiddleLeft,true);
+                Text(Box(85,724,1132,32),"Theil–Sen · "+FindingRate(finding)+" · "+SignificanceLabel(finding,false),19,White);
+                Text(Box(85,756,1132,44),finding.hasPValue ? TestSummary(finding) : finding.reason,
+                    17,Dim,bodyFont,TextAnchor.UpperLeft,true);
                 bool filed = investigation?.origin?.id == finding.id;
                 if (Button(Box(1240,724,275,51),filed ? "Finding filed" : "File this finding",true,false,
                         finding.hasRate && !filed && CanFile(record),22))
@@ -69,9 +72,10 @@ namespace Homecoming.Field
                 Text(Box(522,829,1018,38),$"Reviewed by {finding.reviewer} · {finding.test}",18,Dim);
         }
 
-        void DrawHistoricalChart(ArchiveTrend trend, Rect chart)
+        void DrawHistoricalChart(ArchiveTrend trend, Rect chart, bool includeZero = false, int selectedIndex = -1)
         {
             float min = trend.points.Min(p => p.value), max = trend.points.Max(p => p.value);
+            if (includeZero) { min = Mathf.Min(min,0); max = Mathf.Max(max,0); }
             if (max <= min) { min -= 1; max += 1; }
             float first = trend.points[0].t, last = trend.points[^1].t;
             for (int i=0;i<3;i++)
@@ -83,6 +87,8 @@ namespace Homecoming.Field
             Vector2 Plot(ArchiveTrendPoint p) => new(
                 Mathf.Lerp(chart.x,chart.xMax,Mathf.InverseLerp(first,last,p.t)),
                 Mathf.Lerp(chart.yMax,chart.y,Mathf.InverseLerp(min,max,p.value)));
+            if (includeZero) Fill(Box(chart.x,Plot(new ArchiveTrendPoint { value = 0 }).y,chart.width,1),Dim);
+            if (selectedIndex >= 0) Fill(Box(Plot(trend.points[selectedIndex]).x,chart.y,2,chart.height),Yellow);
             float maxGap = trend.mode == "anomaly" ? .084f : 1.001f;
             var previous = trend.points[0];
             foreach (var point in trend.points)
@@ -96,7 +102,7 @@ namespace Homecoming.Field
             Text(Box(chart.xMax-150,chart.yMax+5,150,27),trend.lastDate,15,Dim,dataFont,TextAnchor.MiddleRight);
         }
 
-        void DrawArchiveTable(EvidenceSeries record, ArchiveTrend trend)
+        void DrawArchiveTable(EvidenceSeries record, ArchiveTrend trend, float top = 519)
         {
             const int size = 16;
             int count = trend?.points?.Length ?? record.years?.Length ?? 0;
@@ -105,10 +111,10 @@ namespace Homecoming.Field
             {
                 string date = trend == null ? record.years[offset+i].year.ToString(Invariant) : trend.points[offset+i].date;
                 float value = trend == null ? record.years[offset+i].value : trend.points[offset+i].value;
-                Text(Box(83+(i/4)*310,519+(i%4)*35,301,30),$"{date,-9}   {value,8:0.###} {record.unit}",17,White,dataFont);
+                Text(Box(83+(i/4)*310,top+(i%4)*35,301,30),$"{date,-9}   {value,8:0.###} {record.unit}",17,White,dataFont);
             }
-            if (Button(Box(1341,519,174,39),"Previous values",false,false,offset > 0,17)) archiveValuePage--;
-            if (Button(Box(1341,569,174,39),"Next values",false,false,offset+size < count,17)) archiveValuePage++;
+            if (Button(Box(1341,top,174,39),"Previous values",false,false,offset > 0,17)) archiveValuePage--;
+            if (Button(Box(1341,top+50,174,39),"Next values",false,false,offset+size < count,17)) archiveValuePage++;
         }
     }
 }

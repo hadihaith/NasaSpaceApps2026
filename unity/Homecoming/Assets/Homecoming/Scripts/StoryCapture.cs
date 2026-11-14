@@ -42,38 +42,37 @@ namespace Homecoming
                 ScreenCapture.CaptureScreenshot(Path.Combine(output, name + ".png"));
                 yield return new WaitForSecondsRealtime(.18f);
             }
+            var script = JsonUtility.FromJson<StoryScript>(director.script.text);
+            void Frame(string id, float time)
+            {
+                var chapter = id == "hearing" || id == "deflate" ? "ending" : id == "lab" ? "briefing" : "prologue";
+                var shots = chapter == "ending" ? script.ending : chapter == "briefing" ? script.briefing : script.prologue;
+                director.Play(chapter, true);
+                director.SetShot(Array.FindIndex(shots, shot => shot.id == id));
+                typeof(StoryDirector).GetField("paused", Private).SetValue(director, true);
+                typeof(StoryDirector).GetField("shotTime", Private).SetValue(director, time);
+                director.stage.SetPaused(true);
+                director.stage.Evaluate(id, time, false, true);
+            }
             yield return new WaitForSecondsRealtime(1);
             Show("Home"); yield return Capture("01-title");
-            director.Play("prologue", true);
-            var script = JsonUtility.FromJson<StoryScript>(director.script.text);
-            director.SetShot(Array.FindIndex(script.prologue, shot => shot.id == "party"));
-            typeof(StoryDirector).GetField("shotTime", Private).SetValue(director, 1.5f);
-            director.stage.Evaluate("party", 1.5f, false, true);
+            Frame("opening", 2.4f);
+            director.stage.FailIntro();
+            yield return Capture("opening");
+            Frame("party", 1.5f);
             yield return Capture("02-party");
-            director.SetShot(3);
-            typeof(StoryDirector).GetField("shotTime", Private).SetValue(director, 2);
-            director.stage.Evaluate("correction", 2, false, true);
+            Frame("correction", 2);
             yield return Capture("03-dialogue");
             Show("Recruit"); yield return Capture("04-recruitment");
             Show("Ready"); yield return Capture("05-handoff");
-            director.Play("ending", true);
-            typeof(StoryDirector).GetField("shotTime", Private).SetValue(director, 3.2f);
-            director.stage.Evaluate("hearing", 3.2f, false, true);
+            Frame("hearing", 3.2f);
             yield return Capture("06-hearing");
             Show("Epilogue"); yield return Capture("07-epilogue");
             Show("Chapters"); yield return Capture("08-options");
             Show("Credits"); yield return Capture("09-credits");
-            foreach (var name in new[] { "years", "earth", "lab", "launch" })
+            foreach (var (name, time) in new[] { ("years", 4.2f), ("earth", 3.4f), ("lab", 3.2f), ("launch", .74f) })
             {
-                bool briefing = name == "lab";
-                director.Play(briefing ? "briefing" : "prologue", true);
-                var shots = briefing ? script.briefing : script.prologue;
-                int index = Array.FindIndex(shots, shot => shot.id == name);
-                director.SetShot(index);
-                float time = name == "years" ? 4.2f : name == "earth" ? 3.4f : name == "lab" ? 3.2f : .8f;
-                typeof(StoryDirector).GetField("shotTime", Private).SetValue(director, time);
-                typeof(StoryDirector).GetField("paused", Private).SetValue(director, true);
-                director.stage.Evaluate(name, time, false, true);
+                Frame(name, time);
                 yield return Capture("cinema-" + name);
             }
             // Contact frames inspect anticipation, contact and follow-through without playing by eye alone.
@@ -83,11 +82,11 @@ namespace Homecoming
                 {
                     string chapter = name == "hearing" || name == "deflate" ? "ending" : "prologue";
                     director.Play(chapter, true);
-                    var data = JsonUtility.FromJson<StoryScript>(director.script.text);
-                    var shots = chapter == "ending" ? data.ending : data.prologue;
+                    var shots = chapter == "ending" ? script.ending : script.prologue;
                     int index = Array.FindIndex(shots, shot => shot.id == name);
                     director.SetShot(index);
                     typeof(StoryDirector).GetField("paused", Private).SetValue(director, true);
+                    director.stage.SetPaused(true);
                     for (int frame = 0; frame < 12; frame++)
                     {
                         float time = (frame + .5f) * shots[index].seconds / 12;

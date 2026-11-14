@@ -7,14 +7,13 @@ namespace Homecoming.Field
     public sealed partial class FieldSimulation
     {
         const string GuidedRainOrigin = "sahel";
-        const string GuidedRainFallback = "amazon";
         const string GuidedSoilOrigin = "phoenix";
         const string HistoricalLink = "Historical comparison of matched records";
         const string NoComparison = "Comparable evidence unavailable";
         Investigation investigation;
         bool caseLoaded, hearingRequested;
         string reportStatus, transientGap;
-        bool reportDetails;
+        bool reportDetails, temperatureOpen;
         EvidenceSeries pairedOrigin, pairedTarget;
         FiledFinding pairedDifference;
         bool orbitOpen, orbitPaused;
@@ -29,6 +28,7 @@ namespace Homecoming.Field
             if (!LegacyCapture)
             {
                 investigation = FieldCaseStore.Load();
+                RestoreFiledTest();
                 RecoverScenarioCommit();
             }
         }
@@ -47,7 +47,8 @@ namespace Homecoming.Field
 
         string CaseQuestion => investigation?.kind switch
         {
-            InvestigationKind.Rainfall => "How did rainfall change at the two sites?",
+            InvestigationKind.Rainfall => "Did rainfall change at the same rate at the Sahel and central Chile points?",
+            InvestigationKind.Temperature => "How did 2 m air temperature change across Phoenix and central Arizona?",
             InvestigationKind.Soil => "How does a year of changed rainfall affect root-zone water? What happens when you make one more weather edit?",
             _ => "What changed in the Earth record, and where can you check it?"
         };
@@ -56,6 +57,7 @@ namespace Homecoming.Field
         {
             investigation = demoActive || investigationTest ? null : FieldCaseStore.Find(kind);
             investigation ??= new Investigation { kind = kind };
+            RestoreFiledTest();
             if (kind == InvestigationKind.Soil && investigation.campaignId != Campaign?.Id)
             {
                 investigation.first = investigation.second = null;
@@ -63,10 +65,26 @@ namespace Homecoming.Field
                 investigation.committingRunId = null;
                 investigation.campaignId = Campaign?.Id;
             }
-            reportDetails = false;
+            reportDetails = temperatureOpen = false;
             transientGap = reportStatus = null;
             RecoverScenarioCommit();
             SaveInvestigation();
+        }
+
+        void RestoreFiledTest()
+        {
+            var difference = investigation?.difference;
+            if (investigation?.kind != InvestigationKind.Rainfall || difference?.hasPValue != true || difference.hasOlsRate)
+                return;
+            CheckGuidedRecords();
+            if (guidedRain == null || difference.id != guidedRain.difference.id ||
+                investigation.origin?.id != guidedRain.left.id || investigation.other?.id != guidedRain.right.id) return;
+            var test = guidedRain.difference.test;
+            difference.hasOlsRate = true;
+            difference.olsRatePerDecade = test.slopePerDecade;
+            difference.hypothesis = test.hypothesis;
+            difference.status = guidedRain.difference.status;
+            investigation.comparisonId = guidedRain.id;
         }
 
         void SaveInvestigation()
@@ -101,7 +119,7 @@ namespace Homecoming.Field
                 unit = record.unit, aggregation = record.aggregation, window = Period(record), count = record.years.Length,
                 hasRate = record.hasSlope, ratePerDecade = record.slope * 10,
                 fittedChange = record.slope * (record.years[^1].year - record.years[0].year),
-                significance = "Significance not established", test = "Theil–Sen descriptive slope",
+                significance = "Significance not established", status = "not-established", test = "Theil–Sen descriptive slope",
                 reason = "No matching statistical review is available for this view."
             };
             ApplyArchiveReview(record, finding, trend);
@@ -121,7 +139,7 @@ namespace Homecoming.Field
             if (!Usable(record)) return false;
             return investigation?.kind switch
             {
-                InvestigationKind.Rainfall => false,
+                InvestigationKind.Rainfall or InvestigationKind.Temperature => false,
                 InvestigationKind.Soil => record.region == GuidedSoilOrigin && record.key == "rain" && record.provider == "reanalysis",
                 _ => true
             };
@@ -157,18 +175,10 @@ namespace Homecoming.Field
             pairedDifference = null;
             pairedTrend = null;
             comparisonScope = null;
-            if (investigation.kind == InvestigationKind.Rainfall && TryGetReviewedPair(out pairedOrigin, out pairedTarget, out pairedDifference))
-                return true;
             if (investigation.kind == InvestigationKind.Rainfall)
-            {
-                pairedOrigin = ArchiveRain(data, GuidedRainOrigin);
-                pairedTarget = ArchiveRain(data, GuidedRainFallback);
-            }
-            else
-            {
-                pairedOrigin = FindFiledRecord(investigation.origin);
-                pairedTarget = data.evidence.FirstOrDefault(record => Comparable(pairedOrigin, record) && SameScope(pairedOrigin, record));
-            }
+                return TryGetReviewedPair(out pairedOrigin, out pairedTarget, out pairedDifference);
+            pairedOrigin = FindFiledRecord(investigation.origin);
+            pairedTarget = data.evidence.FirstOrDefault(record => Comparable(pairedOrigin, record) && SameScope(pairedOrigin, record));
             return Comparable(pairedOrigin, pairedTarget) && SameScope(pairedOrigin, pairedTarget);
         }
 
@@ -176,7 +186,11 @@ namespace Homecoming.Field
         {
             if (pairedOrigin == null || pairedTarget == null) return;
             if (investigation.kind == InvestigationKind.Rainfall)
+            {
+                if (pairedDifference?.hasPValue != true) return;
                 investigation.origin = MakeFinding(pairedOrigin);
+                investigation.comparisonId = guidedRain.id;
+            }
             if (investigation.origin == null) return;
             investigation.other = MakeFinding(pairedTarget);
             investigation.difference = pairedDifference;
@@ -184,6 +198,28 @@ namespace Homecoming.Field
             investigation.relationship = HistoricalLink;
             investigation.relationshipScope = comparisonScope ?? "Matched archived measure, product, time treatment, footprint type and years.";
             SaveInvestigation();
+        }
+
+        void FileTemperature()
+        {
+            if (investigation.kind != InvestigationKind.Temperature || !investigation.callsRevealed ||
+                guidedTemperature == null) return;
+            investigation.origin = MakeFinding(guidedTemperature);
+            SaveInvestigation();
+            OpenCase();
+        }
+
+        bool RevealTemperature()
+        {
+            CheckGuidedRecords();
+            if (investigation.kind != InvestigationKind.Temperature ||
+                investigation.originCall == Direction.Unset || guidedTemperature == null) return false;
+            Go(View.Report);
+            temperatureOpen = investigation.callsRevealed = true;
+            archiveValuePage = 0;
+            showArchiveValues = false;
+            SaveInvestigation();
+            return true;
         }
 
         void FileGap(string reason)
@@ -200,12 +236,18 @@ namespace Homecoming.Field
         {
             LoadInvestigation();
             Go(View.Report);
-            orbitOpen = reportDetails = false;
+            orbitOpen = reportDetails = temperatureOpen = false;
         }
 
         bool StartComparison()
         {
             if (!FindPair()) return false;
+            if (investigation.kind == InvestigationKind.Rainfall)
+            {
+                if (investigation.originCall == Direction.Unset || investigation.otherCall == Direction.Unset) return false;
+                investigation.callsRevealed = true;
+                SaveInvestigation();
+            }
             if (!LocateFootprint(pairedOrigin,out orbitStart) || !LocateFootprint(pairedTarget,out orbitEnd))
             {
                 OpenComparisonWithoutOrbit();
@@ -214,7 +256,7 @@ namespace Homecoming.Field
             Go(View.Report);
             orbitOpen = true;
             comparisonHasOrbit = true;
-            comparisonTable = differenceOpen = false;
+            ResetComparisonView();
             orbitPaused = false;
             orbitProgress = reduced ? 1 : 0;
             orbitLastTime = Time.realtimeSinceStartupAsDouble;
@@ -246,7 +288,9 @@ namespace Homecoming.Field
                 },outputFolder);
                 SaveInvestigation();
                 hearingRequested = true;
-                StorySession.ReturnFromSimulation();
+                var evidence = investigation.first != null || investigation.second != null
+                    ? StoryEvidence.Mixed : StoryEvidence.Historical;
+                StorySession.ReturnFromSimulation(evidence);
             }
             catch (Exception error) when (error is System.IO.IOException || error is UnauthorizedAccessException || error is InvalidOperationException)
             {

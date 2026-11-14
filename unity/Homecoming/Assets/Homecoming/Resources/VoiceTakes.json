@@ -1,0 +1,105 @@
+{
+  "fallbackSource": "Locally synthesized team dialogue using eSpeak NG 1.52.0 (English formant voices).",
+  "takes": [
+    {
+      "id": "reveal.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/reveal.01"
+    },
+    {
+      "id": "correction.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/correction.01"
+    },
+    {
+      "id": "correction.02",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/correction.02"
+    },
+    {
+      "id": "party.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/party.01"
+    },
+    {
+      "id": "jam.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/jam.01"
+    },
+    {
+      "id": "years.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/years.01"
+    },
+    {
+      "id": "years.02",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/years.02"
+    },
+    {
+      "id": "return.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/return.01"
+    },
+    {
+      "id": "return.02",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/return.02"
+    },
+    {
+      "id": "earth.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/earth.01"
+    },
+    {
+      "id": "launch.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/launch.01"
+    },
+    {
+      "id": "lab.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/lab.01"
+    },
+    {
+      "id": "lab.02",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/lab.02"
+    },
+    {
+      "id": "hearing.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.01"
+    },
+    {
+      "id": "hearing.02.scenario",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.scenario"
+    },
+    {
+      "id": "hearing.02.historical",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.historical"
+    },
+    {
+      "id": "hearing.02.mixed",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.mixed"
+    },
+    {
+      "id": "deflate.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/deflate.01"
+    },
+    {
+      "id": "drought-alert.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-alert.01"
+    },
+    {
+      "id": "drought-welcome.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-welcome.01"
+    },
+    {
+      "id": "drought-count.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-count.01"
+    },
+    {
+      "id": "drought-none.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-none.01"
+    },
+    {
+      "id": "drought-how-many.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-how-many.01"
+    },
+    {
+      "id": "drought-all.01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-all.01"
+    },
+    {
+      "id": "recruit-zorvax-01",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/recruit-zorvax-01"
+    }
+  ]
+}

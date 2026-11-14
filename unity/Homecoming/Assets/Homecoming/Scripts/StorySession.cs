@@ -5,8 +5,8 @@ using UnityEngine.SceneManagement;
 namespace Homecoming
 {
     [Serializable] public sealed class StoryCue { public float at; public string name; }
-    // One timed caption: "Speaker: words", shown from `at` seconds until the next line or the end of the shot.
-    [Serializable] public sealed class StoryLine { public float at; public string text; }
+    public enum StoryEvidence { Scenario, Historical, Mixed }
+    [Serializable] public sealed class StoryLine { public float at, end; public string id, text, variant; }
     [Serializable] public sealed class StoryShot
     {
         public string id, description, label, line;
@@ -15,16 +15,26 @@ namespace Homecoming
         public StoryLine[] lines;
 
         // The caption on screen at time t. Timed lines win; a single `line` shows for the whole shot.
-        public string LineAt(float t, out float since)
+        public string LineAt(float t, out float since, StoryEvidence evidence = StoryEvidence.Mixed)
         {
-            since = t;
-            if (lines == null || lines.Length == 0) return line;
-            string current = null;
+            var line = ActiveLine(t, evidence);
+            since = line != null ? t - line.at : t;
+            return line?.text ?? this.line;
+        }
+
+        public StoryLine ActiveLine(float time, StoryEvidence evidence)
+        {
+            StoryLine current = null;
+            if (lines == null) return current;
             foreach (var entry in lines)
             {
-                if (entry.at > t) break;
-                current = entry.text;
-                since = t - entry.at;
+                if (entry.at > time) break;
+                // Discovery scenes without an end time keep a line until the next one.
+                if (entry.end > entry.at && time >= entry.end) continue;
+                if (entry.variant == "scenario" && evidence != StoryEvidence.Scenario ||
+                    entry.variant == "historical" && evidence != StoryEvidence.Historical ||
+                    entry.variant == "mixed" && evidence != StoryEvidence.Mixed) continue;
+                current = entry;
             }
             return current;
         }
@@ -33,8 +43,7 @@ namespace Homecoming
     {
         public StoryShot[] prologue, briefing, ending;
     }
-    // Discovery cutscenes live in Resources/Cutscenes.json, separate from Story.json, because
-    // scripts/prepare-unity-story.py regenerates Story.json from the web story.
+    // Discovery cutscenes live in Resources/Cutscenes.json alongside the shared film timeline.
     // To add a cutscene: add an array to the JSON, a field here and a case in Find().
     [Serializable] public sealed class CutsceneScript
     {
@@ -66,10 +75,12 @@ namespace Homecoming
         }
         // Process-local: returning from a future simulation does not invent saved evidence.
         static bool pendingHearing;
-        public static void ReturnFromSimulation()
+        public static StoryEvidence HearingEvidence { get; private set; } = StoryEvidence.Mixed;
+        public static void ReturnFromSimulation(StoryEvidence evidence = StoryEvidence.Mixed)
         {
             if (!Application.CanStreamedLevelBeLoaded(StoryScene))
                 throw new InvalidOperationException("Add Story.unity to the active Build Profile scene list.");
+            HearingEvidence = evidence;
             pendingHearing = true;
             SceneManager.LoadSceneAsync(StoryScene);
         }

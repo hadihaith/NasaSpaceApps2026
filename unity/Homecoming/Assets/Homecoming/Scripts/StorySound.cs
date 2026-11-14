@@ -1,25 +1,42 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Homecoming
 {
-    // A small original soundscape, synthesised locally: ventilation, engine bed, warm
-    // instrumental cues and physical impacts. No voice synthesis or external downloads.
     [DefaultExecutionOrder(-100), RequireComponent(typeof(AudioSource))]
     public sealed class StorySound : MonoBehaviour
     {
+        public enum Bus { Dialogue, Music, Sfx, Ambience, Archive }
+
+        [Serializable] sealed class VoiceTake
+        {
+            public string id, unityClip, fallbackClip;
+            public float duration;
+        }
+        [Serializable] sealed class VoiceManifest { public VoiceTake[] takes; }
+
         const int Rate = 24000;
         readonly Dictionary<string, AudioClip> sounds = new Dictionary<string, AudioClip>();
         readonly List<AudioClip> generated = new List<AudioClip>();
         readonly List<AudioSource> sources = new List<AudioSource>();
         readonly AudioClip[] themes = new AudioClip[4];
-        AudioSource source, controls, room, air, scoreA, scoreB;
+        readonly Dictionary<string, AudioClip> resourceClips = new Dictionary<string, AudioClip>();
+        readonly Dictionary<string, VoiceTake> takes = new Dictionary<string, VoiceTake>();
+        readonly float[] levels = { .95f, .46f, .72f, .16f, .45f };
+        AudioSource source, controls, room, air, scoreA, scoreB, music, dialogue;
+        string attemptedLine;
+        bool dialogueActive;
+        double dialogueEnd;
         StoryStage stage;
         string currentShot = "home";
         int theme = -1;
         bool aIsTarget = true, paused;
         float quietUntil;
         public bool Muted { get; private set; }
+        public bool DialoguePlaying => dialogueActive && !paused && !Muted && dialogue.isPlaying;
+
+        public float ArchiveVolume => Muted ? 0 : levels[(int)Bus.Archive] * (dialogueActive ? .56f : 1);
 
         void Awake()
         {
@@ -30,10 +47,20 @@ namespace Homecoming
             air = NewSource("Cabin ventilation", new Vector3(-3.5f, 3.8f, -1.8f), .24f, .25f);
             scoreA = NewSource("Score A", Vector3.zero, 0, 0);
             scoreB = NewSource("Score B", Vector3.zero, 0, 0);
+            music = NewSource("Musical cues", Vector3.zero, 0, 0);
+            dialogue = NewSource("Dialogue", Vector3.zero, levels[(int)Bus.Dialogue], 0);
             room.clip = MakeAmbience(false); air.clip = MakeAmbience(true);
             room.loop = air.loop = true;
             room.Play(); air.Play();
             for (int i = 0; i < themes.Length; i++) themes[i] = MakeScore(i);
+            var manifest = Resources.Load<TextAsset>("VoiceTakes");
+            foreach (var take in manifest != null ? JsonUtility.FromJson<VoiceManifest>(manifest.text)?.takes ?? Array.Empty<VoiceTake>() : Array.Empty<VoiceTake>())
+            {
+                if (take != null && !string.IsNullOrEmpty(take.id) &&
+                    (!string.IsNullOrEmpty(take.unityClip) || !string.IsNullOrEmpty(take.fallbackClip)))
+                    takes[take.id] = take;
+            }
+            SetLevel(Bus.Sfx, levels[(int)Bus.Sfx]);
             SetMuted(PlayerPrefs.GetInt("homecoming.unity.mute", 0) == 1);
         }
         void Configure(AudioSource target, float volume, float spatial)
@@ -110,7 +137,9 @@ namespace Homecoming
         }
         public void SetShot(string id, StoryStage owner)
         {
+            StopCue();
             stage = owner; currentShot = id;
+            if (id == "hearing" || id == "archive") PlayMusic(id, id == "archive");
             quietUntil = 0;
             int next = id == "years" || id == "return" || id == "deflate" || id == "epilogue" ? 1 :
                 id == "earth" || id == "launch" || id == "title" ? 2 : id == "lab" || id == "ready" ? 3 : 0;
@@ -121,17 +150,22 @@ namespace Homecoming
             target.clip = themes[next]; target.loop = true; target.volume = 0; target.Play();
             if (paused) target.Pause();
         }
-        public void Evaluate(string id, float t, bool dialogue)
+        public void Evaluate(string id, float t)
         {
             if (source == null || paused) return;
+            if (dialogueActive && (!dialogue.isPlaying || AudioSettings.dspTime >= dialogueEnd)) StopDialogue();
+            bool opening = id == "opening";
             bool space = id == "signal" || id == "earth";
             bool quiet = Time.unscaledTime < quietUntil || id == "deflate";
-            float duck = dialogue ? .67f : 1;
-            float score = (id == "title" ? .42f : id == "party" ? .3f : .21f) * duck * (quiet ? .2f : 1);
+            float duck = dialogueActive && dialogue.volume > 0 ? .56f : 1;
+            float musicLevel = levels[(int)Bus.Music] * duck;
+            music.volume = Mathf.MoveTowards(music.volume, musicLevel, Time.unscaledDeltaTime * 4);
+            float score = opening || music.isPlaying ? 0 :
+                (id == "title" ? .42f : id == "party" ? .3f : .21f) * musicLevel * (quiet ? .2f : 1);
             scoreA.volume = Mathf.MoveTowards(scoreA.volume, aIsTarget ? score : 0, Time.unscaledDeltaTime * .3f);
             scoreB.volume = Mathf.MoveTowards(scoreB.volume, aIsTarget ? 0 : score, Time.unscaledDeltaTime * .3f);
-            room.volume = Mathf.MoveTowards(room.volume, space ? .015f : quiet ? .15f : id == "launch" && t > .74f ? .5f : .36f, Time.unscaledDeltaTime);
-            air.volume = Mathf.MoveTowards(air.volume, space ? 0 : .24f, Time.unscaledDeltaTime);
+            room.volume = Mathf.MoveTowards(room.volume, (opening ? 0 : space ? .015f : quiet ? .15f : id == "launch" && t > .74f ? .5f : .36f) * levels[(int)Bus.Ambience] / .16f, Time.unscaledDeltaTime);
+            air.volume = Mathf.MoveTowards(air.volume, (space || opening ? 0 : .24f) * levels[(int)Bus.Ambience] / .16f, Time.unscaledDeltaTime);
         }
         public void SetMuted(bool mute)
         {
@@ -139,8 +173,20 @@ namespace Homecoming
             foreach (var audioSource in sources) if (audioSource != null) audioSource.mute = mute;
             PlayerPrefs.SetInt("homecoming.unity.mute", mute ? 1 : 0);
         }
+        public void SetLevel(Bus bus, float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value)) return;
+            levels[(int)bus] = Mathf.Clamp01(value);
+            if (source == null) return;
+            source.volume = .6f * levels[(int)Bus.Sfx];
+            controls.volume = .42f * levels[(int)Bus.Sfx];
+            dialogue.volume = levels[(int)Bus.Dialogue];
+        }
+
         public void SetPaused(bool value)
         {
+            if (paused == value) return;
+            if (dialogueActive) dialogueEnd += value ? -AudioSettings.dspTime : AudioSettings.dspTime;
             paused = value;
             foreach (var audioSource in sources)
             {
@@ -148,12 +194,102 @@ namespace Homecoming
                 if (value) audioSource.Pause(); else audioSource.UnPause();
             }
         }
-        public void StopCue() { if (source != null) source.Stop(); }
+        void StopDialogue()
+        {
+            dialogue.Stop();
+            dialogueActive = false;
+        }
+
+        public void StopCue()
+        {
+            if (source == null) return;
+            source.Stop();
+            music.Stop();
+            StopDialogue();
+            attemptedLine = null;
+        }
+
+        AudioClip LoadClip(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return null;
+            if (!resourceClips.TryGetValue(key, out var clip))
+            {
+                clip = Resources.Load<AudioClip>(key);
+                resourceClips[key] = clip;
+            }
+            return clip;
+        }
+
+        void PlayMusic(string id, bool loop)
+        {
+            var clip = LoadClip("HomecomingAudio/" + id);
+            if (clip == null) return;
+            music.volume = 0;
+            music.clip = clip;
+            music.loop = loop;
+            music.Play();
+            if (paused) music.Pause();
+        }
+
+        public void PreloadDialogue(string id)
+        {
+            if (id == null || !takes.TryGetValue(id, out var take)) return;
+            LoadClip(take.unityClip);
+            LoadClip(take.fallbackClip);
+        }
+
+        // Use the same active, variant-filtered line as the caption clock.
+        public void UpdateDialogue(string id, float offset, float remaining)
+        {
+            if (paused || attemptedLine == id) return;
+            StopDialogue();
+            attemptedLine = id;
+            if (!Muted && offset >= 0 && offset < .16f) Speak(id, offset, remaining);
+        }
+
+        public bool PlayDialogue(string id) => !Muted && !paused && Speak(id, 0, float.PositiveInfinity);
+
+        bool Speak(string id, float offset, float remaining)
+        {
+            if (id == null || !takes.TryGetValue(id, out var take)) return false;
+            var clip = LoadClip(take.unityClip);
+            bool primaryReady = clip != null && clip.loadState == AudioDataLoadState.Loaded;
+            if (!primaryReady) clip = LoadClip(take.fallbackClip);
+            if (clip == null || clip.loadState != AudioDataLoadState.Loaded) return false;
+            float duration = primaryReady && take.duration > 0 ? Mathf.Min(take.duration, clip.length) : clip.length;
+            float length = Mathf.Min(remaining, duration - offset);
+            if (length <= 0) return false;
+            StopDialogue();
+            dialogue.clip = clip;
+            dialogue.timeSamples = Mathf.Min(clip.samples - 1, Mathf.RoundToInt(offset * clip.frequency));
+            dialogue.Play();
+            dialogueEnd = AudioSettings.dspTime + length;
+            dialogueActive = true;
+            return true;
+        }
+
+
         public void Cue(string name)
         {
-            if (Muted || name == "voice") return;
+            if (Muted || string.IsNullOrEmpty(name) || name == "voice") return;
+            bool interfaceSound = name == "click" || name == "hover";
+            if (paused && !interfaceSound) return;
+            if ((currentShot == "party" && name == "celebrate") || (currentShot == "title" && name == "discover"))
+            {
+                PlayMusic(currentShot == "party" ? "welcome" : "title", false);
+                return;
+            }
             if (name == "quiet") { quietUntil = Time.unscaledTime + .6f; return; }
-            if (!sounds.TryGetValue(name, out var clip))
+            string prop = currentShot switch
+            {
+                "years" when name == "sputter" => "rattle",
+                "lab" when name == "scan" => "projector",
+                "launch" when name == "stamp" => "detent",
+                "hearing" when name == "stamp" => "paper",
+                _ => name
+            };
+            var clip = LoadClip("HomecomingAudio/" + prop);
+            if (clip == null && !sounds.TryGetValue(name, out clip))
             {
                 float length = name == "hover" ? .035f : name == "click" ? .065f : name == "party-hit" ? .65f : name == "stamp" ? .48f :
                     name == "deflate" ? 1.35f : name == "radio" ? .85f : name == "orbit" ? 1.25f : name == "celebrate" ? 1.2f : name == "alarm" ? .9f : .45f;
@@ -186,7 +322,6 @@ namespace Homecoming
                 }
                 clip = Clip(name, data, 1); sounds.Add(name, clip);
             }
-            bool interfaceSound = name == "click" || name == "hover";
             if (!interfaceSound && stage != null)
             {
                 source.transform.position = name == "party-hit" || name == "sputter" ? stage.cannon.transform.position :

@@ -1,7 +1,14 @@
-# Trend Detective
+# Operation: The Great Homecoming
 
-A web tool for the NASA Space Apps 2026 challenge
+The Unity game for the NASA Space Apps 2026 challenge
 [Be an Earth System Trend Detective](https://www.spaceappschallenge.org/2026/challenges/earth-system-trend-detective/).
+Join the crew, run climate experiments, and file evidence from real NASA records.
+
+Open `unity/Homecoming` in **Unity 6000.6.9f1**. Start with
+`Assets/Scenes/Story.unity` and press **Play**, or open `Assets/Scenes/Simulation.unity`
+for direct lab access. The [Unity guide](unity/README.md) covers the macOS build and investigation controls.
+
+## Browser companion
 
 Pick an Earth science variable and a place. The app pulls four decades of NASA
 data, plots the time series, and says in plain language whether there is a
@@ -29,10 +36,6 @@ The bar at the top numbers the sections in the order to visit them, and each sec
 The order, labels and step-by-step instructions live in one place, `src/lib/site.ts`. The navbar, the How-to page and the "Next step" cards all read it.
 
 ## Run it locally
-
-For **Unity 6000.6.9f1**, open `unity/Homecoming` in Unity Hub.
-Play `Assets/Scenes/Simulation.unity` to start in the field lab, or start
-`Assets/Scenes/Story.unity` for the original story. See the [Unity guide](unity/README.md).
 
 ```bash
 npm install

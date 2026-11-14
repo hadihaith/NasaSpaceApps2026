@@ -146,7 +146,7 @@ namespace Homecoming
         {
             if (!initialized) Initialize();
             bool visible = shot == "home" || (shot == "recruit" && role == 0) || (shot == "ready" && role > 0) || shot == "epilogue" ||
-                shot == "reveal" || shot == "party" || shot == "years" || shot == "return" || shot == "hearing" ||
+                (shot == "jam" && role == 2) || shot == "reveal" || shot == "party" || shot == "years" || shot == "return" || shot == "hearing" ||
                 (shot == "correction" && role < 2) || (shot == "launch" && role == 0) || (shot == "lab" && role > 0) ||
                 CutsceneScript.IsCutsceneShot(shot);
             gameObject.SetActive(visible);
@@ -161,7 +161,7 @@ namespace Homecoming
                     // Nyxen's finger goes up; Zorvax answers "The first of many!" with open arms.
                     action = role == 1 ? "Eureka" : "Welcome";
                     start = role == 1 ? .2f : 1.55f; end = role == 1 ? 3.3f : 3.6f; hold = role == 1 ? .6f : .5f; break;
-                case "party": action = role == 0 ? "Welcome" : role == 1 ? "Explain" : "Wave"; start = .65f + role * .07f; end = 4.4f; loop = true; rate = 1.05f; break;
+                case "party": action = role == 0 ? "Welcome" : role == 1 ? "Explain" : "Idle"; start = .72f + role * .2f; end = 3.8f; loop = false; rate = 1.05f; break;
                 case "return": action = role == 0 ? "Complain" : "Idle"; start = 1.12f; end = 4.65f; rate = 1.35f; break;
                 case "launch": action = "Nod"; start = .08f; end = 2.1f; rate = .8f; break;
                 case "lab": if (role == 1) { action = "Explain"; start = .35f; end = 6.5f; rate = .77f; hold = .9f; } break;
@@ -174,7 +174,7 @@ namespace Homecoming
                 case "drought-none": if (role == 0) { action = "Nod"; start = .1f; end = 1.5f; } break;
                 case "drought-all": if (role == 0) { action = "Complain"; start = .05f; end = 3.5f; rate = 1.2f; } break;
             }
-            Sample(action, t, start, end, rate, loop, hold);
+            Sample(action, still ? (t < start ? 0 : start + .64f) : t, start, end, rate, loop, hold);
             float x = role == 0 ? -1.5f : role == 1 ? .35f : 2.1f;
             float z = role == 0 ? .85f : role == 1 ? .12f : -.18f;
             float yaw = role == 0 ? -8 : role == 1 ? -13 : -23;
@@ -186,6 +186,11 @@ namespace Homecoming
             {
                 headYaw = still ? 0 : Mathf.Sin(t * .45f + role) * 5;
                 if (role == 2) { yaw = -32; headPitch = -3; }
+            }
+            if (shot == "reveal")
+            {
+                float take = Smooth(2.65f + role * .17f, 3.44f + role * .17f, t);
+                headYaw = role == 2 ? -26 * Smooth(2.06f, 2.7f, t) : 29 * (1 - take) - 25 * take;
             }
             if (shot == "reveal" && role == 0)
             {
@@ -205,7 +210,7 @@ namespace Homecoming
             }
             if (shot == "party")
             {
-                float dance = still ? 0 : Smooth(.72f, .94f, t);
+                float dance = still || role == 2 ? 0 : Smooth(.72f + role * .22f, .94f + role * .22f, t) * (1 - Smooth(2.9f, 3.85f, t));
                 float beat = Mathf.Sin((t - .72f) * 7.8f + role * 1.85f);
                 float hop = Mathf.Max(0, beat);
                 x += Mathf.Sin(t * 4 + role) * .085f * dance;
@@ -216,23 +221,18 @@ namespace Homecoming
                 torsoRoll = -beat * 3 * dance;
                 rightArmTilt = beat * 7 * dance;
             }
+            if ((shot == "party" || shot == "jam") && role == 2)
+            {
+                x -= .24f; z += .22f; yaw -= 12;
+                headPitch = shot == "jam" ? 11 - 5 * Smooth(1.13f, 1.42f, t) : 13 * Smooth(.2f, .56f, t);
+                if (shot == "jam") headYaw -= 20 * Smooth(1.22f, 1.6f, t);
+            }
             if (shot == "years")
             {
-                // Time-lapse: the crew slumps a little more with every year that passes...
                 float lapse = StoryStage.Lapse(t, still);
                 y = -.06f * lapse; torsoPitch = (role == 0 ? 8 : 5) * lapse; headPitch = (role == 2 ? 16 : 11) * lapse;
                 roll = (role == 2 ? -5 : 2) * lapse; headYaw = (role == 0 ? -9 : 5) * lapse;
                 rightArmTilt = (role == 0 ? -12 : -5) * lapse;
-                // ...and jumps between spots and stances, the way a time-lapse skips through days.
-                if (!still && lapse > 0 && lapse < 1)
-                {
-                    int day = Mathf.FloorToInt(t * 6);
-                    float restless = Mathf.Sin(lapse * Mathf.PI);
-                    x += (Hash(role, day) - .5f) * .55f * restless;
-                    z += (Hash(role + 7, day) - .5f) * .35f * restless;
-                    yaw += (Hash(role + 13, day) - .5f) * 70 * restless;
-                    headYaw += (Hash(role + 21, day) - .5f) * 40 * restless;
-                }
                 // "Should I take the banner down?": the cadet looks up at it, then back down.
                 if (role == 2) headPitch = 16 * lapse - 30 * Smooth(2.9f, 3.4f, t) * (1 - Smooth(4.5f, 5.1f, t));
                 // "Not until they get here.": Zorvax straightens, chin up.
@@ -303,10 +303,23 @@ namespace Homecoming
             if (shot == "launch" && role == 0)
             {
                 float reach = Smooth(.12f, .5f, t) * (1 - Smooth(.92f, 1.5f, t));
-                Reach(leftArm, leftForearm, leftHand, new Vector3(-.05f, Mathf.Lerp(1.42f, 1.16f, Smooth(.52f, .75f, t)), 1), reach);
+                float press = Smooth(.52f, .74f, t) * (1 - Smooth(.78f, 1.1f, t));
+                Reach(leftArm, leftForearm, leftHand, new Vector3(-.05f, Mathf.Lerp(1.42f, 1.13f, press), 1), reach);
+                // Turn the palm toward the button so the contact reads in the insert.
+                if (leftHand != null)
+                    leftHand.rotation = Quaternion.Slerp(leftHand.rotation,
+                        Quaternion.FromToRotation(leftHand.TransformDirection(Vector3.up), Vector3.down) * leftHand.rotation,
+                        reach * .78f);
             }
+            if (shot == "party" && role == 2)
+                Reach(rightArm, rightForearm, rightHand, new Vector3(.60f, 1.0f, .91f),
+                    Smooth(.16f, .66f, t) * (1 - Smooth(.76f, 1.35f, t)));
             if (shot == "hearing" && role == 0)
+            {
                 Reach(rightArm, rightForearm, rightHand, new Vector3(-.74f, 1.41f, 1.36f), .9f * Smooth(.08f, .4f, t));
+                Reach(leftArm, leftForearm, leftHand, new Vector3(.59f, .98f, .91f),
+                    .9f * Smooth(.95f, 1.85f, t) * (1 - Smooth(2.43f, 3.47f, t)));
+            }
         }
     }
 }

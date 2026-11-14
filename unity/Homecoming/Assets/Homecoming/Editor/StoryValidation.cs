@@ -25,23 +25,28 @@ namespace Homecoming.Editor
             stage.ApplyTypography();
             _ = stage.Environment;
             var story = JsonUtility.FromJson<StoryScript>(director.script.text);
-            Require(story.prologue.Length == 11 && story.briefing.Length == 1 && story.ending.Length == 2, "All 14 source shots exist");
-            Require(story.prologue.Select(s => s.id).Distinct().Count() == 11, "Unique prologue shots");
+            Require(story.prologue.Length == 12 && story.briefing.Length == 1 && story.ending.Length == 2, "All 15 source shots exist");
+            Require(story.prologue.Select(s => s.id).Distinct().Count() == 12, "Unique prologue shots");
             foreach (var shot in story.prologue.Concat(story.briefing).Concat(story.ending))
             {
                 Require(shot.seconds > 0 && !string.IsNullOrWhiteSpace(shot.description), "Valid shot " + shot.id);
                 if (shot.cues != null) foreach (var cue in shot.cues) Require(cue.at >= 0 && cue.at < shot.seconds, "Cue timing " + shot.id);
                 if (shot.lines != null)
                 {
-                    float previous = -1;
                     foreach (var line in shot.lines)
                     {
-                        Require(line.at > previous && line.at < shot.seconds - .8f, "Line timing and reading time " + shot.id);
-                        Require(!string.IsNullOrWhiteSpace(line.text) && line.text.IndexOf(':') > 0, "Speaker: line format " + shot.id);
-                        previous = line.at;
+                        Require(line.at >= 0 && line.end > line.at && line.end <= shot.seconds, "Caption timing " + shot.id);
+                        Require(!string.IsNullOrWhiteSpace(line.id) && !string.IsNullOrWhiteSpace(line.text), "Caption text " + shot.id);
                     }
                 }
             }
+            Require(Mathf.Abs(story.prologue.Sum(s => s.seconds) - 74.4f) < .001f, "Prologue matches shared cut");
+            var intro = Resources.Load<UnityEngine.Video.VideoClip>("Film/auk-intro");
+            Require(intro != null && Math.Abs(intro.length - story.prologue[0].seconds) < .05, "AUK intro movie matches opening duration");
+            Require(intro.width == 1920 && intro.height == 1080, "AUK intro retains the original 1080p frame");
+            Require(Mathf.Abs(story.ending.Sum(s => s.seconds) - 10.2f) < .001f, "Ending matches shared cut");
+            foreach (StoryEvidence kind in Enum.GetValues(typeof(StoryEvidence)))
+                Require(story.ending[0].LineAt(3.2f, out _, kind)?.StartsWith("Nyxen:") == true, "Hearing variant " + kind);
             foreach (var actor in stage.crew)
             {
                 Require(actor.rig != null && actor.clips.Length >= 3, "Original rig and clips " + actor.name);
@@ -77,12 +82,12 @@ namespace Homecoming.Editor
             var original = stage.televisionMaterial;
             stage.televisionMaterial = new Material(original);
             stage.screen.sharedMaterial = stage.televisionMaterial;
-            typeof(StoryStage).GetField("poster", Private).SetValue(stage, Resources.Load<Texture2D>("Film/apollo11"));
+            typeof(StoryStage).GetField("poster", Private).SetValue(stage, Resources.Load<Texture2D>("Film/apollo-still"));
             var rt = new RenderTexture(1600, 900, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             rt.Create();
             stage.filmCamera.targetTexture = rt;
             string[] names = { "home", "signal", "apollo", "reveal", "correction", "party", "jam", "years", "return", "earth", "launch", "lab", "hearing", "deflate" };
-            float[] times = { 1, 4.3f, 2, 3.2f, 1.4f, 1.55f, .7f, 2, 2.8f, 3, .78f, 4, 3.2f, 2.6f };
+            float[] times = { 1, 4.3f, 2, 3.2f, 1.4f, 1.55f, 1.4f, 3.1f, 3.55f, 3, .78f, 4, 3.2f, 2.6f };
             for (int i = 0; i < names.Length; i++)
             {
                 stage.Evaluate(names[i], times[i], false, true);
@@ -126,7 +131,7 @@ namespace Homecoming.Editor
             var original = stage.televisionMaterial;
             stage.televisionMaterial = new Material(original);
             stage.screen.sharedMaterial = stage.televisionMaterial;
-            typeof(StoryStage).GetField("poster", Private).SetValue(stage, Resources.Load<Texture2D>("Film/apollo11"));
+            typeof(StoryStage).GetField("poster", Private).SetValue(stage, Resources.Load<Texture2D>("Film/apollo-still"));
             var rt = new RenderTexture(960, 540, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             rt.Create();
             stage.filmCamera.targetTexture = rt;
@@ -310,14 +315,15 @@ namespace Homecoming.Editor
                     {
                         var returned = Object.FindAnyObjectByType<StoryDirector>();
                         Require(returned != null && returned.CurrentShot == "hearing", "Return API starts final hearing after scene reload");
+                        Require(StorySession.HearingEvidence == StoryEvidence.Historical, "Hearing received the evidence type");
                         Require(!StorySession.ConsumeHearingRequest(), "Return request consumed once");
-                        Debug.Log("HOMECOMING_SMOKE_OK: 14 story shots, discovery cutscene, deterministic atmosphere, unclipped score, motion options, pause, chapter routes, save, preview isolation, simulation-return scene reload.");
+                        Debug.Log("HOMECOMING_SMOKE_OK: 15 story shots, discovery cutscene, deterministic atmosphere, unclipped score, motion options, pause, chapter routes, save, preview isolation, simulation-return scene reload.");
                     }
                     catch (Exception error) { reloadResult = 1; Debug.LogException(error); }
                     FinishSmoke(reloadResult, recruit, briefing, ending);
                 };
                 SceneManager.sceneLoaded += loaded;
-                StorySession.ReturnFromSimulation();
+                StorySession.ReturnFromSimulation(StoryEvidence.Historical);
                 waitingForReturn = true;
             }
             catch (Exception error) { result = 1; Debug.LogException(error); }

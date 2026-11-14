@@ -1,11 +1,10 @@
 # The Great Homecoming — Unity
 
 Open **`unity/Homecoming`** in Unity Hub with **6000.6.9f1**. Open
-`Assets/Scenes/Story.unity` and press **Play**. This is a complete Unity project,
-separate from the existing web app.
+`Assets/Scenes/Story.unity` and press **Play**. The Unity macOS player is the Homecoming release.
 
-The story keeps the original 14 shots from `src/homecoming/story.ts` and extends their
-dialogue and timing (see **Dialogue** below): Apollo 11, the crew's misunderstanding, the party,
+The 15-shot Unity story opens with the full AUK Space Apps title film. The rest of the story follows
+Apollo 11, the crew's misunderstanding, the party,
 the 57-year wait, Artemis, recruitment, the laboratory introduction, the final
 hearing and the deflating balloon. Recruitment and the epilogue retain the
 original wording. The existing three skinned GLB characters and their animation
@@ -24,8 +23,10 @@ are used.
 - Scene descriptions and reduced camera motion are available in playback options.
 - Designation, story progress and options are saved locally using `PlayerPrefs`.
   **Start a new operation** clears only this story's designation and progress.
-- The original Apollo clip is bundled. Its archival still is used if the video
-  decoder is unavailable. Dialogue uses subtitles; no generated voices are included.
+- The AUK and Apollo clips are bundled. The title card and archival still are available
+  when their videos cannot play. Dialogue has captions and uses the packaged voice takes.
+- The current spoken takes use local eSpeak NG synthesis. `VoiceTakes.json` lists the
+  cue IDs and fallback clips. A licensed primary audio clip can be assigned per cue.
 
 ## Field simulation
 
@@ -33,11 +34,17 @@ Open **`Assets/Scenes/Story.unity`** for the full story and choose **Enter labor
 
 ### Play the cases
 
-- **Two places, one measurement** · Open **Investigation**, select the rainfall case and call the direction at both sites. Fly to the comparison and file the findings. For the 1991–2025 window, the Central Sahel grid point rises by 2.133 mm/month per decade and the Central Chile grid point falls by 18.840 mm/month per decade. These are descriptive Theil–Sen slopes. The reviewed paired difference is +24.645 mm/month per decade with a significant OLS slope test. The two individual trends have significance withheld. Read the mission report and submit it to the hearing.
+- **Two places, one measurement** · Open **Investigation**, select the rainfall case and call the direction at both sites. Fly to the comparison, inspect the matched years and the paired difference, revise your calls if you wish, then file the findings. For 1991–2025, the descriptive Theil–Sen slopes are +2.133 for the Central Sahel grid point and −18.840 for Central Chile, in mm/month per decade. The paired series has a descriptive slope of +24.645 and a reviewed OLS slope of +22.844 in the same units. Only the paired OLS result carries a significance test. Read the mission report and submit it to the hearing.
+- **Phoenix temperature** · Make a call, open the 1981–2025 record, and examine the fit and its uncertainty before filing. The descriptive slope is +0.509 °C per decade across 45 complete years. The reviewed OLS estimate is +0.468 °C per decade.
 - **Same weather, different ground** · File the Central Arizona rainfall record and predict which way root-zone water will move under changed precipitation. Set precipitation to +100%, leave the other controls at their inherited values, and preview twelve months. **Advance 12 months** saves the run and turns its ending state into the start of the next run. Return to the lab, change only temperature to +4 °C, then preview and advance again. Check the comparison or file the coverage gap. A wrong prediction can complete the case with an explanation.
 - **Free investigation** · Choose a preset site, variable, product and available time view in the Earth archive. File a comparable record or document the gap. Climate projections support the six terrain presets. Central Chile is a historical grid point.
 
 Use **Tab** and **Shift+Tab** to focus actions, **Enter** to activate, and the arrow keys to adjust a focused weather control. **Space** skips the descent or pauses playback. **M** toggles sound. On the ground use **WASD** to move and hold the **right mouse button** to look. The playback controls let you select a month, compare inherited weather, inspect tabular values, or discard a preview. The branch controls fork and replay saved revisions. The Investigation desk includes guided demos.
+
+The weather console shows inherited readings and draft readings on the same
+monitor. Drag a dial or focus it and use the arrow keys. **Preview 12 months**
+opens the simulation playback. **Advance & save 12 months** commits the weather
+and end state to the active branch.
 
 ### Read the numbers
 
@@ -49,7 +56,21 @@ Campaign data and exported JSON reports use Unity's application data folder. On 
 
 Run `node scripts/prepare-unity-simulation.mjs --check` from the repository root to verify the pinned pack. Run without `--check` to regenerate it. **Homecoming → Field simulation → Build scene** recreates `Simulation.unity`. **Homecoming → Build macOS player** builds the complete game with `Story.unity` first and `Simulation.unity` second. **Homecoming → Field simulation → Build macOS preview** produces a local player with direct lab entry.
 
-Run the preview executable with `--investigation-preview /absolute/folder` to verify scenario advancement, synchronized February results, a reviewed historical comparison, JSON export and the hearing. Captures and the synthetic player’s report go to the supplied folder. Use `--field-preview /absolute/folder` for the older illustrative playback check. **Homecoming → Field simulation → Validate model and campaign** checks arithmetic and saved-state behavior.
+Run **Homecoming → Field simulation → Validate model and campaign** and
+**Homecoming → Run playback smoke check** before building the release. The latter
+enters Play Mode and can be run in batch mode without `-quit`.
+
+For end-to-end QA, **Homecoming → Field simulation → Build story-first macOS QA player**
+places a separate app in `Builds/`. In an isolated project copy, use a different
+Player Settings product name and bundle identifier to give QA its own campaign
+and preferences. Launch the QA executable with `--investigation-preview /absolute/folder`,
+then finish or skip the prologue, join as a test recruit, and enter the lab. The
+harness exercises two consecutive Arizona scenarios, the matched rainfall
+comparison, a revised prediction, JSON export and the historical hearing. It emits
+`INVESTIGATION_STORY_ENTRY_OK` and `INVESTIGATION_PLAYBACK_OK` and writes the
+captures and report to the supplied folder. The direct-lab preview also accepts
+`--investigation-preview`. Use `--field-preview /absolute/folder` for the older
+illustrative playback check. Package the story-first `.app` from **Build macOS player**.
 
 ## Lighting and grade
 
@@ -95,7 +116,7 @@ original instrumental themes generated locally. Music crossfades between hopeful
 waiting, determined and laboratory moods, and ducks beneath dialogue. The balloon
 ending deliberately goes quieter. Interface sounds have a separate channel, so menu
 clicks remain responsive while the film is paused. The existing sound toggle mutes
-every layer. No narration or external music files are added.
+every layer. The original score and prop cues are generated locally.
 
 ## Dialogue
 
@@ -112,18 +133,14 @@ Each line shows from `at` until the next line or the end of the shot, eases in, 
 speaker's caption colour (Zorvax orange, Nyxen mint, Cadet B paper). Validation requires the
 `Speaker: words` form, increasing times, and at least 0.8 s of reading time before the shot ends.
 
-The Unity film extends the web story: it restores the crew's motivation (they think humans
-leaving Earth means humans coming to them; Artemis shows humans keep going home; Zorvax sets
-out to find what Earth has that their planet doesn't) and adds a line or exchange to most shots.
-`scripts/prepare-unity-story.py` keeps these Unity-authored `lines`, the longer shot lengths and
-the fuller descriptions when it re-syncs from `src/homecoming/story.ts`.
+Unity owns the authored timeline in `Resources/Story.json`. Keep line IDs stable across
+the timeline and `Resources/VoiceTakes.json` so individual performances can be replaced.
 
 ## Discovery cutscenes
 
-Short comic scenes that play when the player makes a discovery. Scripts are in
-`docs/cutscene-scripts.md`; the shot data is in
-`Homecoming/Assets/Homecoming/Resources/Cutscenes.json` (kept separate from `Story.json`,
-which `prepare-unity-story.py` regenerates).
+Short comic scenes that can play after a discovery. Scripts are in
+`docs/cutscene-scripts.md`. The Unity shot data lives in
+`Homecoming/Assets/Homecoming/Resources/Cutscenes.json`.
 
 - **Preview:** Play → **Chapters / options** → *Discovery cutscenes / preview*.
 - **From the simulation:** call `Homecoming.StorySession.PlayCutscene("drought");`. The story
@@ -160,8 +177,8 @@ which `prepare-unity-story.py` regenerates).
   seeking, reduced motion, pause, chapter transitions, saving and the return API.
   It restores the previous story save afterwards.
 
-Run `python3 scripts/prepare-unity-story.py` from the repository root to sync the
-original story and bundled media into Unity again. It does not rebuild the scene.
+Run `python3 scripts/prepare-unity-story.py` from the repository root to sync
+crew models and planet textures. Edit the Unity timeline in `Resources/Story.json`.
 
 The project uses the Built-in Render Pipeline. The official glTFast **6.21.0**
 package is pinned in `Packages/manifest.json` and restored from Unity's registry

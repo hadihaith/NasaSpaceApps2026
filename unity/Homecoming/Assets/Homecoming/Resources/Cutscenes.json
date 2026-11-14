@@ -3,7 +3,9 @@
     {
       "id": "drought-alert",
       "description": "The ship's old television flashes red: SOIL MOISTURE DECLINING. Nyxen reads it calmly.",
-      "line": "Nyxen: Commander, the soil is drying out.",
+      "lines": [
+        {"at": 0, "end": 2.6, "id": "drought-alert.01", "text": "Nyxen: Commander, the soil is drying out."}
+      ],
       "seconds": 2.6,
       "cues": [
         { "at": 0.05, "name": "alarm" },
@@ -13,7 +15,9 @@
     {
       "id": "drought-welcome",
       "description": "Zorvax throws his arms wide in delight.",
-      "line": "Zorvax: Wonderful! Prepare the human welcome baskets!",
+      "lines": [
+        {"at": 0, "end": 2.6, "id": "drought-welcome.01", "text": "Zorvax: Wonderful! Prepare the human welcome baskets!"}
+      ],
       "seconds": 2.6,
       "cues": [
         { "at": 0.35, "name": "celebrate" }
@@ -22,14 +26,18 @@
     {
       "id": "drought-count",
       "description": "Cadet B raises a hand with a question.",
-      "line": "Cadet B: How many humans are coming?",
+      "lines": [
+        {"at": 0, "end": 1.9, "id": "drought-count.01", "text": "Cadet B: How many humans are coming?"}
+      ],
       "seconds": 1.9,
       "cues": []
     },
     {
       "id": "drought-none",
       "description": "Zorvax nods, completely unbothered.",
-      "line": "Zorvax: None yet.",
+      "lines": [
+        {"at": 0, "end": 1.4, "id": "drought-none.01", "text": "Zorvax: None yet."}
+      ],
       "seconds": 1.4,
       "cues": [
         { "at": 0.2, "name": "quiet" }
@@ -38,14 +46,18 @@
     {
       "id": "drought-how-many",
       "description": "Cadet B looks up at the ceiling hatch, worried.",
-      "line": "Cadet B: So… how many baskets?",
+      "lines": [
+        {"at": 0, "end": 1.9, "id": "drought-how-many.01", "text": "Cadet B: So… how many baskets?"}
+      ],
       "seconds": 1.9,
       "cues": []
     },
     {
       "id": "drought-all",
       "description": "Zorvax gestures grandly. A mountain of welcome baskets tumbles from the ceiling and buries Cadet B up to the cap.",
-      "line": "Zorvax: ALL OF THEM!",
+      "lines": [
+        {"at": 0, "end": 3.4, "id": "drought-all.01", "text": "Zorvax: ALL OF THEM!"}
+      ],
       "seconds": 3.4,
       "cues": [
         { "at": 0.15, "name": "stamp" },

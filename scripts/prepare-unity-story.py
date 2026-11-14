@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Sync the existing Homecoming story/media into the separate Unity project.
+"""Sync Homecoming media into the separate Unity project.
 
 Does not generate artwork, modify the web game or rebuild an edited Unity scene.
 """
-import json
-import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -14,41 +12,6 @@ TARGET = ROOT / "unity/Homecoming/Assets/Homecoming/Resources"
 
 
 def main():
-    source = (ROOT / "src/homecoming/story.ts").read_text()
-    sequences = {}
-    for name, key in [("PROLOGUE", "prologue"), ("LAB_INTRO", "briefing"), ("ENDING", "ending")]:
-        body = source.split(f"export const {name}: Shot[] = [", 1)[1].split("\n];", 1)[0]
-        shots = []
-        for line in body.splitlines():
-            if "id:" not in line:
-                continue
-            shot = {}
-            for field in ["id", "description", "label", "line"]:
-                match = re.search(r'\b' + field + r': "([^"]*)"', line)
-                if match:
-                    shot[field] = match.group(1)
-            shot["seconds"] = float(re.search(r"seconds: ([\d.]+)", line).group(1))
-            shot["cues"] = [{"at": float(at), "name": cue} for at, cue in re.findall(r'\[([\d.]+), "([^"]+)"\]', line)]
-            shots.append(shot)
-        if not shots:
-            raise ValueError(f"No shots parsed for {name}; check the source story format.")
-        sequences[key] = shots
-    TARGET.mkdir(parents=True, exist_ok=True)
-    # The Unity film extends the web story with timed dialogue ("lines"), longer shots to read
-    # them, and fuller descriptions. Keep those Unity-authored fields; take the rest from the web.
-    existing_path = TARGET / "Story.json"
-    if existing_path.exists():
-        existing = json.loads(existing_path.read_text())
-        for key, shots in sequences.items():
-            authored = {shot["id"]: shot for shot in existing.get(key, [])}
-            for shot in shots:
-                unity = authored.get(shot["id"])
-                if unity and unity.get("lines"):
-                    shot.pop("line", None)
-                    for field in ("lines", "seconds", "description"):
-                        shot[field] = unity[field]
-                    shot["cues"] = unity.get("cues", shot["cues"])
-    (TARGET / "Story.json").write_text(json.dumps(sequences, ensure_ascii=False, indent=2) + "\n")
     crew = TARGET / "Crew"
     crew.mkdir(exist_ok=True)
     for asset in (ROOT / "public/assets/characters").glob("*.glb"):
@@ -68,7 +31,7 @@ def main():
                 raise RuntimeError("Install Pillow to convert existing WebP textures outside macOS.") from error
             with Image.open(original) as image:
                 image.save(film / destination)
-    print("Synced original story:", ", ".join(f"{len(shots)} {name} shots" for name, shots in sequences.items()))
+    print("Synced Homecoming crew models and planet textures.")
 
 
 if __name__ == "__main__":

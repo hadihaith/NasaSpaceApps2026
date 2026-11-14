@@ -112,13 +112,19 @@ namespace Homecoming.Field.Editor
         }
 
         [MenuItem("Homecoming/Field simulation/Build macOS preview")]
-        public static void BuildPreview()
+        public static void BuildPreview() => BuildInvestigationPlayer(false);
+
+        [MenuItem("Homecoming/Field simulation/Build story-first macOS QA player")]
+        public static void BuildStoryFirstPreview() => BuildInvestigationPlayer(true);
+
+        static void BuildInvestigationPlayer(bool storyFirst)
         {
-            string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../Builds/Homecoming Field.app"));
+            const string story = "Assets/Scenes/Story.unity";
+            string name = storyFirst ? "The Great Homecoming QA.app" : "Homecoming Field.app";
+            string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../Builds", name));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                // Start straight in the lab for the local preview. Regular build profiles start in Story.
-                scenes = new[] { ScenePath, "Assets/Scenes/Story.unity" },
+                scenes = storyFirst ? new[] { story, ScenePath } : new[] { ScenePath, story },
                 locationPathName = output, target = BuildTarget.StandaloneOSX, extraScriptingDefines = new[] { "HOMECOMING_FIELD_PREVIEW" }
             });
             if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)

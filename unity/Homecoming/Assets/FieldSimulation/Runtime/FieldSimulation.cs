@@ -334,6 +334,7 @@ namespace Homecoming.Field
         {
             ReleaseLook();
             paused = false;
+            hotDial = -1;
             focusIndex = 0;
             view = next;
             switch (next)
@@ -453,12 +454,18 @@ namespace Homecoming.Field
             PlayerPrefs.Save();
         }
 
-        void OnApplicationFocus(bool focused) { if (!focused && lookHeld) ReleaseLook(); }
+        void OnApplicationFocus(bool focused)
+        {
+            if (focused) return;
+            hotDial = -1;
+            if (lookHeld) ReleaseLook();
+        }
         void OnDisable() { if (lookHeld) ReleaseLook(); }
         void OnDestroy()
         {
             if (fade != null) Destroy(fade);
             if (sideFade != null) Destroy(sideFade);
+            if (dialFace != null) Destroy(dialFace);
         }
     }
 }

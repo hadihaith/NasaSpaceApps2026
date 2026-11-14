@@ -163,19 +163,14 @@ namespace Homecoming
                 case "jam":
                     look.party = (1 - Smooth(.15f, 1.6f, t)) * .65f;
                     look.key = 2.2f;
-                    look.exposure += reduced ? 0 : .2f * (Pulse(t, .6f, .07f) + Pulse(t, 1.1f, .07f)); break;
+                    break;
                 case "years":
                 {
-                    // Time-lapse: 57 years pass in a couple of seconds. The room fades from the 1969
-                    // look to 2026 while the lights flutter like days going by, then settles.
-                    float lapse = reduced ? 1 : Smooth(.25f, 2.7f, t);
-                    look = Look.Lerp(Bright(flicker), Faded(t, reduced), lapse);
-                    if (!reduced && lapse > 0 && lapse < 1)
-                    {
-                        float days = Mathf.Sin(t * 21f) * Mathf.Sin(lapse * Mathf.PI);
-                        look.practical *= 1 + .6f * days;
-                        look.exposure += .12f * days;
-                    }
+                    float lapse = StoryStage.Lapse(t, reduced);
+                    var welcome = Bright(0);
+                    welcome.party = 1; welcome.key = 2.4f; welcome.saturation = 1.15f;
+                    welcome.tint = new Color(1.05f, .99f, .96f);
+                    look = Look.Lerp(welcome, Faded(t, reduced), lapse);
                     break;
                 }
                 case "deflate": case "epilogue":
@@ -195,11 +190,11 @@ namespace Homecoming
                 case "launch": case "title":
                 {
                     // 2026 until the slam at 0.74 s, then every light kicks on, brighter than ever.
-                    float on = id == "title" ? 1 : Smooth(.72f, .86f, t);
+                    float on = id == "title" ? 1 : Smooth(.73f, .76f, t);
                     var lit = Bright(flicker);
-                    lit.key = 2.8f; lit.practical = 4f; lit.fill = 1.2f; lit.saturation = 1.12f;
+                    lit.key = 2.2f; lit.practical = 1.85f; lit.fill = 1.05f; lit.saturation = 1.05f; lit.bloom = .3f;
                     look = Look.Lerp(Faded(t, reduced), lit, on);
-                    look.exposure += reduced || id == "title" ? 0 : .6f * Pulse(t, .8f, .12f); break;
+                    look.exposure += reduced || id == "title" ? 0 : .12f * Pulse(t, .8f, .12f); break;
                 }
                 case "lab": case "ready":
                 {

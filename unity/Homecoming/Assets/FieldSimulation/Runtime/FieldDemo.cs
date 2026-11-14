@@ -102,7 +102,24 @@ namespace Homecoming.Field
             int flag = Array.IndexOf(args,"--investigation-preview");
             if (flag < 0 || flag+1 >= args.Length) return;
             var field = FindAnyObjectByType<FieldSimulation>();
-            if (field != null) field.StartCoroutine(field.ValidateInvestigation(args[flag+1]));
+            if (field != null)
+            {
+                field.StartCoroutine(field.ValidateInvestigation(args[flag+1]));
+                return;
+            }
+
+            // A story-first QA build reaches the field through the normal recruitment and lab controls.
+            void OnFieldLoaded(Scene scene, LoadSceneMode mode)
+            {
+                if (scene.name != StorySession.SimulationScene) return;
+                SceneManager.sceneLoaded -= OnFieldLoaded;
+                var controller = FindAnyObjectByType<FieldSimulation>();
+                CheckInvestigation(controller != null && StorySession.BriefingComplete,
+                    "The story-first check did not enter the laboratory after the briefing");
+                Debug.Log("INVESTIGATION_STORY_ENTRY_OK: reached the laboratory after the story briefing.");
+                controller.StartCoroutine(controller.ValidateInvestigation(args[flag+1]));
+            }
+            SceneManager.sceneLoaded += OnFieldLoaded;
         }
 
         IEnumerator ValidateInvestigation(string output)
@@ -125,6 +142,7 @@ namespace Homecoming.Field
             Go(View.Lab);
             var beforeId = Campaign.Current.id;
             settings.rain = 100;
+            yield return CaptureInvestigation(output,"00-weather-console-draft");
             LaunchScenario();
             CheckInvestigation(PendingPreview != null && Campaign.Current.id == beforeId,"Starting the preview changed the committed world");
             yield return new WaitForSecondsRealtime(.8f);
@@ -140,6 +158,8 @@ namespace Homecoming.Field
             yield return new WaitForSecondsRealtime(.5f);
             yield return CaptureInvestigation(output,"02-february-scenario");
             Finish();
+            CheckInvestigation(HasPendingAdvance && Campaign.Current.id == beforeId,"Finished playback did not leave the edited forecast pending");
+            yield return CaptureInvestigation(output,"02b-scenario-pending");
             CommitScenario();
             CheckInvestigation(investigation.first?.id == Campaign.Current.id && investigation.first.parentId == beforeId &&
                 investigation.first.edited.rain == 100 && investigation.first.result != investigation.scenarioCall,"First result or prediction outcome is missing");
@@ -173,6 +193,25 @@ namespace Homecoming.Field
             FileGap("This view compares January values across years. The available cross-location analysis uses annual values.");
             CheckInvestigation(investigation.IsReady,"The explicitly unresolved free comparison could not complete");
 
+            NewInvestigation(InvestigationKind.Temperature);
+            CheckInvestigation(!RevealTemperature(),"Temperature evidence opened before a call");
+            investigation.originCall = Direction.Fall;
+            CheckInvestigation(RevealTemperature(),"The reviewed Phoenix record could not open");
+            yield return CaptureInvestigation(output,"08-phoenix-temperature");
+            investigation.revisedOriginCall = Direction.Rise;
+            FileTemperature();
+            var temperature = investigation.origin;
+            CheckInvestigation(investigation.IsReady && investigation.revisedOriginCall == Direction.Rise &&
+                temperature.count == 45 && temperature.window == "1981–2025" && temperature.unit == "°C" &&
+                temperature.status == "significant" && temperature.hasOlsRate && temperature.hasInterval &&
+                Mathf.Abs(temperature.ratePerDecade - .50877193f) < .0001f &&
+                Mathf.Abs(temperature.olsRatePerDecade - .46767677f) < .0001f &&
+                Mathf.Abs(temperature.intervalLow - .34259101f) < .0001f &&
+                Mathf.Abs(temperature.intervalHigh - .59276253f) < .0001f &&
+                Mathf.Abs(temperature.pValue - 2.14409205e-9f) < 1e-12f &&
+                !string.IsNullOrEmpty(temperature.fingerprint) && !string.IsNullOrEmpty(temperature.hypothesis),
+                "Filed Phoenix temperature evidence differs from the reviewed record");
+
             NewInvestigation(InvestigationKind.Rainfall);
             investigation.originCall = Direction.Rise;
             investigation.otherCall = Direction.Fall;
@@ -185,17 +224,38 @@ namespace Homecoming.Field
             yield return CaptureInvestigation(output,"05-rainfall-comparison");
             differenceOpen = true;
             yield return CaptureInvestigation(output,"06-paired-difference");
+            investigation.revisedOriginCall = Direction.LittleChange;
             FileComparison();
-            CheckInvestigation(investigation.IsReady && investigation.difference?.hasPValue == true &&
-                investigation.difference.ratePerDecade > 0 && investigation.difference.pValue > 0 &&
-                investigation.other.place == "Central Chile","Paired findings or review were not filed");
+            var difference = investigation.difference;
+            CheckInvestigation(investigation.IsReady && investigation.comparisonId == "rain-two-ways" &&
+                investigation.originCall == Direction.Rise && investigation.revisedOriginCall == Direction.LittleChange &&
+                investigation.origin.count == 35 && investigation.other.count == 35 && difference?.count == 35 &&
+                investigation.origin.status == "not-established" && !investigation.origin.hasPValue &&
+                investigation.other.status == "not-established" && !investigation.other.hasPValue &&
+                investigation.origin.unit == "mm/month" && difference.unit == "mm/month" &&
+                investigation.other.place == "Central Chile" &&
+                Mathf.Abs(investigation.origin.ratePerDecade - 2.1333333f) < .001f &&
+                Mathf.Abs(investigation.other.ratePerDecade + 18.8401515f) < .001f &&
+                difference.status == "significant" && difference.hasPValue && difference.hasOlsRate && difference.hasInterval &&
+                Mathf.Abs(difference.ratePerDecade - 24.6453125f) < .001f &&
+                Mathf.Abs(difference.olsRatePerDecade - 22.8439846f) < .001f &&
+                Mathf.Abs(difference.intervalLow - 16.3621244f) < .001f &&
+                Mathf.Abs(difference.intervalHigh - 29.3258448f) < .001f &&
+                Mathf.Abs(difference.pValue - 3.2300391e-8f) < 1e-11f,
+                "Filed rainfall evidence or prediction history differs from the reviewed comparison");
             CloseComparison();
             reportDetails = true;
             yield return new WaitForSecondsRealtime(.5f);
             yield return CaptureInvestigation(output,"07-historical-report");
             yield return new WaitForSecondsRealtime(.4f);
 
-            SceneManager.sceneLoaded += FinishInvestigationValidation;
+            UnityEngine.Events.UnityAction<Scene, LoadSceneMode> onHearing = null;
+            onHearing = (scene, mode) =>
+            {
+                SceneManager.sceneLoaded -= onHearing;
+                FinishInvestigationValidation(scene, output);
+            };
+            SceneManager.sceneLoaded += onHearing;
             SubmitInvestigation(output);
             CheckInvestigation(hearingRequested && File.Exists(Path.Combine(output,investigation.id+".json")),"Report export or story submission failed");
         }
@@ -213,12 +273,22 @@ namespace Homecoming.Field
             if (!condition) throw new InvalidOperationException("INVESTIGATION_VALIDATION_FAILED: "+reason);
         }
 
-        static void FinishInvestigationValidation(Scene scene,LoadSceneMode mode)
+        static void FinishInvestigationValidation(Scene scene, string output)
         {
-            SceneManager.sceneLoaded -= FinishInvestigationValidation;
-            CheckInvestigation(scene.name == StorySession.StoryScene && FindAnyObjectByType<StoryDirector>()?.CurrentShot == "hearing",
+            var director = FindAnyObjectByType<StoryDirector>();
+            CheckInvestigation(scene.name == StorySession.StoryScene && director?.CurrentShot == "hearing" &&
+                StorySession.HearingEvidence == StoryEvidence.Historical,
                 "The report did not open the hearing");
-            Debug.Log("INVESTIGATION_PLAYBACK_OK: two advances, inherited state, February scrubbing, wrong prediction, unresolved monthly view, comparison flight, reviewed paired finding, report export and hearing.");
+            director.StartCoroutine(CaptureValidatedHearing(director, output));
+        }
+
+        static IEnumerator CaptureValidatedHearing(StoryDirector director, string output)
+        {
+            float deadline = Time.realtimeSinceStartup + 15;
+            yield return new WaitUntil(() => director.ShotTime >= 3.2f || Time.realtimeSinceStartup >= deadline);
+            CheckInvestigation(director.CurrentShot == "hearing" && director.ShotTime >= 3.2f, "The hearing did not play through the report correction");
+            yield return CaptureInvestigation(output, "09-historical-hearing");
+            Debug.Log("INVESTIGATION_PLAYBACK_OK: two advances, inherited state, February scrubbing, wrong prediction, unresolved monthly view, reviewed Phoenix and paired rainfall, report export and hearing.");
 #if !UNITY_EDITOR
             Application.Quit(0);
 #endif

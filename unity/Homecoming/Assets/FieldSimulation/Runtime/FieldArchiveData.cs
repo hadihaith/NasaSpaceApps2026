@@ -7,6 +7,7 @@ namespace Homecoming.Field
 {
     [Serializable] sealed class FieldArchivePack
     {
+        public int schemaVersion;
         public ArchiveRecord[] evidence;
         public ArchiveComparison[] comparisons;
     }
@@ -47,12 +48,15 @@ namespace Homecoming.Field
     }
 
     [Serializable] struct ArchiveTrendPoint { public string date; public float t, value; }
-    [Serializable] sealed class ArchiveTest { public string method; public float p, alpha, lowerPerDecade, upperPerDecade; }
-    [Serializable] sealed class ArchiveReview { public string id, reviewer, rationale; }
+    [Serializable] sealed class ArchiveTest { public string method, hypothesis; public float p, alpha, slopePerDecade, lowerPerDecade, upperPerDecade; }
+    [Serializable] sealed class ArchiveReview { public string id, reviewer, rationale; public bool accepted; }
 
     public sealed partial class FieldSimulation
     {
         FieldArchivePack historicalPack;
+        ArchiveComparison guidedRain;
+        EvidenceSeries guidedSahel, guidedChile, guidedTemperature;
+        bool guidedRecordsChecked;
         ArchiveTrend pairedTrend;
         int archiveMode, archiveMonth, archiveValuePage;
         bool showArchiveValues;
@@ -140,6 +144,7 @@ namespace Homecoming.Field
             target.hasRate = trend.hasSlope;
             target.ratePerDecade = trend.slopePerDecade;
             target.fittedChange = trend.magnitude;
+            target.status = trend.status;
             target.significance = trend.status switch
             {
                 "significant" => "Statistically significant", "not-significant" => "Not statistically significant",
@@ -152,37 +157,96 @@ namespace Homecoming.Field
                 target.reviewer = trend.review.reviewer;
                 target.reviewRationale = trend.review.rationale;
             }
-            if (string.IsNullOrEmpty(trend.test?.method) || trend.status == "not-established") return;
+            if (!HasReviewedTest(trend)) return;
             target.test = trend.test.method;
+            target.hypothesis = trend.test.hypothesis;
             target.hasPValue = target.hasInterval = true;
             target.pValue = trend.test.p;
             target.alpha = trend.test.alpha;
+            target.hasOlsRate = true;
+            target.olsRatePerDecade = trend.test.slopePerDecade;
             target.intervalLow = trend.test.lowerPerDecade;
             target.intervalHigh = trend.test.upperPerDecade;
         }
 
-        bool TryGetReviewedPair(out EvidenceSeries first, out EvidenceSeries second, out FiledFinding difference)
+        static bool HasReviewedTest(ArchiveTrend trend) => trend?.review?.accepted == true &&
+            trend.status is ("significant" or "not-significant") && !string.IsNullOrEmpty(trend.test?.method);
+
+        static bool MatchesCompleteAnnual(EvidenceSeries record, ArchiveTrend trend, int start, int end)
         {
-            first = second = null;
-            difference = null;
+            int count = end - start + 1;
+            if (trend?.mode != "annual" || trend.unit != record.unit || trend.aggregation != record.aggregation ||
+                !trend.hasSlope || trend.n != count || record.years.Length != count || trend.points?.Length != count) return false;
+            for (int i = 0; i < count; i++)
+            {
+                var point = trend.points[i];
+                int year = start + i;
+                if (point.date != year.ToString(Invariant) || point.t != year ||
+                    record.years[i].year != year || point.value != record.years[i].value) return false;
+            }
+            return true;
+        }
+
+        void CheckGuidedRecords()
+        {
+            if (guidedRecordsChecked) return;
+            guidedRecordsChecked = true;
             historicalPack ??= JsonUtility.FromJson<FieldArchivePack>(dataSource.text);
-            var pair = historicalPack?.comparisons?.FirstOrDefault(c => c.id == "rain-two-ways" && c.type == "historical-comparison");
-            if (pair == null) return false;
+            if (historicalPack?.schemaVersion != 2) return;
+            var temperature = data.evidence.FirstOrDefault(r => r.region == GuidedSoilOrigin && r.key == "temperature" &&
+                r.provider == "reanalysis" && r.unit == "°C" && Usable(r));
+            if (temperature != null)
+            {
+                var metadata = Exported(temperature);
+                var finding = metadata?.finding;
+                if (metadata?.sourceParameter == "T2M" &&
+                    metadata.footprint?.bbox != null && metadata.footprint.bbox.SequenceEqual(new[] { -113f, 32.5f, -111f, 34.5f }) &&
+                    MatchesCompleteAnnual(temperature,finding,1981,2025) && HasReviewedTest(finding) &&
+                    finding.review.id == "phoenix-temperature-review-v1")
+                    guidedTemperature = temperature;
+            }
+            var pair = historicalPack.comparisons?.FirstOrDefault(c => c.id == "rain-two-ways" && c.type == "historical-comparison");
+            if (pair == null) return;
             var a = data.evidence.FirstOrDefault(r => r.id == pair.leftDatasetId);
             var b = data.evidence.FirstOrDefault(r => r.id == pair.rightDatasetId);
-            if (!Usable(a) || !Usable(b) || pair.difference == null || !SameScope(a,b)) return false;
-            // Prefer the exact finding/view IDs from the packaged paired analysis.
-            if (pair.left.id != Exported(a)?.finding?.id || pair.right.id != Exported(b)?.finding?.id || !Comparable(a,b)) return false;
-            first = a;
-            second = b;
-            comparisonScope = pair.scope;
-            pairedTrend = pair.difference;
-            difference = MakeFinding(first);
-            ApplyArchiveReview(first,difference,pair.difference);
+            if (!Comparable(a,b) || a.region != "sahel" || b.region != "central-chile" ||
+                a.unit != "mm/month" || a.key != "rain" || a.provider != "reanalysis" || !SameScope(a,b)) return;
+            var left = Exported(a);
+            var right = Exported(b);
+            if (left?.sourceParameter != "PRECTOTCORR" || left.footprint?.point == null || right?.footprint?.point == null ||
+                left.footprint.point.latitude != 14 || left.footprint.point.longitude != 6 ||
+                right.footprint.point.latitude != -36 || right.footprint.point.longitude != -72 ||
+                pair.left?.id != left.finding?.id || pair.right?.id != right.finding?.id ||
+                !MatchesCompleteAnnual(a,pair.left,1991,2025) || !MatchesCompleteAnnual(b,pair.right,1991,2025) ||
+                left.finding?.status != "not-established" || right.finding?.status != "not-established") return;
+            var delta = pair.difference;
+            if (!HasReviewedTest(delta) || delta.review.id != "rain-two-ways-paired-review-v1" ||
+                delta.mode != "annual" || delta.unit != a.unit || !delta.hasSlope || delta.n != 35 || delta.points?.Length != 35) return;
+            for (int i = 0; i < delta.points.Length; i++)
+            {
+                var point = delta.points[i];
+                if (point.date != pair.left.points[i].date || point.t != pair.left.points[i].t ||
+                    !float.IsFinite(point.value) || Mathf.Abs(point.value - (a.years[i].value - b.years[i].value)) > .00002f) return;
+            }
+            guidedRain = pair;
+            guidedSahel = a;
+            guidedChile = b;
+        }
+
+        bool TryGetReviewedPair(out EvidenceSeries first, out EvidenceSeries second, out FiledFinding difference)
+        {
+            CheckGuidedRecords();
+            first = guidedSahel;
+            second = guidedChile;
+            difference = null;
+            if (guidedRain == null) return false;
+            comparisonScope = guidedRain.scope;
+            pairedTrend = guidedRain.difference;
+            difference = MakeFinding(first,pairedTrend);
             difference.datasetId = null;
             difference.fingerprint = difference.rawSha256 = null;
-            difference.place = PlaceName(a) + " minus " + PlaceName(b);
-            difference.footprint = ArchiveFootprint(a) + " / " + ArchiveFootprint(b);
+            difference.place = PlaceName(first) + " minus " + PlaceName(second);
+            difference.footprint = ArchiveFootprint(first) + " / " + ArchiveFootprint(second);
             return true;
         }
 

@@ -14,10 +14,12 @@ Shader "Homecoming/Television"
             fixed4 _Color;
             fixed4 frag(v2f_img i) : SV_Target
             {
-                float3 c = tex2D(_MainTex,i.uv).rgb;
-                float shade = .94 + .06*sin(i.uv.y*720*3.14159);
-                float2 edge = i.uv*(1-i.uv);
-                float vignette = saturate(pow(edge.x*edge.y*16,.18));
+                float2 centered = i.uv - .5;
+                float2 sampleUv = saturate(centered * (1 + .045 * dot(centered, centered)) + .5);
+                float3 c = tex2D(_MainTex,sampleUv).rgb;
+                float shade = .97 + .03*sin(i.uv.y*1063);
+                float vignette = 1 - smoothstep(.495, .535, max(abs(centered.x), abs(centered.y)) +
+                    .14 * pow(min(abs(centered.x), abs(centered.y)), 2));
                 return fixed4(c*_Color.rgb*shade*vignette,1);
             }
             ENDCG

@@ -127,8 +127,15 @@ namespace Homecoming.Field
             if (Button(Box(1202,33,164,42),muted ? "Sound off" : "Sound on")) ToggleMute();
             if (Button(Box(1380,33,175,42),reduced ? "Motion reduced" : "Motion full")) ToggleMotion();
             if (Button(Box(1309,94,246,44),"Investigation desk",false,false,!HasPendingAdvance && !running)) OpenCase();
+            if (!demoActive && !investigationTest && !running && PendingPreview == null && added.Exists(d => d.id == "drought") &&
+                Application.CanStreamedLevelBeLoaded(StorySession.StoryScene) &&
+                Button(Box(1046,94,246,44),"Watch crew reaction",true))
+                StorySession.PlayCutscene("drought");
 
-            Card(Box(1026,176,529,388),Alpha(Ink,.95f));
+            Rect monitor = Box(1026,176,529,388);
+            Card(monitor,Rgb("#172a2b"));
+            PanelScrews(monitor);
+            BeginWeatherScreen(Box(1040,184,501,315));
             Text(Box(1044,184,493,38),label,29,White,headingFont);
             Text(Box(1044,228,493,25),$"Edited {Value(current):0.#} {unit}   /   Inherited {Value(reference):0.#} {unit}",19,White,strongFont);
             if (scenarioMethods)
@@ -172,7 +179,17 @@ namespace Homecoming.Field
                 SeekPreview(duration-1);
             }
             if (Button(Box(563,779,247,42),PendingPreview != null ? "Discard preview" : "Return to field lab",false,false,true,18)) Go(View.Lab);
-            if (Button(Box(1174,719,360,70),"Advance " + duration + " months",true,false,HasPendingAdvance,26)) CommitScenario();
+            if (HasPendingAdvance)
+            {
+                Rect guard = Box(1162,766,375,62);
+                Card(guard,Rgb("#4a3920"));
+                for (int i = 0; i < 5; i++)
+                {
+                    Fill(Box(guard.x+5,guard.y+5+i*11,5,7),Yellow);
+                    Fill(Box(guard.xMax-10,guard.y+5+i*11,5,7),Yellow);
+                }
+                if (Button(Box(1176,773,347,48),"Advance & save 12 months",false,false,true,24)) CommitScenario();
+            }
             string status = scenarioError ?? SimulationStatus ?? (PendingPreview != null
                 ? "Advance saves this result so the next test starts from its final month." : "Saved scenario replay");
             Text(Box(61,833,1478,27),status,18,Dim);

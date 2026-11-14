@@ -15,7 +15,7 @@ namespace Homecoming
         readonly Dictionary<(Font, int, Color, TextAnchor, bool), GUIStyle> textStyles = new Dictionary<(Font, int, Color, TextAnchor, bool), GUIStyle>();
         Font displayFont, bodyFont, monoFont;
         GUIStyle micro, body, display, heading, captionStyle, inputStyle, buttonStyle, mono;
-        Texture2D white, disc, gradient;
+        Texture2D white, disc, gradient, aukLogo, astronautArt, spaceAppsLogo;
         bool interfaceReady, focusRecruit;
         string hoveredControl;
         float lastPointerActivity, interfaceClock, uiOpacity = 1;
@@ -68,6 +68,9 @@ namespace Homecoming
             GUI.skin.settings.selectionColor = new Color(.16f, .36f, .4f);
             GUI.skin.settings.cursorColor = orange.linear;
             white = Texture2D.whiteTexture;
+            aukLogo = Resources.Load<Texture2D>("Film/auk");
+            astronautArt = Resources.Load<Texture2D>("Film/astronaut");
+            spaceAppsLogo = Resources.Load<Texture2D>("Film/space-apps-kuwait");
             disc = new Texture2D(96, 96, TextureFormat.RGBA32, false);
             for (int y = 0; y < 96; y++) for (int x = 0; x < 96; x++)
             {
@@ -248,6 +251,8 @@ namespace Homecoming
             var oldMatrix = GUI.matrix;
             var oldColor = GUI.color;
             float scale = Scale;
+            if (page == Page.Film && CurrentShot == "opening")
+                Fill(new Rect(0, 0, Screen.width, Screen.height), Color.black);
             GUI.matrix = Matrix4x4.TRS(new Vector3((Screen.width - 1600 * scale) / 2, (Screen.height - 900 * scale) / 2, 0), Quaternion.identity, Vector3.one * scale);
             uiOpacity = 1;
             if (page == Page.Film) FilmGUI();
@@ -295,42 +300,48 @@ namespace Homecoming
         void FilmGUI()
         {
             var shot = sequence[shotIndex];
-            Fill(new Rect(0, 0, 1600, 58), ink);
-            Fill(new Rect(0, 794, 1600, 106), ink);
-            Dot(42, 29, 3, orange);
-            Text(57, 19, 900, 25, "I.A.D. / " + sequenceName.ToUpperInvariant() + (preview ? " / PREVIEW" : " / TRANSMISSION"), micro);
-            Text(1365, 19, 200, 25, "RECEPTION  98.6%", micro);
-            if (!string.IsNullOrEmpty(shot.label))
+            bool opening = shot.id == "opening";
+            Fill(new Rect(0, 0, 1600, 58), opening ? Color.black : ink);
+            Fill(new Rect(0, 794, 1600, 106), opening ? Color.black : ink);
+            if (opening)
             {
-                float reveal = reducedMotion ? 1 : Ease(shotTime / .7f);
-                uiOpacity = reveal;
-                string year = shot.label, badge = shot.label == "1969" ? "THE FIRST TRANSMISSION" : "THE SAME ROOM. STILL WAITING.";
-                if (shot.id == "years")
+                Fill(new Rect(0, 0, 1600, 900), Color.black);
+                if (!stage.IntroFailed && stage.IntroPicture != null)
+                    GUI.DrawTexture(new Rect(0, 0, 1600, 900), stage.IntroPicture, ScaleMode.ScaleToFit, false);
+                else if (stage.IntroFailed)
                 {
-                    // The year rolls forward with the time-lapse, 1969 → 2026.
-                    float lapse = StoryStage.Lapse(shotTime, reducedMotion);
-                    year = Mathf.RoundToInt(Mathf.Lerp(1969, 2026, lapse)).ToString();
-                    if (lapse < 1) badge = "TIME PASSES";
+                    float mark = reducedMotion ? (shotTime >= .3f ? 1 : 0) : Ease((shotTime - .3f) / .35f);
+                    float art = reducedMotion ? (shotTime >= .8f ? 1 : 0) : Ease((shotTime - .8f) / .35f);
+                    if (aukLogo != null) TintTexture(new Rect(1009, 248, 112, 230), aukLogo, new Color(1, 1, 1, mark));
+                    if (astronautArt != null) TintTexture(new Rect(362, 197, 445, 406), astronautArt, new Color(1, 1, 1, art));
+                    if (spaceAppsLogo != null) TintTexture(new Rect(879, 510, 372, 154), spaceAppsLogo, new Color(1, 1, 1, art));
                 }
-                Badge(62, 135, badge, orange);
-                Text(54, 171 + (1 - reveal) * 24, 500, 148, year, Style(displayFont, 133, paper));
-                Rule(63, 325, 75, orange, 3);
-                uiOpacity = 1;
+            }
+            if (shot.id == "apollo") Badge(63, 88, "APOLLO 11  /  1969", orange);
+            if (shot.id == "years")
+                Badge(63, 88, shotTime < 2.7f ? "1969" : "57 YEARS LATER  /  2026", orange);
+            if (shot.id == "return")
+                Badge(63, 88, shotTime < 3.2f ? "ARTEMIS II  /  CREWED LUNAR FLYBY" : "ARTEMIS II  /  CREW RETURNED TO EARTH", mint);
+            if (shot.id == "lab")
+                Badge(63, 88, shotTime < 4.2f ? "EARTH SIMULATION" : "EARTH SIMULATION  /  ADJUST WEATHER, THEN PREVIEW", mint);
+            if (shot.id == "hearing" && shotTime >= 2.5f)
+            {
+                var kind = StorySession.HearingEvidence;
+                string label = kind == StoryEvidence.Scenario ? "SIMULATION" :
+                    kind == StoryEvidence.Historical ? "HISTORICAL RECORD" : "HISTORICAL RECORD  /  SIMULATION";
+                Badge(63, 88, label, orange);
             }
             if (shot.id == "title")
             {
-                Fill(new Rect(0, 58, 1600, 736), ink);
-                Insignia(800, 200, 45, orange);
-                Text(200, 279, 1200, 35, "OPERATION  /  FILE 001", Style(monoFont, 14, mint, TextAnchor.MiddleCenter));
+                Fill(new Rect(0, 0, 1600, 794), Color.black);
+                Text(200, 279, 1200, 35, "OPERATION", Style(monoFont, 14, mint, TextAnchor.MiddleCenter));
                 float reveal = reducedMotion ? 1 : Ease(shotTime / .8f);
                 uiOpacity = reveal;
                 Text(140, 337 + (1 - reveal) * 35, 1320, 170, "THE GREAT HOMECOMING", Style(displayFont, 126, paper, TextAnchor.MiddleCenter));
                 Rule(740, 548, 120 * reveal, orange, 3);
-                uiOpacity = reducedMotion ? 1 : Ease((shotTime - .7f) / .6f);
-                Text(200, 574, 1200, 30, "BETTER TOGETHER.  LOVE THY HUMAN.", Style(monoFont, 16, mint, TextAnchor.MiddleCenter));
                 uiOpacity = 1;
             }
-            string spoken = shot.LineAt(shotTime, out float lineAge);
+            string spoken = shot.LineAt(shotTime, out float lineAge, StorySession.HearingEvidence);
             bool dialogue = captions && !string.IsNullOrEmpty(spoken);
             string line = dialogue ? spoken : descriptions ? shot.description : "";
             if (!string.IsNullOrEmpty(line))
@@ -338,7 +349,7 @@ namespace Homecoming
                 // A new line eases in, so a reply reads as a reply rather than a jump cut.
                 uiOpacity = dialogue && !reducedMotion ? Ease(lineAge / .18f) : 1;
                 int colon = dialogue ? line.IndexOf(':') : -1;
-                string name = colon > 0 ? line.Substring(0, colon).ToUpperInvariant() : "SCENE DESCRIPTION";
+                string name = colon > 0 ? line.Substring(0, colon).ToUpperInvariant() : dialogue ? "SOUND" : "SCENE DESCRIPTION";
                 string words = colon > 0 ? line.Substring(colon + 1).Trim() : line;
                 float width = Mathf.Clamp(captionStyle.CalcSize(new GUIContent(words)).x + 130, 520, 1110);
                 float height = captionStyle.CalcHeight(new GUIContent(words), width - 90) + 61;

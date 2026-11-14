@@ -7,6 +7,7 @@ namespace Homecoming
     [RequireComponent(typeof(StorySound))]
     public sealed partial class StoryDirector : MonoBehaviour
     {
+        const string RecruitVoice = "recruit-zorvax-01";
         public StoryStage stage;
         public TextAsset script;
         public string simulationScene = StorySession.SimulationScene;
@@ -29,6 +30,7 @@ namespace Homecoming
         string sequenceName, designation = "";
         int shotIndex, cueIndex;
         float shotTime, pageTime;
+        float introStall;
         bool paused, preview, captions = true, descriptions, reducedMotion;
         StorySound sound;
         float Scale => Mathf.Min(Screen.width / 1600f, Screen.height / 900f);
@@ -48,6 +50,7 @@ namespace Homecoming
             var cutscene = StorySession.ConsumeCutsceneRequest();
             if (cutscene != null && cutscenes.Find(cutscene) != null) Play(cutscene, false);
             else if (StorySession.ConsumeHearingRequest()) Play("ending", false);
+            else if (string.IsNullOrWhiteSpace(designation)) Play("prologue");
             else Show(Page.Home);
         }
         void Show(Page next)
@@ -57,9 +60,13 @@ namespace Homecoming
             pageTime = 0;
             paused = false;
             sound.SetPaused(false);
-            sound.StopCue();
             stage.SetShot(CurrentShot);
             sound.SetShot(CurrentShot, stage);
+            if (page == Page.Recruit)
+            {
+                sound.PreloadDialogue(RecruitVoice);
+                sound.PlayDialogue(RecruitVoice);
+            }
             stage.Evaluate(CurrentShot, 0, reducedMotion, sound.Muted);
         }
         public void Play(string chapter, bool isPreview = false)
@@ -79,9 +86,18 @@ namespace Homecoming
             shotIndex = Mathf.Clamp(index, 0, sequence.Length - 1);
             shotTime = 0;
             cueIndex = 0;
-            sound.StopCue();
+            for (int i = shotIndex; i < Mathf.Min(sequence.Length, shotIndex + 2); i++)
+            {
+                if (sequence[i].lines == null) continue;
+                foreach (var line in sequence[i].lines) sound.PreloadDialogue(line.id);
+            }
             stage.SetShot(CurrentShot);
             sound.SetShot(CurrentShot, stage);
+            if (CurrentShot == "opening")
+            {
+                introStall = 0;
+                stage.StartIntro(reducedMotion);
+            }
             stage.SetPaused(paused);
             stage.Evaluate(CurrentShot, shotTime, reducedMotion, sound.Muted);
         }
@@ -130,11 +146,27 @@ namespace Homecoming
                 if (page != Page.Film) return;
                 if (!paused)
                 {
-                    shotTime += Time.unscaledDeltaTime;
                     var shot = sequence[shotIndex];
+                    if (shot.id == "opening" && !stage.IntroFailed)
+                    {
+                        if (stage.IntroFinished) { Advance(); return; }
+                        float currentTime = stage.IntroTime;
+                        introStall = currentTime > shotTime ? 0 : introStall + Time.unscaledDeltaTime;
+                        if (introStall > 4.5f)
+                        {
+                            shotTime = 0;
+                            stage.FailIntro();
+                        }
+                        else shotTime = currentTime;
+                    }
+                    else shotTime += Time.unscaledDeltaTime;
+                    var spoken = shot.ActiveLine(shotTime, StorySession.HearingEvidence);
+                    sound.UpdateDialogue(spoken?.id, spoken == null ? 0 : shotTime - spoken.at,
+                        spoken == null ? 0 : spoken.end - shotTime);
                     while (shot.cues != null && cueIndex < shot.cues.Length && shotTime >= shot.cues[cueIndex].at)
                         sound.Cue(shot.cues[cueIndex++].name);
-                    if (shotTime >= shot.seconds) Advance();
+                    float duration = shot.id == "opening" && stage.IntroFailed ? 3.2f : shot.seconds;
+                    if (shotTime >= duration && (shot.id != "opening" || stage.IntroFailed)) Advance();
                 }
             }
             else
@@ -143,9 +175,9 @@ namespace Homecoming
                 if (Input.GetKeyDown(KeyCode.Escape) && page != Page.Home) Show(Page.Home);
             }
             UpdateInterface();
-            stage.Evaluate(CurrentShot, page == Page.Film ? shotTime : pageTime, reducedMotion, sound.Muted);
-            bool speaking = page == Page.Film && !string.IsNullOrEmpty(sequence[shotIndex].LineAt(shotTime, out _));
-            sound.Evaluate(CurrentShot, page == Page.Film ? shotTime : pageTime, speaking);
+            float time = page == Page.Film ? shotTime : pageTime;
+            stage.Evaluate(CurrentShot, time, reducedMotion, sound.Muted, sound.ArchiveVolume);
+            sound.Evaluate(CurrentShot, time);
         }
         void OnDestroy() => DisposeInterface();
 

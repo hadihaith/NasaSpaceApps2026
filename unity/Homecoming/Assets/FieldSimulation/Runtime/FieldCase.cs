@@ -4,16 +4,16 @@ using UnityEngine;
 
 namespace Homecoming.Field
 {
-    enum InvestigationKind { Free, Rainfall, Soil }
+    enum InvestigationKind { Free, Rainfall, Soil, Temperature }
     enum Direction { Unset, Rise, Fall, LittleChange }
 
     [Serializable] sealed class FiledFinding
     {
         public string id, datasetId, rawSha256, fingerprint, mode, reviewer, reviewRationale, variable, place, footprint, product, version, provider, url, unit, aggregation;
-        public string window, significance, test, review, reason;
+        public string window, significance, status, test, hypothesis, review, reason;
         public int count;
-        public bool hasRate, hasPValue, hasInterval;
-        public float ratePerDecade, fittedChange, pValue, alpha, intervalLow, intervalHigh;
+        public bool hasRate, hasPValue, hasInterval, hasOlsRate;
+        public float ratePerDecade, fittedChange, pValue, alpha, intervalLow, intervalHigh, olsRatePerDecade;
     }
 
     [Serializable] sealed class InvestigationRun
@@ -29,12 +29,15 @@ namespace Homecoming.Field
         public string id = Guid.NewGuid().ToString("N");
         public InvestigationKind kind;
         public FiledFinding origin, other, difference;
-        public Direction originCall, otherCall, scenarioCall;
+        public Direction originCall, otherCall, scenarioCall, revisedOriginCall, revisedOtherCall;
+        public bool callsRevealed;
         public InvestigationRun first, second;
-        public string relationship, relationshipScope, gap, conclusion, campaignId, submittedUtc, committingRunId;
+        public string comparisonId, relationship, relationshipScope, gap, conclusion, campaignId, submittedUtc, committingRunId;
         public bool IsReady => origin != null && origin.hasRate &&
-            (!string.IsNullOrEmpty(relationship) && (other != null || !string.IsNullOrWhiteSpace(gap))) &&
-            (kind != InvestigationKind.Rainfall || (originCall != Direction.Unset && otherCall != Direction.Unset)) &&
+            (kind == InvestigationKind.Temperature ? originCall != Direction.Unset && origin.hasPValue :
+                !string.IsNullOrEmpty(relationship) && (other != null || !string.IsNullOrWhiteSpace(gap))) &&
+            (kind != InvestigationKind.Rainfall || (originCall != Direction.Unset && otherCall != Direction.Unset &&
+                difference?.hasPValue == true)) &&
             (kind != InvestigationKind.Soil || (scenarioCall != Direction.Unset && first != null && second != null &&
                 (first.result == scenarioCall || !string.IsNullOrWhiteSpace(conclusion))));
     }

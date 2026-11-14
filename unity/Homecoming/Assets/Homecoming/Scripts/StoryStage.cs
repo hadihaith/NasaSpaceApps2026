@@ -16,7 +16,25 @@ namespace Homecoming
         public Light practical;
         public Material televisionMaterial;
         RenderTexture videoTexture;
+        VideoPlayer introPlayer;
+        public Texture IntroPicture => introPlayer != null && introPlayer.frame >= 0 ? introPlayer.texture : null;
+        public float IntroTime => introPlayer == null ? 0 : (float)introPlayer.time;
+        public bool IntroFailed { get; private set; }
+        public bool IntroFinished { get; private set; }
         Texture poster;
+        Texture2D artemisOut, artemisMoon, artemisHome;
+        Transform jammedStreamer, trigger;
+        Material streamerMaterial, archiveBackdropMaterial;
+        GameObject archiveBackdrop;
+        Renderer[] cabinet, hullLettering;
+        Vector3 cabinetScreenScale;
+        TextMesh reportHeading, reportSecondHeading;
+        bool paused;
+        const double ArchiveStart = 3;
+        const double RevealStart = 8.7;
+        const double CorrectionStart = 12.9;
+        static readonly Vector3 PartyCamera = new Vector3(.35f, 2.35f, 9.1f);
+        static readonly Vector3 PartyLook = new Vector3(.2f, 1.6f, 0);
         string current;
         bool videoFailed;
         float videoPrepareAge;
@@ -65,10 +83,9 @@ namespace Homecoming
             _ = Lighting;
             _ = Environment;
             foreach (var actor in crew) actor.Initialize();
-            switchButton = switchProp.transform.Find("Red pushbutton");
             BuildBaskets();
             ApplyTypography();
-            poster = Resources.Load<Texture2D>("Film/apollo11");
+            poster = Resources.Load<Texture2D>("Film/apollo-still");
             // Clone per player; the asset is never modified by playback.
             televisionMaterial = new Material(televisionMaterial);
             screen.sharedMaterial = televisionMaterial;
@@ -82,6 +99,100 @@ namespace Homecoming
             television.prepareCompleted += OnVideoPrepared;
             television.errorReceived += OnVideoError;
             television.Prepare();
+        }
+        public void StartIntro(bool reduced)
+        {
+            StopIntro();
+            IntroFailed = reduced;
+            if (reduced) return;
+            var clip = Resources.Load<VideoClip>("Film/auk-intro");
+            if (clip == null) { IntroFailed = true; return; }
+            if (introPlayer == null)
+            {
+                introPlayer = gameObject.AddComponent<VideoPlayer>();
+                introPlayer.playOnAwake = false;
+                // IMGUI draws the decoded frame at its native resolution.
+                introPlayer.renderMode = VideoRenderMode.APIOnly;
+                introPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
+                introPlayer.waitForFirstFrame = true;
+                introPlayer.loopPointReached += IntroEnded;
+                introPlayer.errorReceived += IntroErrored;
+                introPlayer.prepareCompleted += IntroPrepared;
+            }
+            introPlayer.clip = clip;
+            introPlayer.Prepare();
+        }
+        void IntroPrepared(VideoPlayer player)
+        {
+            if (!paused && current == "opening") player.Play();
+        }
+        void IntroEnded(VideoPlayer player) => IntroFinished = true;
+        void IntroErrored(VideoPlayer player, string error)
+        {
+            IntroFailed = true;
+            Debug.LogWarning("AUK intro unavailable. Showing the logo card. " + error);
+        }
+        public void FailIntro()
+        {
+            StopIntro();
+            IntroFailed = true;
+        }
+        public void StopIntro()
+        {
+            if (introPlayer != null) introPlayer.Stop();
+            IntroFinished = false;
+        }
+
+        void PrepareStoryProps()
+        {
+            if (jammedStreamer != null) return;
+            cabinet = screen.transform.parent.GetComponentsInChildren<Renderer>(true);
+            cabinetScreenScale = screen.transform.localScale;
+            var identification = bridge.transform.Find("Hull identification");
+            var stencil = bridge.transform.Find("Hull stencil");
+            hullLettering = new[] { identification?.GetComponent<Renderer>(), stencil?.GetComponent<Renderer>() };
+            switchButton = switchProp.transform.Find("Red pushbutton");
+            // Frame the original 4:3 broadcast against black until the CRT is revealed.
+            archiveBackdropMaterial = new Material(televisionMaterial) { name = "Archival picture mask", color = Color.black };
+            archiveBackdrop = Part(PrimitiveType.Quad, screen.transform.parent,
+                screen.transform.localPosition - Vector3.forward * .015f, V(40, 24, 1), archiveBackdropMaterial);
+            archiveBackdrop.transform.localRotation = screen.transform.localRotation;
+            artemisOut = Resources.Load<Texture2D>("Film/artemis-out");
+            artemisMoon = Resources.Load<Texture2D>("Film/artemis-moon");
+            artemisHome = Resources.Load<Texture2D>("Film/artemis-home");
+            var barrelMaterial = cannon.transform.Find("Barrel").GetComponent<Renderer>().sharedMaterial;
+            var muzzle = cannon.transform.Find("Black muzzle");
+            jammedStreamer = new GameObject("Jammed teal streamer").transform;
+            jammedStreamer.SetParent(cannon.transform, false);
+            jammedStreamer.localPosition = muzzle.localPosition + new Vector3(.035f, .022f, .028f);
+            var line = jammedStreamer.gameObject.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            streamerMaterial = new Material(barrelMaterial) { name = "Matte teal streamer" };
+            streamerMaterial.color = new Color(.16f, .64f, .57f);
+            streamerMaterial.SetFloat("_Metallic", 0);
+            streamerMaterial.SetFloat("_Glossiness", .18f);
+            line.sharedMaterial = streamerMaterial;
+            line.startWidth = .069f;
+            line.endWidth = .048f;
+            line.numCornerVertices = 3;
+            Vector3[] bends = { V(0, 0, 0), V(.035f, .11f, .03f), V(.095f, .19f, .02f),
+                V(.125f, .24f, -.05f), V(.09f, .30f, -.12f), V(-.01f, .32f, -.09f) };
+            line.positionCount = bends.Length;
+            line.SetPositions(bends);
+
+            Part(PrimitiveType.Sphere, cannon.transform, V(-.25f, -.06f, .35f),
+                V(.18f, .13f, .14f), barrelMaterial);
+            trigger = cannon.transform.GetChild(cannon.transform.childCount - 1);
+            trigger.name = "Round cannon trigger";
+
+            reportHeading = report.transform.Find("Report heading").GetComponent<TextMesh>();
+            var subheading = report.transform.Find("Report subheading").GetComponent<TextMesh>();
+            reportSecondHeading = Instantiate(subheading, report.transform);
+            reportSecondHeading.transform.localPosition = V(0, -.14f, .025f);
+            subheading.gameObject.SetActive(false);
+            reportHeading.name = "Evidence type";
+            reportSecondHeading.name = "Second evidence type";
+            reportHeading.color = reportSecondHeading.color = new Color(.07f, .11f, .13f);
         }
         public void ApplyTypography()
         {
@@ -116,8 +227,9 @@ namespace Homecoming
         static void SetHeight(Transform t, float y) => t.localPosition = new Vector3(t.localPosition.x, y, t.localPosition.z);
         void OnVideoPrepared(VideoPlayer player)
         {
-            if (player.isActiveAndEnabled && UsesFilm(current))
-                player.Play();
+            if (!player.isActiveAndEnabled || !UsesFilm(current)) return;
+            player.time = FilmOffset(current);
+            if (!paused) player.Play();
         }
         void OnVideoError(VideoPlayer player, string message)
         {
@@ -126,27 +238,50 @@ namespace Homecoming
         }
         public void SetPaused(bool paused)
         {
+            this.paused = paused;
+            if (introPlayer != null && current == "opening" && introPlayer.isPrepared)
+            {
+                if (paused) introPlayer.Pause();
+                else if (!IntroFailed && !IntroFinished) introPlayer.Play();
+            }
             if (!television.isActiveAndEnabled) return;
             if (paused) television.Pause();
             else if (UsesFilm(current) && television.isPrepared) television.Play();
         }
-        bool UsesFilm(string id) => id == "apollo" || id == "reveal" || id == "correction" || id == "party";
+        bool UsesFilm(string id) => id == "apollo" || id == "reveal" || id == "correction";
+        static double FilmOffset(string id) => id == "reveal" ? RevealStart : id == "correction" ? CorrectionStart : ArchiveStart;
         public void SetShot(string id)
         {
+            var previous = current;
             current = id;
+            if (previous == "opening" && current != "opening") StopIntro();
             bridge.SetActive(id != "signal" && id != "earth");
             if (!television.isActiveAndEnabled) return;
             if (UsesFilm(id) && television.isPrepared)
             {
-                if (id == "apollo") television.time = 0;
-                television.Play();
+                bool continuous = previous == "apollo" && id == "reveal" || previous == "reveal" && id == "correction";
+                if (!continuous || System.Math.Abs(television.time - FilmOffset(id)) > .23)
+                    television.time = FilmOffset(id);
+                if (!paused) television.Play();
             }
             else television.Pause();
         }
-        public void Evaluate(string id, float t, bool reducedMotion, bool mute)
+        static bool SpaceShot(string id) => id == "signal" || id == "earth";
+        public void Evaluate(string id, float t, bool reducedMotion, bool mute, float archiveVolume = .45f)
         {
             if (current != id) SetShot(id);
-            bool space = id == "signal" || id == "earth";
+            filmCamera.enabled = id != "opening";
+            if (id == "opening")
+            {
+                if (introPlayer != null)
+                {
+                    introPlayer.SetDirectAudioMute(0, mute);
+                    introPlayer.SetDirectAudioVolume(0, archiveVolume);
+                }
+                return;
+            }
+            if (!SpaceShot(id)) PrepareStoryProps();
+            bool space = SpaceShot(id);
             bridge.SetActive(!space);
             stars.SetActive(true);
             moon.SetActive(id == "signal");
@@ -155,8 +290,8 @@ namespace Homecoming
             bool cutscene = CutsceneScript.IsCutsceneShot(id);
             bool old = id == "years" || id == "return" || id == "hearing" || id == "deflate" ||
                 id == "home" || id == "recruit" || id == "epilogue" || cutscene;
-            banner.SetActive(old || id == "party");
-            float unfurl = Mathf.Clamp01((t - .72f) / .58f);
+            banner.SetActive(old || id == "party" || id == "jam");
+            float unfurl = id == "jam" ? 1 : reducedMotion ? (t >= .72f ? 1 : 0) : Mathf.Clamp01((t - .72f) / .58f);
             float overshoot = reducedMotion ? 0 : Mathf.Sin(unfurl * Mathf.PI * 2) * Mathf.Exp(-unfurl * 3) * .17f;
             // How far the room has aged: 0 in 1969, 1 in 2026, rolling forward during the time-lapse.
             float aged = id == "years" ? Lapse(t, reducedMotion) : old ? 1 : 0;
@@ -166,53 +301,64 @@ namespace Homecoming
             switchProp.SetActive(id == "launch");
             balloon.SetActive((old || id == "party") && id != "recruit");
             float deflateAge = id == "deflate" ? Mathf.Max(0, t - .84f) : 0;
-            float deflate = Mathf.SmoothStep(0, 1, deflateAge / 1.8f);
+            float deflate = reducedMotion ? (deflateAge >= 1.8f ? 1 : 0) : Mathf.SmoothStep(0, 1, deflateAge / 1.8f);
             float flutter = reducedMotion ? 0 : Mathf.Sin(deflateAge * 24) * Mathf.Sin(deflate * Mathf.PI);
             float sag = old ? aged : 0, droop = 1 - .08f * sag;
-            balloon.transform.localPosition = new Vector3(-.65f + deflate * .7f + flutter * .07f,
+            balloon.transform.localPosition = new Vector3(-.25f + deflate * .7f + flutter * .07f,
                 1.9f - .2f * sag - deflate * 1.15f + (reducedMotion ? 0 : Mathf.Sin(t * 1.6f) * .035f * (1 - sag)), .5f);
             balloon.transform.localScale = new Vector3(.48f * droop * (1 - deflate * .86f) * (1 + flutter * .15f),
                 .62f * droop * (1 - deflate * .93f), .48f * droop * (1 - deflate * .86f));
             balloon.transform.localRotation = Quaternion.Euler(0, 0, -deflate * 85 + flutter * 16);
             cannon.SetActive(id != "lab" && id != "ready" && id != "apollo" && id != "recruit");
-            float recoil = id == "party" ? Spring(t - .74f, 8, 24) * 19 : id == "jam" ? Spring(t - .58f, 14, 36) * 7 + Spring(t - 1.08f, 14, 36) * 5 : 0;
+            float recoil = reducedMotion ? 0 : id == "party" ? Spring(t - .72f, 8, 24) * 19 :
+                id == "jam" ? Spring(t - .58f, 14, 36) * 7 + Spring(t - 1.08f, 14, 36) * 5 : 0;
             cannon.transform.localRotation = Quaternion.Euler(-22 - recoil, -18, 0);
+            if (jammedStreamer != null)
+            {
+                jammedStreamer.gameObject.SetActive(id == "jam" || old || id == "party" && t >= 1.32f);
+                float bend = id == "jam" && t < 1.08f ? 0 : 29;
+                jammedStreamer.localRotation = Quaternion.Euler(18 + bend - 3 * recoil, 0, -27);
+            }
+            if (trigger != null && id == "party")
+                trigger.localPosition = V(-.25f, -.06f, .35f - .045f * Pulse(t, .72f, .075f));
+            else if (trigger != null) trigger.localPosition = V(-.25f, -.06f, .35f);
             switchProp.transform.localScale = Vector3.one;
             if (switchButton != null) switchButton.localPosition = new Vector3(0, .19f - Pulse(t, .74f, .1f) * .075f, 0);
             Lighting.Evaluate(id, t, reducedMotion);
             foreach (var actor in crew) actor.Pose(id, t, reducedMotion);
             if (id == "hearing" && crew[0].ReportGrip != null)
             {
-                report.transform.position = crew[0].ReportGrip.position + new Vector3(.03f, .16f, .09f);
-                report.transform.localRotation = Quaternion.Euler(-7, -8 + Mathf.Sin(t * .8f) * 3, -4 - 5 * Mathf.SmoothStep(0, 1, (t - 2.4f) / .6f));
+                var kind = StorySession.HearingEvidence;
+                reportHeading.text = kind == StoryEvidence.Scenario ? "SIMULATION" : "HISTORICAL RECORD";
+                reportHeading.characterSize = kind == StoryEvidence.Scenario ? .009f : .0068f;
+                reportSecondHeading.gameObject.SetActive(kind == StoryEvidence.Mixed);
+                reportSecondHeading.text = "SIMULATION";
+                reportSecondHeading.characterSize = .0076f;
+                float presented = reducedMotion ? (t >= .6f ? 1 : 0) : Mathf.SmoothStep(0, 1, (t - .15f) / .45f);
+                float faceOn = reducedMotion ? (t >= 2.5f ? 1 : 0) : Mathf.SmoothStep(0, 1, (t - 2.18f) / .38f);
+                report.transform.position = crew[0].ReportGrip.position + V(.10f + .25f * faceOn, .06f + .2f * presented, .19f);
+                report.transform.localRotation = Quaternion.Euler(-15 * (1 - faceOn), -8 * (1 - faceOn), -4 * (1 - faceOn));
             }
             for (int i = 0; i < confetti.Length; i++)
             {
                 bool flying = id == "party" && t > .72f;
-                bool landed = id == "jam" || (old && id != "recruit");
+                bool landed = id == "jam" || (old && id != "recruit") || flying && (reducedMotion || t >= 3.75f);
                 confetti[i].gameObject.SetActive(flying || landed);
-                if (landed)
-                {
-                    // Where each strip came to rest after the party, never swept up.
-                    float restX = .8f + (Hash(i, 0) * 5 - 2.5f) * 1.25f, restZ = .5f + (Hash(i, 2) - .5f) * 2.5f;
-                    confetti[i].localPosition = new Vector3(Mathf.Clamp(restX, -4.5f, 4.5f), .012f, Mathf.Clamp(restZ, -1.5f, 3f));
-                    confetti[i].localRotation = Quaternion.Euler(90, Hash(i, 4) * 360, 0);
-                    continue;
-                }
-                if (!flying) continue;
-                float age = reducedMotion ? 1 : t - .72f;
+                if (!flying && !landed) continue;
                 float vx = Hash(i, 0) * 5 - 2.5f, vy = 2.9f + Hash(i, 1) * 3.5f;
+                float landAt = (vy + Mathf.Sqrt(vy * vy + 4 * 2.6f * .89f)) / (2 * 2.6f);
+                float age = landed ? landAt : Mathf.Min(landAt, t - .72f);
                 float drag = (1 - Mathf.Exp(-age * .8f)) / .8f;
-                float flutterPaper = Mathf.Sin(age * (7 + Hash(i, 3) * 4) + i) * .08f * age;
-                confetti[i].localPosition = new Vector3(.8f + vx * drag + flutterPaper,
-                    Mathf.Max(.025f, .9f + vy * age - 2.6f * age * age), .5f + (Hash(i, 2) - .5f) * drag * 2);
-                confetti[i].localRotation = Quaternion.Euler(age * (80 + i * 7), age * 150, i * 28 + age * 120);
+                confetti[i].localPosition = V(.8f + vx * drag,
+                    Mathf.Max(.012f, .9f + vy * age - 2.6f * age * age), .5f + (Hash(i, 2) - .5f) * drag * 2);
+                confetti[i].localRotation = age >= landAt ? Quaternion.Euler(90, Hash(i, 4) * 360, 0) :
+                    Quaternion.Euler(age * (80 + i * 7), age * 150, i * 28 + age * 120);
             }
             if (moon.activeSelf) moon.transform.localRotation = Quaternion.Euler(-6, 225 + (reducedMotion ? 0 : t * 7), 8);
             if (earth.activeSelf) earth.transform.localRotation = Quaternion.Euler(0, 228 + (reducedMotion ? 0 : t * 6), 21);
             if (projection.activeSelf)
             {
-                float rise = id == "ready" ? 1 : Mathf.SmoothStep(0, 1, (t - .6f) / 1.3f);
+                float rise = id == "ready" ? 1 : reducedMotion ? (t >= .6f ? 1 : 0) : Mathf.SmoothStep(0, 1, (t - .6f) / 1.3f);
                 projection.transform.localPosition = new Vector3(0, Mathf.Lerp(.55f, 1.65f, rise), -.8f);
                 projection.transform.localScale = Vector3.one * (.04f + .96f * rise);
                 projection.transform.localRotation = Quaternion.Euler(0, reducedMotion ? 0 : t * 15, 12);
@@ -223,14 +369,29 @@ namespace Homecoming
                 if (videoPrepareAge > 12) videoFailed = true;
             }
             bool video = UsesFilm(id) && television.isPrepared && !videoFailed;
-            television.SetDirectAudioMute(0, mute);
-            television.SetDirectAudioVolume(0, .45f);
-            televisionMaterial.mainTexture = video ? (Texture)videoTexture : id == "return" ? null : poster;
-            televisionMaterial.color = id == "years" ? new Color(.23f, .23f, .2f) : id == "return" ? new Color(.16f, .3f, .52f) : Color.white;
-            monitorTitle.gameObject.SetActive(id == "return" || id == "years");
-            monitorSubtitle.gameObject.SetActive(id == "return");
-            monitorTitle.text = id == "return" ? "ARTEMIS" : "NO SIGNAL";
-            monitorSubtitle.text = "BACK TO THE MOON";
+            television.SetDirectAudioMute(0, mute || id != "apollo");
+            television.SetDirectAudioVolume(0, archiveVolume);
+            televisionMaterial.mainTexture = id == "return" ? (t >= 3.2f ? artemisHome : t >= 1.5f ? artemisMoon : artemisOut) :
+                video ? (Texture)videoTexture : poster;
+            bool monitorOff = id == "launch" || id == "lab" || id == "ready" || id == "hearing" || id == "deflate";
+            float brightness = monitorOff ? .015f : id == "years" ? Mathf.Lerp(1, .045f, aged) :
+                id == "return" ? Mathf.SmoothStep(.06f, 1, (t - .15f) / .40f) : 1;
+            televisionMaterial.color = new Color(brightness, brightness, brightness);
+            bool pictureOnly = id == "apollo" || id == "reveal" && !reducedMotion && t < .24f;
+            if (archiveBackdrop != null) archiveBackdrop.SetActive(pictureOnly);
+            if (cabinet != null)
+            {
+                bool broadcast = UsesFilm(id) || id == "return";
+                screen.transform.localScale = broadcast ? V(cabinetScreenScale.y * 4f / 3f,
+                    cabinetScreenScale.y, cabinetScreenScale.z) : cabinetScreenScale;
+                foreach (var renderer in cabinet)
+                    if (renderer != screen) renderer.enabled = !pictureOnly;
+            }
+            if (hullLettering != null)
+                foreach (var renderer in hullLettering)
+                    if (renderer != null) renderer.enabled = !pictureOnly;
+            monitorTitle.gameObject.SetActive(false);
+            monitorSubtitle.gameObject.SetActive(false);
             if (titleSize < 0) titleSize = monitorTitle.characterSize;
             monitorTitle.characterSize = titleSize;
             // Captured lazily: editor validation evaluates shots without calling Initialize.
@@ -242,7 +403,7 @@ namespace Homecoming
             Environment.Evaluate(id, t, reducedMotion);
         }
         // The 2026 time-lapse: 57 years pass between 0.25 s and 2.7 s of the shot.
-        public static float Lapse(float t, bool reduced) => reduced ? 1 : Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.25f, 2.7f, t));
+        public static float Lapse(float t, bool reduced) => reduced ? (t >= 2.7f ? 1 : 0) : Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.25f, 2.7f, t));
         static float Hash(int i, int n) => Mathf.Repeat(Mathf.Sin((i + 1) * 12.9898f + n * 78.233f) * 43758.5453f, 1);
         static float Spring(float age, float damping, float frequency) => age < 0 ? 0 : Mathf.Exp(-age * damping) * Mathf.Sin(age * frequency);
         static float Pulse(float t, float at, float width) => Mathf.Exp(-Mathf.Pow((t - at) / width, 2));
@@ -257,19 +418,29 @@ namespace Homecoming
                 case "home": from = to = V(1.6f, 2.15f, 9.8f); look = target = V(1.7f, 1.55f, -.2f); break;
                 case "signal": from = V(5, 3, 65); to = V(-.35f, 1.45f, 5.9f); look = target = V(0, 1.2f, 0); duration = 4.5f; break;
                 // Start back far enough to see the whole 1969 set, then ease toward the screen.
-                case "apollo": from = V(1.95f, 2.0f, 3.6f); to = V(1.95f, 2.03f, 3.0f); look = target = V(1.9f, 2.0f, -1.5f); fov = 34; duration = 5.7f; break;
-                case "reveal": from = V(1.95f, 2.03f, 3.0f); to = V(.7f, 2.1f, 8.4f); look = V(1.9f, 2.0f, -1.5f); target = V(.25f, 1.45f, .1f); fov = 34; duration = 2.8f; break;
+                case "apollo": case "reveal":
+                    var screenCenter = screen.transform.position;
+                    fov = 34;
+                    float height = screen.transform.lossyScale.y * Mathf.Max(1, (4f / 3f) / filmCamera.aspect);
+                    float distance = height / (2 * Mathf.Tan(fov * Mathf.Deg2Rad * .5f));
+                    from = to = screenCenter + Vector3.forward * distance;
+                    look = target = screenCenter;
+                    if (id == "reveal")
+                    {
+                        to = V(.7f, 2.1f, 8.4f); target = V(.25f, 1.45f, .1f); duration = 2.6f;
+                    }
+                    break;
                 case "correction": from = V(-.7f, 1.85f, 4.5f); to = V(-.4f, 1.8f, 4.15f); look = target = V(-.35f, 1.65f, .35f); fov = 34; duration = 3.6f; break;
-                case "party": from = V(.2f, 2.2f, 8.4f); to = V(.35f, 2.35f, 9.1f); look = target = V(.2f, 1.6f, 0); break;
+                case "party": from = V(.2f, 2.2f, 8.4f); to = PartyCamera; look = target = PartyLook; break;
                 case "jam": from = V(.05f, 1.45f, 3.7f); to = V(.1f, 1.3f, 3.4f); look = target = V(.8f, 1.08f, .5f); duration = 2.6f; break;
-                case "years": from = V(.35f, 2.35f, 9.1f); to = V(.15f, 2.1f, 8.8f); look = target = V(.2f, 1.6f, 0); duration = 6.4f; break;
+                case "years": from = to = PartyCamera; look = target = PartyLook; break;
                 case "return": from = V(.15f, 2.1f, 8.8f); to = V(.9f, 1.95f, 7.4f); duration = 4.8f; break;
                 case "earth": from = V(1.1f, 1.6f, 7.5f); to = V(-.1f, 1.4f, 5.9f); look = target = V(0, 1.2f, 0); duration = 5f; break;
-                case "launch": from = V(-.2f, 1.5f, 3.7f); to = V(.2f, 1.4f, 3.35f); look = target = V(-.05f, 1.08f, .6f); duration = 1.5f; break;
+                case "launch": from = V(.86f, 1.72f, 3.8f); to = V(.74f, 1.62f, 3.45f); look = target = V(-.05f, 1.12f, .8f); duration = 1.5f; break;
                 case "lab": from = V(-.8f, 2.1f, 8.8f); to = V(.1f, 1.9f, 7.8f); look = target = V(0, 1.45f, -.4f); duration = 6.4f; break;
                 case "ready": from = to = V(.1f, 2.1f, 8.6f); look = target = V(0, 1.5f, -.4f); break;
                 case "hearing": from = V(-.25f, 2.1f, 8.4f); to = V(-.2f, 2.0f, 7.6f); look = target = V(.05f, 1.4f, .35f); duration = 5.8f; break;
-                case "deflate": from = V(-.55f, 1.65f, 3.5f); to = V(-.4f, 1.3f, 4); look = V(-.65f, 1.8f, .5f); target = V(-.3f, 1.1f, .5f); duration = 4.4f; break;
+                case "deflate": from = V(.32f, 1.76f, 4.3f); to = V(.33f, 1.49f, 4.26f); look = V(.35f, 1.45f, .55f); target = V(.42f, 1.04f, .55f); duration = 2.65f; break;
                 case "recruit": from = to = V(-2.65f, 1.8f, 5); look = target = V(-2.7f, 1.35f, .8f); break;
                 // Cutscene 1, The Welcome Baskets. Crew marks: Zorvax x -1.5, Nyxen x .35, Cadet B x 2.1.
                 case "drought-alert": from = V(1.2f, 1.95f, 3.6f); to = V(1.0f, 1.9f, 4.7f); look = V(1.95f, 2.0f, -1.5f); target = V(1.2f, 1.6f, -.4f); duration = 2.6f; fov = 34; break;
@@ -283,7 +454,7 @@ namespace Homecoming
             float hold = id == "years" ? 2.7f : 0;
             float q = Mathf.Clamp01((t - hold) / (duration - hold));
             float p = reduced ? 1 : q * q * q * (q * (6 * q - 15) + 10);
-            if (!reduced && id == "reveal") p = 1 - Mathf.Pow(1 - q, 3);
+            if (!reduced && id == "reveal") p = Mathf.SmoothStep(0, 1, (t - .12f) / 2.16f);
             filmCamera.transform.position = Vector3.Lerp(from, to, p);
             if (!reduced && id == "signal")
             {
@@ -300,7 +471,7 @@ namespace Homecoming
                 filmCamera.transform.Rotate(0, 0, Spring(t - .74f, 12, 24) * .7f, Space.Self);
             }
             float aspect = filmCamera.aspect;
-            if (aspect < 1.55f && id != "apollo" && id != "jam" && id != "deflate")
+            if (aspect < 1.55f && id != "apollo" && id != "reveal" && id != "jam" && id != "deflate")
                 fov = 2 * Mathf.Atan(Mathf.Tan(fov * Mathf.Deg2Rad / 2) * 1.55f / Mathf.Max(.5f, aspect)) * Mathf.Rad2Deg;
             filmCamera.fieldOfView = fov;
         }
@@ -378,7 +549,7 @@ namespace Homecoming
             }
             basketPile.gameObject.SetActive(false);
         }
-        static void Part(PrimitiveType type, Transform parent, Vector3 position, Vector3 scale, Material material)
+        static GameObject Part(PrimitiveType type, Transform parent, Vector3 position, Vector3 scale, Material material)
         {
             var go = GameObject.CreatePrimitive(type);
             var collider = go.GetComponent<Collider>();
@@ -387,6 +558,7 @@ namespace Homecoming
             go.transform.localPosition = position;
             go.transform.localScale = scale;
             go.GetComponent<Renderer>().sharedMaterial = material;
+            return go;
         }
 
         void OnDestroy()
@@ -394,10 +566,24 @@ namespace Homecoming
             if (environment != null) environment.Teardown();
             if (wicker != null) Destroy(wicker);
             if (ribbon != null) Destroy(ribbon);
+            if (streamerMaterial != null)
+            {
+                if (Application.isPlaying) Destroy(streamerMaterial); else DestroyImmediate(streamerMaterial);
+            }
+            if (archiveBackdropMaterial != null)
+            {
+                if (Application.isPlaying) Destroy(archiveBackdropMaterial); else DestroyImmediate(archiveBackdropMaterial);
+            }
             if (television != null)
             {
                 television.prepareCompleted -= OnVideoPrepared;
                 television.errorReceived -= OnVideoError;
+            }
+            if (introPlayer != null)
+            {
+                introPlayer.loopPointReached -= IntroEnded;
+                introPlayer.errorReceived -= IntroErrored;
+                introPlayer.prepareCompleted -= IntroPrepared;
             }
             if (videoTexture != null) { videoTexture.Release(); Destroy(videoTexture); }
             if (videoTexture != null && televisionMaterial != null) Destroy(televisionMaterial);

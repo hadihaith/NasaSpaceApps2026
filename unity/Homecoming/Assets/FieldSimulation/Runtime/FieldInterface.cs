@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -17,8 +18,12 @@ namespace Homecoming.Field
         static readonly string[] EvidenceNames = { "Rain", "Soil moisture", "Temperature", "Humidity", "Wind" };
         GUIStyle text;
         Texture2D fade, sideFade;
+        Texture2D dialFace;
         bool showSites;
         int hotSlider = -1;
+        int hotDial = -1;
+        float dialDrag;
+        int dialStart;
         int focusIndex, controlIndex;
         readonly List<int> availableControls = new();
         bool tabMoved;
@@ -195,34 +200,213 @@ namespace Homecoming.Field
                     }
             }
 
-            Rect card = Box(1152,119,412,669);
-            Card(card,Alpha(Ink,.93f));
-            Fill(Box(card.x,card.y,54,3),Mint);
-            Tag(1180,144,"SCENARIO",Mint);
-            Text(Box(1180,171,355,53),"Weather controls",42,White,headingFont);
-            Text(Box(1180,232,355,36),"Changes from the regional monthly normal",19,Dim);
-
-            for (int i = 0; i < data.controls.Length; i++) Slider(i,1180,278+i*75,356);
             if (LegacyCapture)
             {
+                Rect card = Box(1152,119,412,669);
+                Card(card,Alpha(Ink,.93f));
+                Fill(Box(card.x,card.y,54,3),Mint);
+                Tag(1180,144,"SCENARIO",Mint);
+                Text(Box(1180,171,355,53),"Weather controls",42,White,headingFont);
+                Text(Box(1180,232,355,36),"Changes from the regional monthly normal",19,Dim);
+                for (int i = 0; i < data.controls.Length; i++) Slider(i,1180,278+i*75,356);
                 Tag(1180,589,"SIMULATED TIME",Dim);
                 for (int i = 0; i < Months.Length; i++)
                     if (Button(Box(1180+i*120,620,115,40),Durations[i],false,duration == Months[i],true,17)) duration = Months[i];
                 if (Button(Box(1180,687,355,57),"Begin descent   ↘",true,false,true,27)) Launch();
                 if (Button(Box(1180,751,355,26),"Reset weather controls",false,false,true,16)) settings = default;
             }
-            else
-            {
-                string blocker = GuidedLaunchBlocker();
-                Text(Box(1180,586,356,85),blocker ?? $"Twelve-month preview · starts {Campaign.Current.NextDate:MMM yyyy}",20,Dim,bodyFont,TextAnchor.MiddleLeft,true);
-                if (Button(Box(1180,687,355,57),"Preview 12 months",true,false,blocker == null,26)) LaunchScenario();
-                if (Button(Box(1180,751,355,26),"Restore inherited weather",false,false,Campaign != null,16)) Select(siteIndex);
-            }
+            else DrawWeatherConsole();
 
             Fade(Box(0,772,1600,128),Alpha(Ink,.96f),180);
             Tag(54,836,"1991–2020 NASA POWER NORMALS   /   CONDITIONAL SCENARIOS",White);
             if (Button(Box(1134,828,210,34),reduced ? "Motion reduced" : "Motion full",false,false,true,16)) ToggleMotion();
             if (Button(Box(1355,828,209,34),muted ? "Sound off" : "Sound on",false,false,true,16)) ToggleMute();
+        }
+
+        void DrawWeatherConsole()
+        {
+            Rect console = Box(1089,118,475,684);
+            Card(console,Rgb("#203338"));
+            Fill(Box(console.x+3,console.y+3,console.width-6,console.height-6),Rgb("#15272a"));
+            PanelScrews(console);
+            Tag(1114,136,"CONDITIONAL SCENARIO",Mint);
+            Text(Box(1113,159,432,47),"Weather controls",39,White,headingFont);
+            Text(Box(1115,205,430,27),"Drag dials or use Tab and arrow keys.",19,Dim);
+            if (dialFace == null) dialFace = MakeDialFace();
+
+            for (int i = 0; i < data.controls.Length; i++)
+                DrawWeatherDial(i,1116+(i%2)*219,239+(i/2)*183);
+
+            string blocker = GuidedLaunchBlocker();
+            Text(Box(1117,605,417,62),blocker ?? $"Preview starts {Campaign.Current.NextDate:MMM yyyy}. Advance from playback to save.",
+                18,Dim,bodyFont,TextAnchor.MiddleLeft,true);
+            if (Button(Box(1116,678,419,51),"Preview 12 months",true,false,blocker == null,25)) LaunchScenario();
+            if (Button(Box(1116,743,419,36),"Restore inherited weather",false,false,Campaign != null,18)) Select(siteIndex);
+            if (!showSites && !branchesOpen && !branchComparisonOpen) DrawWeatherMonitor();
+        }
+
+        void DrawWeatherMonitor()
+        {
+            Rect bezel = Box(54,462,852,288);
+            Card(bezel,Rgb("#172a2b"));
+            PanelScrews(bezel);
+            Rect screen = Box(75,482,809,246);
+            BeginWeatherScreen(screen);
+            Tag(95,492,"LOCAL WEATHER MONITOR  /  "+displayed.Date.ToString("MMM yyyy",Invariant).ToUpperInvariant(),Mint);
+            var draft = ClimateModel.ApplyForcing(displayed.normal,settings);
+            Text(Box(96,526,753,34),"Inherited weather  /  Draft weather",26,White,headingFont);
+
+            for (int i = 0; i < data.controls.Length; i++)
+            {
+                var control = data.controls[i];
+                float x = 96+(i%2)*389, y = 574+(i/2)*62;
+                string unit = i switch { 0 => "°C", 1 => "mm/month", 2 => "% RH", _ => "m/s" };
+                float WeatherValue(Weather weather) => i switch
+                {
+                    0 => weather.temperature, 1 => weather.rain, 2 => weather.humidity, _ => weather.wind
+                };
+                Text(Box(x,y,363,24),control.label,16,Dim,strongFont);
+                Text(Box(x,y+21,363,34),FormattableString.Invariant(
+                    $"{WeatherValue(displayed.weather):0.#} → {WeatherValue(draft):0.#} {unit}"),22,Mint,dataFont);
+            }
+            DrawWeatherBeam(Box(861,505,20,192));
+        }
+
+        void BeginWeatherScreen(Rect rect)
+        {
+            Fill(rect,Rgb("#081819"));
+            for (float y = rect.y+5; y < rect.yMax; y+=6)
+                Fill(Box(rect.x,y,rect.width,1),Alpha(Mint,.065f));
+            Fill(Box(rect.x,rect.y,rect.width,2),Alpha(Mint,.3f));
+            Fill(Box(rect.x,rect.yMax-2,rect.width,2),Alpha(Mint,.3f));
+        }
+
+        void DrawWeatherBeam(Rect tube)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            Fill(tube,Ink);
+            Fill(Box(tube.center.x-3,tube.y+17,6,tube.height-34),Alpha(Aqua,.18f));
+            Fill(Box(tube.center.x-1,tube.y+17,2,tube.height-34),Aqua);
+            float phase = reduced ? .44f : Mathf.Repeat(elapsed*.48f,1);
+            float y = Mathf.Lerp(tube.y+18,tube.yMax-18,phase);
+            Fill(Box(tube.center.x-5,y-4,10,8),Alpha(Aqua,.42f));
+            Fill(Box(tube.center.x-2,y-2,4,4),White);
+            Fill(Box(tube.x+2,tube.y+3,tube.width-4,12),Line);
+            Fill(Box(tube.x+2,tube.yMax-15,tube.width-4,12),Line);
+            Fill(Box(tube.x+5,tube.y+10,tube.width-10,3),Mint);
+            Fill(Box(tube.x+5,tube.yMax-13,tube.width-10,3),Mint);
+        }
+
+        void DrawWeatherDial(int control, float x, float y)
+        {
+            var definition = data.controls[control];
+            Color tint = Rgb(definition.color);
+            Rect cell = Box(x,y,202,174);
+            Vector2 center = new Vector2(x+101,y+103);
+            Rect target = Box(center.x-57,center.y-57,114,114);
+            int index = controlIndex++;
+            availableControls.Add(index);
+            bool focused = focusIndex == index && keyboardFocus;
+            var evt = Event.current;
+            if (evt.type == EventType.MouseDown && evt.button == 0 && target.Contains(evt.mousePosition))
+            {
+                Vector2 pointer = evt.mousePosition - center;
+                focusIndex = index;
+                keyboardFocus = true;
+                if (pointer.magnitude > 33)
+                {
+                    float angle = Mathf.Atan2(pointer.x,-pointer.y)*Mathf.Rad2Deg;
+                    float value = Mathf.Lerp(definition.min,definition.max,Mathf.InverseLerp(-135,135,angle));
+                    settings[control] = DialValue(definition,value);
+                }
+                hotDial = control;
+                dialStart = settings[control];
+                dialDrag = 0;
+                evt.Use();
+            }
+            if (hotDial == control && evt.type == EventType.MouseDrag && evt.button == 0)
+            {
+                dialDrag += evt.delta.x - evt.delta.y;
+                settings[control] = DialValue(definition,dialStart+dialDrag*definition.step/7f);
+                evt.Use();
+            }
+            if (hotDial == control && evt.rawType == EventType.MouseUp) hotDial = -1;
+            if (focused && evt.type == EventType.KeyDown &&
+                evt.keyCode is (KeyCode.LeftArrow or KeyCode.RightArrow or KeyCode.DownArrow or KeyCode.UpArrow))
+            {
+                int direction = evt.keyCode is (KeyCode.RightArrow or KeyCode.UpArrow) ? 1 : -1;
+                settings[control] = DialValue(definition,settings[control]+direction*definition.step);
+                evt.Use();
+            }
+
+            Card(cell,Rgb("#102024"));
+            if (focused)
+            {
+                Fill(Box(x,y,cell.width,2),Yellow);
+                Fill(Box(x,y,2,cell.height),Yellow);
+            }
+            Text(Box(x+6,y+4,190,26),definition.label,19,White,strongFont,TextAnchor.MiddleCenter);
+            Text(Box(x+6,y+27,190,23),Signed(settings[control])+" "+definition.unit.TrimStart(),19,tint,dataFont,TextAnchor.MiddleCenter);
+            GUI.DrawTexture(target,dialFace);
+            float fraction = Mathf.InverseLerp(definition.min,definition.max,settings[control]);
+            Vector2 needle = DialDirection(Mathf.Lerp(-135,135,fraction));
+            DrawChartSegment(center+needle*17,center+needle*33,focused ? Yellow : tint);
+            Text(Box(x+8,y+144,57,25),Signed(definition.min),14,Dim,dataFont);
+            Text(Box(x+137,y+144,57,25),Signed(definition.max),14,Dim,dataFont,TextAnchor.MiddleRight);
+        }
+
+        static int DialValue(ClimateControl definition, float value) =>
+            Mathf.Clamp(Mathf.RoundToInt(value/definition.step)*definition.step,definition.min,definition.max);
+
+        static Vector2 DialDirection(float angle)
+        {
+            float radians = angle*Mathf.Deg2Rad;
+            return new Vector2(Mathf.Sin(radians),-Mathf.Cos(radians));
+        }
+
+        static Texture2D MakeDialFace()
+        {
+            const int size = 128;
+            var face = new Texture2D(size,size,TextureFormat.RGBA32,false) { hideFlags = HideFlags.HideAndDontSave };
+            var colors = new Color32[size*size];
+            Color engraved = Rgb("#9bb8b4"), rim = Rgb("#0d191c"), grip = Rgb("#61706b"), top = Rgb("#3d4a46");
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                Vector2 point = new Vector2(x+.5f-size/2f,y+.5f-size/2f);
+                float radius = point.magnitude;
+                if (radius >= 63) continue;
+                float angle = Mathf.Atan2(point.x,point.y);
+                float degrees = angle*Mathf.Rad2Deg;
+                Color pixel;
+                if (radius > 48)
+                {
+                    bool tick = Mathf.Abs(degrees) <= 136 && Mathf.Abs(degrees/15-Mathf.Round(degrees/15)) < .08f;
+                    pixel = tick && radius < 60 ? engraved : rim;
+                }
+                else
+                {
+                    float shade = .68f + .24f*point.normalized.y;
+                    if (radius > 37) shade += .13f*Mathf.Cos(angle*26);
+                    pixel = (radius > 35 ? grip : top)*shade;
+                    pixel.a = 1;
+                }
+                colors[y*size+x] = pixel;
+            }
+            face.SetPixels32(colors);
+            face.Apply(false,true);
+            return face;
+        }
+
+        void PanelScrews(Rect panel)
+        {
+            for (int corner = 0; corner < 4; corner++)
+            {
+                float x = (corner & 1) == 0 ? panel.x+9 : panel.xMax-16;
+                float y = corner < 2 ? panel.y+9 : panel.yMax-16;
+                Fill(Box(x,y,7,7),Rgb("#61716b"));
+                Fill(Box(x+1,y+3,5,1),Ink);
+            }
         }
 
         void Slider(int i,float x,float y,float width)
@@ -467,7 +651,8 @@ namespace Homecoming.Field
             Tag(282,835,"HISTORICAL RECORDS ARE STORED SEPARATELY FROM SIMULATION RESULTS",Dim);
         }
 
-        void DrawChart(EvidenceSeries record,Rect r, float? minimum = null, float? maximum = null, Color? color = null, float tickWidth = 86)
+        void DrawChart(EvidenceSeries record,Rect r, float? minimum = null, float? maximum = null, Color? color = null,
+            float tickWidth = 86, int selectedIndex = -1)
         {
             if (record.years.Length < 2) return;
             int first = record.years[0].year, last = record.years[^1].year;
@@ -481,6 +666,11 @@ namespace Homecoming.Field
             }
             Vector2 prev = default;
             int lastYear = int.MinValue;
+            if (selectedIndex >= 0)
+            {
+                float x = Mathf.Lerp(r.x,r.xMax,Mathf.InverseLerp(first,last,record.years[selectedIndex].year));
+                Fill(Box(x,r.y,2,r.height),Yellow);
+            }
             foreach (var p in record.years)
             {
                 var v = new Vector2(Mathf.Lerp(r.x,r.xMax,Mathf.InverseLerp(first,last,p.year)),Mathf.Lerp(r.yMax,r.y,Mathf.InverseLerp(min,max,p.value)));

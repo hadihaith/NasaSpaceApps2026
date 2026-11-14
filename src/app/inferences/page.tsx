@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { InferenceExplorer } from "@/components/InferenceExplorer";
+import { NextStep } from "@/components/NextStep";
 import { VERDICT } from "@/lib/earth/verdict";
 import { cityVsRegionWarming, rainAgreement, relationships, seriesSummaries } from "@/lib/earth/inferences";
 import { pText, sig, signed } from "@/lib/format";
 
 export const metadata: Metadata = {
-  title: "Inferences · Trend Detective",
+  title: "Inferences · The Great Homecoming",
   description:
     "What 45 years of NASA and NOAA records for Phoenix, Arizona do and do not let us conclude, with every trend tested for significance.",
 };
@@ -169,6 +170,7 @@ export default function InferencesPage() {
             </li>
           </ul>
         </section>
+        <NextStep from="/inferences" />
       </main>
 
       <footer className="mt-16 border-t-[2.5px] border-edge pt-5 text-sm text-ink-2">

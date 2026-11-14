@@ -1,10 +1,18 @@
+import type { Metadata } from "next";
 import { Workbench } from "@/components/Workbench";
+import { NextStep } from "@/components/NextStep";
+
+export const metadata: Metadata = {
+  title: "Investigate · The Great Homecoming",
+  description: "Pick any Earth science variable and place, guess the trend, then test it on four decades of NASA data.",
+};
 
 export default function Home() {
   return (
     <div id="top" className="mx-auto max-w-[1180px] px-4 pb-16 sm:px-6">
       <main>
         <Workbench />
+        <NextStep from="/detective" />
       </main>
 
       <footer className="mt-16 border-t-[2.5px] border-edge pt-5 text-sm text-ink-2">

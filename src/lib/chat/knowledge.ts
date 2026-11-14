@@ -11,7 +11,14 @@ This is a NASA Space Apps Challenge 2026 project for the challenge "Be an Earth 
 The challenge asks for a tool that selects Earth-science variables, shows how they change over time, and tests
 whether those changes are statistically significant (for example with a t-test, the Mann-Kendall test or confidence intervals).
 
+SITE LAYOUT
+The bar at the top numbers the sections in the order to visit them: 1 Play ("/"), 2 Investigate ("/detective"),
+3 Inferences ("/inferences"), 4 What if ("/what-if"), plus a "How to" guide ("/how-to") on the right. Each section
+page ends with a "Next step" card. When someone is unsure where to go, suggest /how-to or the next numbered section.
+
 PAGES (use these paths when pointing people somewhere)
+- "/how-to" The guide: where to start, what to do in each section, real data versus simulation, and what result
+  labels such as "Significant trend" and "Significance not established" mean.
 - "/" Operation: The Great Homecoming. A funny story game. In 1969 an alien crew (Commander Zorvax, the scientist
   Dr. Nyxen and Cadet B) celebrated Apollo 11, thinking humans were finally leaving Earth to visit them. 57 years
   later they are still waiting, so they decide to "make humans love our planet more". The player is recruited, names

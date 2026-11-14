@@ -198,24 +198,6 @@ body {
     border-left: 2px solid var(--edge);
   }
 
-  /* Site navigation: a segmented control of links. The current page turns gold. */
-  .seg > .navlink-item + .navlink-item {
-    border-left: 2px solid var(--edge);
-  }
-  .navlink {
-    display: block;
-    padding: 0.45rem 1rem;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .navlink:hover {
-    background: var(--wash);
-  }
-  .navlink[aria-current="page"] {
-    background: var(--gold);
-    color: #10242e;
-  }
-
   /* Range sliders for the what-if controls */
   .slider {
     width: 100%;
@@ -376,3 +358,166 @@ dialog::backdrop {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Site navigation ----------
+ * Always dark, in the home screen's own palette (the game's bridge: deep navy, warm gold
+ * insignia, muted lilac text), so the bar reads the same above the game and every page.
+ */
+.site-nav {
+  --site-nav-h: 60px;
+  position: relative;
+  z-index: 40;
+  color: #fbf4ea;
+  background: #100e1d;
+  border-bottom: 1px solid #ffffff1a;
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+.site-nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem 1.25rem;
+  min-height: var(--site-nav-h);
+  padding: 0.5rem 4.4vw;
+}
+.site-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+  line-height: 1.1;
+}
+.site-nav-brand strong {
+  display: block;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 1.02rem;
+  letter-spacing: -0.005em;
+}
+.site-nav-brand small {
+  display: block;
+  margin-top: 2px;
+  color: #9490ab;
+  font: 600 10px/1.2 ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+/* The same insignia as the game's ship bar. */
+.site-nav-insignia {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  color: #211a2e;
+  background: #ffcd72;
+  border: 1px solid #ffe195;
+  border-radius: 10px;
+  box-shadow: inset 0 -4px #15102326;
+}
+.site-nav-insignia b { position: relative; font-size: 1.35rem; line-height: 1; }
+.site-nav-insignia i {
+  position: absolute;
+  width: 25px;
+  height: 12px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  transform: rotate(-33deg);
+}
+.site-nav-steps {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.site-nav-steps a,
+.site-nav-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 38px;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #b7b3c8;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: color 120ms, background-color 120ms, border-color 120ms;
+}
+.site-nav-num {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #5c5672;
+  border-radius: 50%;
+  font: 700 11px/1 ui-monospace, monospace;
+}
+.site-nav-steps a:hover,
+.site-nav-help:hover {
+  color: #fbf4ea;
+  border-color: #ffffff33;
+}
+.site-nav-steps a[aria-current="page"] {
+  color: #ffcd72;
+  background: #ffcd7214;
+  border-color: #ffcd7247;
+}
+.site-nav-steps a[aria-current="page"] .site-nav-num {
+  color: #211a2e;
+  background: #ffcd72;
+  border-color: #ffcd72;
+}
+.site-nav-help {
+  color: #91edff;
+  border-color: #91edff55;
+}
+.site-nav-help > span {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #91edff;
+  color: #0c0b17;
+  font-weight: 800;
+  font-size: 12px;
+}
+.site-nav-help[aria-current="page"],
+.site-nav-help[data-new] {
+  background: #91edff1a;
+}
+.site-nav a:focus-visible {
+  outline: 2px solid #91edff;
+  outline-offset: 2px;
+}
+
+/* Small screens: brand and help on one row, the numbered sections scroll on the next. */
+@media (max-width: 860px) {
+  .site-nav-inner { flex-wrap: wrap; padding-block: 0.55rem; }
+  .site-nav-steps {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .site-nav-steps::-webkit-scrollbar { display: none; }
+}
+@media (max-width: 420px) {
+  .site-nav-brand small { display: none; }
+  .site-nav-help { padding-inline: 0.6rem; }
+}
+
+/* On the home screen the game keeps its own ship bar (Laboratory, Archive, Encyclopedia,
+ * Report). The site bar already carries the insignia, so the ship bar drops its copy and
+ * sits slimmer, reading as the game's own controls under the site's navigation. */
+.site-nav ~ .hc-app .hc-topbar { min-height: 52px; padding-block: 6px; background: #0c0b17; }
+.site-nav ~ .hc-app .hc-topbar .hc-insignia { display: none; }
+.site-nav ~ .hc-app .hc-brand span:last-child { color: #9490ab; font-size: 0.74rem; }
+/* Keep the landing screen inside one window under both bars. */
+.site-nav ~ .hc-app .hc-landing-inner { min-height: min(770px, calc(100svh - 133px - 60px)); }
+/* Films play full screen without the site bar. */
+body:has(.hc-film) > .site-nav { display: none; }

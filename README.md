@@ -14,13 +14,19 @@ Nothing to install, and no account or API key is needed.
 
 The site redeploys automatically from `main` through GitHub Actions (see [docs/deployment.md](docs/deployment.md)).
 
-## The three sections
+## The sections
 
-| Page | What it does |
-| --- | --- |
-| **Investigate** (`/`) | Test any variable, anywhere, with live NASA POWER data |
-| **Inferences** (`/inferences`) | What 45 years of real Phoenix records show: every record tested for a trend, plus city-vs-region warming, agreement between three rain records, and which variables move together |
-| **What if** (`/what-if`) | Turn dials for temperature, rain, humidity and wind on Phoenix's real climate. A small physics model (FAO-56 evaporation and a soil-water bucket) reports what follows, with graphs. Hypothetical, not a forecast. An optional AI briefing (Google Gemini) needs `GEMINI_API_KEY` (see [docs/deployment.md](docs/deployment.md)) |
+The bar at the top numbers the sections in the order to visit them, and each section ends with a link to the next.
+
+| # | Page | What it does |
+| --- | --- | --- |
+| 1 | **Play** (`/`) | Operation: The Great Homecoming, the story game: climate experiments with an alien crew, and an Earth Archive of real NASA records |
+| 2 | **Investigate** (`/detective`) | Test any variable, anywhere, with live NASA POWER data |
+| 3 | **Inferences** (`/inferences`) | What 45 years of real Phoenix records show: every record tested for a trend, plus city-vs-region warming, agreement between three rain records, and which variables move together |
+| 4 | **What if** (`/what-if`) | Turn dials for temperature, rain, humidity and wind on Phoenix's real climate. A small physics model (FAO-56 evaporation and a soil-water bucket) reports what follows, with graphs. Hypothetical, not a forecast. An optional AI briefing (Google Gemini) needs `GEMINI_API_KEY` (see [docs/deployment.md](docs/deployment.md)) |
+|   | **How to** (`/how-to`) | Where to start, what to do in each section, real data versus simulation, and how to read the results |
+
+The order, labels and step-by-step instructions live in one place, `src/lib/site.ts`. The navbar, the How-to page and the "Next step" cards all read it.
 
 ## Run it locally
 

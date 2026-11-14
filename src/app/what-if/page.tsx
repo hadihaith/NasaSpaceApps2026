@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { WhatIfLab } from "@/components/WhatIfLab";
+import { NextStep } from "@/components/NextStep";
 import { regionClimate } from "@/lib/earth/climate";
 import { geminiKey } from "@/lib/whatif/ai";
 
 export const metadata: Metadata = {
-  title: "What if · Trend Detective",
+  title: "What if · The Great Homecoming",
   description:
     "Turn the dials on Phoenix's real climate and see what a simple physics model says would follow for soil, air and heat.",
 };
@@ -28,6 +29,7 @@ export default function WhatIfPage() {
         <div className="mt-8">
           <WhatIfLab climate={climate} sources={sources} aiEnabled={aiEnabled} />
         </div>
+        <NextStep from="/what-if" />
       </main>
     </div>
   );

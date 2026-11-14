@@ -68,7 +68,7 @@ const STARTERS = [
   "What does “statistically significant” mean here?",
 ];
 
-const PAGE_PATHS = ["/inferences", "/what-if", "/detective"];
+const PAGE_PATHS = ["/inferences", "/what-if", "/detective", "/how-to"];
 
 /**
  * Render the assistant's text safely as React nodes (never as HTML): page paths become
@@ -76,7 +76,7 @@ const PAGE_PATHS = ["/inferences", "/what-if", "/detective"];
  */
 function renderText(text: string): ReactNode[] {
   const clean = text.replace(/`([^`]+)`/g, "$1").replace(/^\s*\*\s+/gm, "- ");
-  const parts = clean.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*|\/inferences\b|\/what-if\b|\/detective\b)/g);
+  const parts = clean.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*|\/inferences\b|\/what-if\b|\/detective\b|\/how-to\b)/g);
   return parts.map((part, i) => {
     if (PAGE_PATHS.includes(part)) {
       return (

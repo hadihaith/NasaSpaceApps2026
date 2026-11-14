@@ -90,7 +90,9 @@ export function Homecoming() {
     if (messageTimer.current !== null) window.clearTimeout(messageTimer.current);
     audio.close();
   }, [audio]);
-  useEffect(() => { main.current?.scrollIntoView({ block: "start" }); }, [stage]);
+  // Reset to the top of the page on each stage. Scrolling the stage itself into view
+  // would push the site navigation above it out of sight.
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [stage]);
   useEffect(() => {
     const element = modal.current;
     if (!element) return;

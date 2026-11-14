@@ -20,8 +20,9 @@ namespace Homecoming.Editor
         public static void RenderPreviews()
         {
             EditorSceneManager.OpenScene(ScenePath);
-            var director = Object.FindFirstObjectByType<StoryDirector>();
+            var director = Object.FindAnyObjectByType<StoryDirector>();
             var stage = director.stage;
+            stage.ApplyTypography();
             var story = JsonUtility.FromJson<StoryScript>(director.script.text);
             Require(story.prologue.Length == 11 && story.briefing.Length == 1 && story.ending.Length == 2, "All 14 source shots exist");
             Require(story.prologue.Select(s => s.id).Distinct().Count() == 11, "Unique prologue shots");
@@ -35,12 +36,32 @@ namespace Homecoming.Editor
                 Require(actor.rig != null && actor.clips.Length >= 3, "Original rig and clips " + actor.name);
                 Require(actor.rig.GetComponentsInChildren<SkinnedMeshRenderer>().Length > 0, "Skinned character " + actor.name);
                 actor.Initialize();
+                // Seek through unrelated poses, then return: no cumulative bone or face offsets.
+                actor.Pose("party", 1.35f, false);
+                var bones = actor.rig.GetComponentsInChildren<Transform>();
+                var positions = bones.Select(b => b.localPosition).ToArray();
+                var rotations = bones.Select(b => b.localRotation).ToArray();
+                actor.Pose("return", 3, false);
+                actor.Pose("launch", .75f, false);
+                actor.Pose("party", 1.35f, false);
+                for (int i = 0; i < bones.Length; i++)
+                {
+                    Require(Vector3.Distance(bones[i].localPosition, positions[i]) < .0001f, "Deterministic position " + actor.name + "/" + bones[i].name);
+                    Require(Quaternion.Angle(bones[i].localRotation, rotations[i]) < .05f, "Deterministic rotation " + actor.name + "/" + bones[i].name);
+                }
             }
+            Require(Resources.Load<Font>("Fonts/Display") != null && Resources.Load<Font>("Fonts/Body") != null && Resources.Load<Font>("Fonts/Mono") != null, "Custom typography bundled");
+            stage.crew[0].Pose("launch", .74f, false);
+            var pressHand = stage.crew[0].rig.GetComponentsInChildren<Transform>().First(t => t.name == "hand.L");
+            var pressTarget = stage.switchProp.transform.TransformPoint(new Vector3(0, .28f, 0));
+            Require(Vector3.Distance(pressHand.position, pressTarget) < .12f, "Wrist reaches the physical switch");
             Require(EditorBuildSettings.scenes.Count(s => s.enabled) == 1 && EditorBuildSettings.scenes[0].path == ScenePath, "Story only in build");
             foreach (var renderer in Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include))
                 foreach (var material in renderer.sharedMaterials) Require(material != null && material.shader != null && material.shader.isSupported, "Material " + renderer.name);
 
-            Directory.CreateDirectory(PreviewPath);
+            string overridePath = Environment.GetEnvironmentVariable("HOMECOMING_PREVIEW_PATH");
+            string outputPath = string.IsNullOrEmpty(overridePath) ? PreviewPath : overridePath;
+            Directory.CreateDirectory(outputPath);
             var original = stage.televisionMaterial;
             stage.televisionMaterial = new Material(original);
             stage.screen.sharedMaterial = stage.televisionMaterial;
@@ -58,7 +79,7 @@ namespace Homecoming.Editor
                 RenderTexture.active = rt;
                 var image = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
                 image.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0); image.Apply();
-                File.WriteAllBytes(Path.Combine(PreviewPath, names[i] + ".png"), image.EncodeToPNG());
+                File.WriteAllBytes(Path.Combine(outputPath, names[i] + ".png"), image.EncodeToPNG());
                 Object.DestroyImmediate(image);
                 RenderTexture.active = previous;
             }
@@ -68,7 +89,7 @@ namespace Homecoming.Editor
             stage.televisionMaterial = original;
             stage.screen.sharedMaterial = original;
             EditorSceneManager.OpenScene(ScenePath); // Discard sampled poses and preview state.
-            Debug.Log("HOMECOMING_VALIDATION_OK: source shots, cues, 3 skinned rigs, materials, build isolation; rendered 14 frames to " + PreviewPath);
+            Debug.Log("HOMECOMING_VALIDATION_OK: source shots, cues, 3 skinned rigs, deterministic acting, custom fonts, materials, build isolation; rendered 14 frames to " + outputPath);
         }
 
         static void Require(bool condition, string message)
@@ -117,7 +138,7 @@ namespace Homecoming.Editor
             bool briefing = StorySession.BriefingComplete, ending = StorySession.EndingComplete;
             try
             {
-                var director = Object.FindFirstObjectByType<StoryDirector>();
+                var director = Object.FindAnyObjectByType<StoryDirector>();
                 var stage = director.stage;
                 var story = JsonUtility.FromJson<StoryScript>(director.script.text);
                 void Invoke(string method) => typeof(StoryDirector).GetMethod(method, Private).Invoke(director, null);
@@ -155,7 +176,7 @@ namespace Homecoming.Editor
                     int reloadResult = 0;
                     try
                     {
-                        var returned = Object.FindFirstObjectByType<StoryDirector>();
+                        var returned = Object.FindAnyObjectByType<StoryDirector>();
                         Require(returned != null && returned.CurrentShot == "hearing", "Return API starts final hearing after scene reload");
                         Require(!StorySession.ConsumeHearingRequest(), "Return request consumed once");
                         Debug.Log("HOMECOMING_SMOKE_OK: all 14 shots, motion options, pause, chapter routes, save, preview isolation, actual simulation-return scene reload.");

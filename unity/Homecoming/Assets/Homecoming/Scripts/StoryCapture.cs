@@ -11,18 +11,20 @@ namespace Homecoming
     // Inactive during ordinary play and excluded from release players.
     public sealed class StoryCapture : MonoBehaviour
     {
+        public static bool Exporting { get; private set; }
         const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void EnableFromCommandLine()
         {
             if (Array.IndexOf(Environment.GetCommandLineArgs(), "--homecoming-capture") < 0) return;
             Application.runInBackground = true;
+            Exporting = true;
             Debug.Log("Homecoming internal frame capture starting.");
             new GameObject("Development frame capture").AddComponent<StoryCapture>();
         }
         IEnumerator Start()
         {
-            var director = FindFirstObjectByType<StoryDirector>();
+            var director = FindAnyObjectByType<StoryDirector>();
             var sound = director.GetComponent<StorySound>();
             bool muted = sound.Muted;
             sound.SetMuted(true);
@@ -32,6 +34,7 @@ namespace Homecoming
             {
                 var field = typeof(StoryDirector).GetField("page", Private);
                 typeof(StoryDirector).GetMethod("Show", Private).Invoke(director, new[] { Enum.Parse(field.FieldType, name) });
+                typeof(StoryDirector).GetField("pageTime", Private).SetValue(director, 1.3f);
             }
             IEnumerator Capture(string name)
             {
@@ -59,7 +62,29 @@ namespace Homecoming
             Show("Epilogue"); yield return Capture("07-epilogue");
             Show("Chapters"); yield return Capture("08-options");
             Show("Credits"); yield return Capture("09-credits");
+            // Contact frames inspect anticipation, contact and follow-through without playing by eye alone.
+            if (Array.IndexOf(Environment.GetCommandLineArgs(), "--homecoming-motion-frames") >= 0)
+            {
+                foreach (var name in new[] { "reveal", "correction", "party", "return", "launch", "hearing", "deflate" })
+                {
+                    string chapter = name == "hearing" || name == "deflate" ? "ending" : "prologue";
+                    director.Play(chapter, true);
+                    var data = JsonUtility.FromJson<StoryScript>(director.script.text);
+                    var shots = chapter == "ending" ? data.ending : data.prologue;
+                    int index = Array.FindIndex(shots, shot => shot.id == name);
+                    director.SetShot(index);
+                    typeof(StoryDirector).GetField("paused", Private).SetValue(director, true);
+                    for (int frame = 0; frame < 12; frame++)
+                    {
+                        float time = (frame + .5f) * shots[index].seconds / 12;
+                        typeof(StoryDirector).GetField("shotTime", Private).SetValue(director, time);
+                        director.stage.Evaluate(name, time, false, true);
+                        yield return Capture("motion-" + name + "-" + frame.ToString("00"));
+                    }
+                }
+            }
             sound.SetMuted(muted);
+            Exporting = false;
             Debug.Log("HOMECOMING_CAPTURE_OK: " + output);
             Application.Quit(0);
         }

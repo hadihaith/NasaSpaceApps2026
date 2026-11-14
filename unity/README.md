@@ -54,7 +54,13 @@ the story scene named **Story** unless you also update `StorySession.StoryScene`
 - **Set:** expand `HOMEcoming — film set` in `Story.unity`. Materials and mesh
   assets are in `Assets/Homecoming/Set`.
 - **Cameras and blocking:** `StoryStage.cs` and `StoryActor.cs`.
-- **Playback and screens:** `StoryDirector.cs`.
+- **Playback:** `StoryDirector.cs`. **Interface:** `StoryInterface.cs`, with bundled
+  Barlow Condensed, Barlow and IBM Plex Mono fonts in `Resources/Fonts`.
+- The interface uses custom controls, keyboard focus and hover/press feedback.
+  Page entrances and signal graphics respect reduced motion.
+- Character gestures blend with breathing idles. Shot acting, camera easing,
+  switch contact, cannon recoil, confetti drag and balloon follow-through are
+  evaluated from shot time, so pausing and seeking remain deterministic.
 - **Homecoming → Rebuild story scene** recreates the set from
   `StoryProjectBuilder.cs`. This replaces scene edits, so use it deliberately.
 - **Homecoming → Validate and render story frames** checks all shots, cue times,

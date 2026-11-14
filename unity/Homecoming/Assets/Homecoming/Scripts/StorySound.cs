@@ -48,7 +48,7 @@ namespace Homecoming
             if (!sounds.TryGetValue(name, out var clip))
             {
                 int rate = 48000;
-                float length = name == "celebrate" ? 1.1f : name == "deflate" ? 1.3f : name == "radio" ? .55f : .28f;
+                float length = name == "hover" ? .045f : name == "click" ? .07f : name == "celebrate" ? 1.1f : name == "deflate" ? 1.3f : name == "radio" ? .55f : .28f;
                 var samples = new float[(int)(length * rate)];
                 var random = new System.Random(1969 + name.Length);
                 for (int i = 0; i < samples.Length; i++)
@@ -58,7 +58,9 @@ namespace Homecoming
                     float envelope = Mathf.Min(t * 120, 1) * Mathf.Pow(1 - p, 2);
                     float f = name == "quiet" ? 140 : name == "discover" ? 440 + p * 550 : 230 + p * 110;
                     float wave = Mathf.Sin(2 * Mathf.PI * f * t);
-                    if (name == "stamp" || name == "party-hit" || name == "sputter")
+                    if (name == "hover") wave = Mathf.Sin(2 * Mathf.PI * 880 * t) * .1f;
+                    else if (name == "click") wave = Mathf.Sin(2 * Mathf.PI * 560 * t) * .22f;
+                    else if (name == "stamp" || name == "party-hit" || name == "sputter")
                         wave = noise * .6f + Mathf.Sin(2 * Mathf.PI * (90 - p * 45) * t) * .4f;
                     else if (name == "radio") wave = noise * .3f * (.5f + .5f * Mathf.Sin(t * 220));
                     else if (name == "deflate") wave = Mathf.Sin(2 * Mathf.PI * (650 - p * 420) * t) * .18f + noise * .08f;

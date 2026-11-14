@@ -198,6 +198,30 @@ body {
     border-left: 2px solid var(--edge);
   }
 
+  /* Site navigation: a segmented control of links. The current page turns gold. */
+  .seg > .navlink-item + .navlink-item {
+    border-left: 2px solid var(--edge);
+  }
+  .navlink {
+    display: block;
+    padding: 0.45rem 1rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .navlink:hover {
+    background: var(--wash);
+  }
+  .navlink[aria-current="page"] {
+    background: var(--gold);
+    color: #10242e;
+  }
+
+  /* Range sliders for the what-if controls */
+  .slider {
+    width: 100%;
+    accent-color: var(--series-b);
+  }
+
   .chip {
     display: inline-flex;
     align-items: center;

@@ -14,6 +14,14 @@ Nothing to install, and no account or API key is needed.
 
 The site redeploys automatically from `main` through GitHub Actions (see [docs/deployment.md](docs/deployment.md)).
 
+## The three sections
+
+| Page | What it does |
+| --- | --- |
+| **Investigate** (`/`) | Test any variable, anywhere, with live NASA POWER data |
+| **Inferences** (`/inferences`) | What 45 years of real Phoenix records show: every record tested for a trend, plus city-vs-region warming, agreement between three rain records, and which variables move together |
+| **What if** (`/what-if`) | Turn dials for temperature, rain, humidity and wind on Phoenix's real climate. A small physics model (FAO-56 evaporation and a soil-water bucket) reports what follows, with graphs. Hypothetical, not a forecast. An optional AI briefing (Google Gemini) needs `GEMINI_API_KEY` (see [docs/deployment.md](docs/deployment.md)) |
+
 ## Run it locally
 
 ```bash

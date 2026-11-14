@@ -318,12 +318,17 @@ namespace Homecoming
                 uiOpacity = reveal;
                 Text(140, 337 + (1 - reveal) * 35, 1320, 170, "THE GREAT HOMECOMING", Style(displayFont, 126, paper, TextAnchor.MiddleCenter));
                 Rule(740, 548, 120 * reveal, orange, 3);
+                uiOpacity = reducedMotion ? 1 : Ease((shotTime - .7f) / .6f);
+                Text(200, 574, 1200, 30, "BETTER TOGETHER.  LOVE THY HUMAN.", Style(monoFont, 16, mint, TextAnchor.MiddleCenter));
                 uiOpacity = 1;
             }
-            bool dialogue = captions && !string.IsNullOrEmpty(shot.line);
-            string line = dialogue ? shot.line : descriptions ? shot.description : "";
+            string spoken = shot.LineAt(shotTime, out float lineAge);
+            bool dialogue = captions && !string.IsNullOrEmpty(spoken);
+            string line = dialogue ? spoken : descriptions ? shot.description : "";
             if (!string.IsNullOrEmpty(line))
             {
+                // A new line eases in, so a reply reads as a reply rather than a jump cut.
+                uiOpacity = dialogue && !reducedMotion ? Ease(lineAge / .18f) : 1;
                 int colon = dialogue ? line.IndexOf(':') : -1;
                 string name = colon > 0 ? line.Substring(0, colon).ToUpperInvariant() : "SCENE DESCRIPTION";
                 string words = colon > 0 ? line.Substring(colon + 1).Trim() : line;
@@ -332,10 +337,13 @@ namespace Homecoming
                 float x = (1600 - width) / 2, y = 769 - height;
                 Fill(new Rect(x + 3, y + 4, width, height), new Color(0, 0, 0, .3f));
                 Fill(new Rect(x, y, width, height), new Color(ink.r, ink.g, ink.b, .97f));
-                Fill(new Rect(x, y, 3, height), name == "NYXEN" ? mint : orange);
-                Text(x + 25, y + 12, width - 50, 22, name, micro, name == "NYXEN" ? mint : orange);
+                // One accent per speaker: Zorvax orange, Nyxen mint, Cadet B paper.
+                Color accent = name == "NYXEN" ? mint : name == "CADET B" ? paper : orange;
+                Fill(new Rect(x, y, 3, height), accent);
+                Text(x + 25, y + 12, width - 50, 22, name, micro, accent);
                 Text(x + 25, y + 37, width - 50, height - 44, words, captionStyle);
                 Frame(new Rect(x, y, width, height), new Color(muted.r, muted.g, muted.b, .28f), 6);
+                uiOpacity = 1;
             }
             float total = 0, elapsed = shotTime;
             for (int i = 0; i < sequence.Length; i++) { total += sequence[i].seconds; if (i < shotIndex) elapsed += sequence[i].seconds; }
@@ -478,7 +486,9 @@ namespace Homecoming
             Header("MISSION FILE / PLAYBACK");
             Text(55, 151, 900, 95, "THE OPERATION, IN ORDER.", Style(displayFont, 73, paper));
             Text(61, 252, 730, 28, "FOUR CHAPTERS. ONE VERY LONG MISUNDERSTANDING.", micro, mint);
-            if (Chapter("chapter-one", 1, 309, "THE TRANSMISSION", "1969 → 2026 / 39 SECONDS")) Play("prologue");
+            int prologueSeconds = 0;
+            foreach (var entry in story.prologue) prologueSeconds += Mathf.RoundToInt(entry.seconds * 10);
+            if (Chapter("chapter-one", 1, 309, "THE TRANSMISSION", "1969 → 2026 / " + Mathf.RoundToInt(prologueSeconds / 10f) + " SECONDS")) Play("prologue");
             if (Chapter("chapter-two", 2, 417, "RECRUITMENT", "YOUR FIRST DAY AT THE DEPARTMENT")) Show(Page.Recruit);
             if (Chapter("chapter-three", 3, 525, "THE LABORATORY BRIEFING", "YOUR PLANET. TRY THE DIALS.")) Play("briefing", true);
             if (Chapter("chapter-four", 4, 633, "THE FINAL HEARING", "ENDING PREVIEW / NO PROGRESS REQUIRED")) Play("ending", true);

@@ -30,6 +30,16 @@ namespace Homecoming.Editor
             {
                 Require(shot.seconds > 0 && !string.IsNullOrWhiteSpace(shot.description), "Valid shot " + shot.id);
                 if (shot.cues != null) foreach (var cue in shot.cues) Require(cue.at >= 0 && cue.at < shot.seconds, "Cue timing " + shot.id);
+                if (shot.lines != null)
+                {
+                    float previous = -1;
+                    foreach (var line in shot.lines)
+                    {
+                        Require(line.at > previous && line.at < shot.seconds - .8f, "Line timing and reading time " + shot.id);
+                        Require(!string.IsNullOrWhiteSpace(line.text) && line.text.IndexOf(':') > 0, "Speaker: line format " + shot.id);
+                        previous = line.at;
+                    }
+                }
             }
             foreach (var actor in stage.crew)
             {
@@ -88,6 +98,7 @@ namespace Homecoming.Editor
             Object.DestroyImmediate(stage.televisionMaterial);
             stage.televisionMaterial = original;
             stage.screen.sharedMaterial = original;
+            stage.Lighting.Teardown(); // Runtime-only lights are never left in the editor.
             EditorSceneManager.OpenScene(ScenePath); // Discard sampled poses and preview state.
             Debug.Log("HOMECOMING_VALIDATION_OK: source shots, cues, 3 skinned rigs, deterministic acting, custom fonts, materials, build isolation; rendered 14 frames to " + outputPath);
         }

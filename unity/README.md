@@ -4,8 +4,8 @@ Open **`unity/Homecoming`** in Unity Hub with **6000.6.9f1**. Open
 `Assets/Scenes/Story.unity` and press **Play**. This is a complete Unity project,
 separate from the existing web app.
 
-The story retains the original 14 shots, timings and dialogue in
-`src/homecoming/story.ts`: Apollo 11, the crew's misunderstanding, the party,
+The story keeps the original 14 shots from `src/homecoming/story.ts` and extends their
+dialogue and timing (see **Dialogue** below): Apollo 11, the crew's misunderstanding, the party,
 the 57-year wait, Artemis, recruitment, the laboratory introduction, the final
 hearing and the deflating balloon. Recruitment and the epilogue retain the
 original wording. The existing three skinned GLB characters and their animation
@@ -47,6 +47,49 @@ are included. The ending can be previewed independently.
 
 The destination scene name is exposed on the `StoryDirector` component. Keep
 the story scene named **Story** unless you also update `StorySession.StoryScene`.
+
+## Lighting and grade
+
+The film is lit by `StoryLighting.cs`, which builds its rig at runtime (never saved into
+`Story.unity`, so rebuilding or hand-editing the scene cannot drift from it). It switches
+off the builder's two flat directional lights and uses:
+
+- a shadow-casting overhead spot that pools light on the crew and falls off into the room;
+- a cold rim light through the observation window;
+- the television as a real light source (flickering black-and-white in 1969, cold blue for Artemis);
+- rose and teal party lights on the dance beat, and a cyan projector glow in the lab;
+- per-shot ambient level and a darker trilight base.
+
+Every shot has its own look, evaluated from shot time like the acting, so pause and seek
+stay exact: 1969 warm and hopeful; 2026 dim, cold and desaturated with a dying console bulb;
+the switch slam snapping every light back on; Earth rolling from night into daylight
+(`_SunDir` on `Homecoming/Planet`, with a brighter, sun-aware atmosphere).
+
+`StoryGrade.cs` (shader `Resources/Shaders/FilmGrade.shader`) is the camera's finishing pass:
+bloom, exposure, filmic tone mapping, grade, vignette and grain. The IMGUI interface draws
+after it, so captions and menus are never graded. Tune a shot's look in
+`StoryLighting.Evaluate`, or the defaults on the `StoryGrade` component.
+
+## Dialogue
+
+A shot can carry timed lines instead of a single `line`:
+
+```json
+"lines": [
+  { "at": 0.3, "text": "Nyxen: Sir, that’s one human." },
+  { "at": 1.75, "text": "Zorvax: The first of many!" }
+]
+```
+
+Each line shows from `at` until the next line or the end of the shot, eases in, and takes the
+speaker's caption colour (Zorvax orange, Nyxen mint, Cadet B paper). Validation requires the
+`Speaker: words` form, increasing times, and at least 0.8 s of reading time before the shot ends.
+
+The Unity film extends the web story: it restores the crew's motivation (they think humans
+leaving Earth means humans coming to them; Artemis shows humans keep going home; Zorvax sets
+out to find what Earth has that their planet doesn't) and adds a line or exchange to most shots.
+`scripts/prepare-unity-story.py` keeps these Unity-authored `lines`, the longer shot lengths and
+the fuller descriptions when it re-syncs from `src/homecoming/story.ts`.
 
 ## Edit and verify
 

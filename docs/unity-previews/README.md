@@ -2,8 +2,12 @@
 
 Validated with the installed **Unity 6000.6.9f1** on macOS.
 
-- Original source comparison: all **14 shots**, dialogue, descriptions, cue timing
-  and shot durations match `src/homecoming/story.ts`.
+- Story: the **14 shots** and their cue sounds come from `src/homecoming/story.ts`.
+  The Unity film extends them with timed multi-line dialogue, fuller descriptions and
+  longer shots to read the new lines (see `unity/README.md`, **Dialogue**).
+- Lighting: the shot renders here (not `player/`) show the per-shot lighting and film
+  grade from `StoryLighting.cs` and `StoryGrade.cs`. Validation also checks dialogue
+  format, order and reading time.
 - All three GLB character files are byte-identical to the originals.
 - Scene validation passed: skinned rigs, animation clips, supported materials,
   valid cue times, and only the Story scene in the build.

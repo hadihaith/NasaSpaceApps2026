@@ -5,11 +5,29 @@ using UnityEngine.SceneManagement;
 namespace Homecoming
 {
     [Serializable] public sealed class StoryCue { public float at; public string name; }
+    // One timed caption: "Speaker: words", shown from `at` seconds until the next line or the end of the shot.
+    [Serializable] public sealed class StoryLine { public float at; public string text; }
     [Serializable] public sealed class StoryShot
     {
         public string id, description, label, line;
         public float seconds;
         public StoryCue[] cues;
+        public StoryLine[] lines;
+
+        // The caption on screen at time t. Timed lines win; a single `line` shows for the whole shot.
+        public string LineAt(float t, out float since)
+        {
+            since = t;
+            if (lines == null || lines.Length == 0) return line;
+            string current = null;
+            foreach (var entry in lines)
+            {
+                if (entry.at > t) break;
+                current = entry.text;
+                since = t - entry.at;
+            }
+            return current;
+        }
     }
     [Serializable] public sealed class StoryScript
     {

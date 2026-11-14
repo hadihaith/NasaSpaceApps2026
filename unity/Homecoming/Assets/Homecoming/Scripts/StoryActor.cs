@@ -143,8 +143,9 @@ namespace Homecoming
             {
                 case "reveal": if (role == 0) { action = "Welcome"; start = 1.04f; end = 4.2f; hold = .5f; } break;
                 case "correction":
-                    action = role == 1 ? "Eureka" : "Nod";
-                    start = role == 1 ? .2f : .7f; end = 2.85f; hold = role == 1 ? .44f : .18f; break;
+                    // Nyxen's finger goes up; Zorvax answers "The first of many!" with open arms.
+                    action = role == 1 ? "Eureka" : "Welcome";
+                    start = role == 1 ? .2f : 1.55f; end = role == 1 ? 3.3f : 3.6f; hold = role == 1 ? .6f : .5f; break;
                 case "party": action = role == 0 ? "Welcome" : role == 1 ? "Explain" : "Wave"; start = .65f + role * .07f; end = 4.4f; loop = true; rate = 1.05f; break;
                 case "return": action = role == 0 ? "Complain" : "Idle"; start = 1.12f; end = 4.65f; rate = 1.35f; break;
                 case "launch": action = "Nod"; start = .08f; end = 2.1f; rate = .8f; break;
@@ -176,9 +177,10 @@ namespace Homecoming
             }
             if (shot == "correction")
             {
-                headYaw = role == 1 ? -22 : 18 * Smooth(.7f, 1.1f, t);
-                torsoPitch = role == 1 ? -3 : 4;
-                if (role == 1) leftArmTilt = -7 * Envelope(t, .4f, 2.65f);
+                // Zorvax glances toward the cannon, then turns back to declare it.
+                headYaw = role == 1 ? -22 : 18 * Smooth(.7f, 1.1f, t) * (1 - Smooth(1.45f, 1.85f, t));
+                torsoPitch = role == 1 ? -3 : 4 - 7 * Smooth(1.55f, 1.95f, t);
+                if (role == 1) leftArmTilt = -7 * Envelope(t, .4f, 3.3f);
             }
             if (shot == "party")
             {
@@ -198,6 +200,14 @@ namespace Homecoming
                 y = -.06f; torsoPitch = role == 0 ? 8 : 5; headPitch = role == 2 ? 16 : 11;
                 roll = role == 2 ? -5 : 2; headYaw = role == 0 ? -9 : 5;
                 rightArmTilt = role == 0 ? -12 : -5;
+                // "Should I take the banner down?": the cadet looks up at it, then back down.
+                if (role == 2) headPitch = 16 - 30 * Smooth(1.1f, 1.6f, t) * (1 - Smooth(2.9f, 3.5f, t));
+                // "Not until they get here.": Zorvax straightens, chin up.
+                if (role == 0)
+                {
+                    float resolve = Smooth(2.8f, 3.3f, t);
+                    torsoPitch = 8 - 9 * resolve; headPitch = 11 - 15 * resolve; rightArmTilt = -12 + 8 * resolve;
+                }
             }
             if (shot == "return")
             {

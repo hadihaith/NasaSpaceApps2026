@@ -21,10 +21,26 @@ namespace Homecoming
         bool videoFailed;
         float videoPrepareAge;
         Transform switchButton;
+        StoryLighting lighting;
 
         public bool VideoFallback => videoFailed;
+        // Created on first use, so editor validation renders get the same lighting as play.
+        public StoryLighting Lighting
+        {
+            get
+            {
+                if (lighting == null)
+                {
+                    lighting = GetComponent<StoryLighting>();
+                    if (lighting == null) lighting = gameObject.AddComponent<StoryLighting>();
+                    lighting.Initialize(this);
+                }
+                return lighting;
+            }
+        }
         public void Initialize()
         {
+            _ = Lighting;
             foreach (var actor in crew) actor.Initialize();
             switchButton = switchProp.transform.Find("Red pushbutton");
             ApplyTypography();
@@ -116,7 +132,7 @@ namespace Homecoming
             cannon.transform.localRotation = Quaternion.Euler(-22 - recoil, -18, 0);
             switchProp.transform.localScale = Vector3.one;
             if (switchButton != null) switchButton.localPosition = new Vector3(0, .19f - Pulse(t, .74f, .1f) * .075f, 0);
-            practical.intensity = old ? .65f : id == "launch" ? Mathf.Lerp(.65f, 3, Mathf.SmoothStep(0, 1, (t - .74f) / .15f)) : 1.5f;
+            Lighting.Evaluate(id, t, reducedMotion);
             foreach (var actor in crew) actor.Pose(id, t, reducedMotion);
             if (id == "hearing" && crew[0].ReportGrip != null)
             {
@@ -154,7 +170,7 @@ namespace Homecoming
             television.SetDirectAudioMute(0, mute);
             television.SetDirectAudioVolume(0, .45f);
             televisionMaterial.mainTexture = video ? (Texture)videoTexture : id == "return" ? null : poster;
-            televisionMaterial.color = id == "years" ? new Color(.23f, .23f, .2f) : id == "return" ? new Color(.07f, .11f, .13f) : Color.white;
+            televisionMaterial.color = id == "years" ? new Color(.23f, .23f, .2f) : id == "return" ? new Color(.16f, .3f, .52f) : Color.white;
             monitorTitle.gameObject.SetActive(id == "return" || id == "years");
             monitorSubtitle.gameObject.SetActive(id == "return");
             monitorTitle.text = id == "return" ? "ARTEMIS" : "NO SIGNAL";
@@ -175,17 +191,17 @@ namespace Homecoming
                 case "signal": from = V(5, 3, 65); to = V(-.35f, 1.45f, 5.9f); look = target = V(0, 1.2f, 0); duration = 4.5f; break;
                 case "apollo": from = to = V(1.95f, 2.05f, 1.4f); look = target = V(1.95f, 2.05f, -1.5f); fov = 32; break;
                 case "reveal": from = V(1.95f, 2.05f, 1.4f); to = V(.7f, 2.1f, 8.4f); look = V(1.95f, 2.05f, -1.5f); target = V(.25f, 1.45f, .1f); duration = 2.4f; break;
-                case "correction": from = V(-.7f, 1.85f, 4.5f); to = V(-.4f, 1.8f, 4.15f); look = target = V(-.35f, 1.65f, .35f); fov = 34; duration = 2.6f; break;
+                case "correction": from = V(-.7f, 1.85f, 4.5f); to = V(-.4f, 1.8f, 4.15f); look = target = V(-.35f, 1.65f, .35f); fov = 34; duration = 3.6f; break;
                 case "party": from = V(.2f, 2.2f, 8.4f); to = V(.35f, 2.35f, 9.1f); look = target = V(.2f, 1.6f, 0); break;
-                case "jam": from = V(.05f, 1.45f, 3.7f); to = V(.1f, 1.3f, 3.4f); look = target = V(.8f, 1.08f, .5f); duration = 1.7f; break;
-                case "years": from = V(.35f, 2.35f, 9.1f); to = V(.15f, 2.1f, 8.8f); look = target = V(.2f, 1.6f, 0); break;
-                case "return": from = V(.15f, 2.1f, 8.8f); to = V(.9f, 1.95f, 7.4f); break;
-                case "earth": from = V(1.1f, 1.6f, 7.5f); to = V(-.1f, 1.4f, 5.9f); look = target = V(0, 1.2f, 0); break;
+                case "jam": from = V(.05f, 1.45f, 3.7f); to = V(.1f, 1.3f, 3.4f); look = target = V(.8f, 1.08f, .5f); duration = 2.6f; break;
+                case "years": from = V(.35f, 2.35f, 9.1f); to = V(.15f, 2.1f, 8.8f); look = target = V(.2f, 1.6f, 0); duration = 4.8f; break;
+                case "return": from = V(.15f, 2.1f, 8.8f); to = V(.9f, 1.95f, 7.4f); duration = 4.8f; break;
+                case "earth": from = V(1.1f, 1.6f, 7.5f); to = V(-.1f, 1.4f, 5.9f); look = target = V(0, 1.2f, 0); duration = 5f; break;
                 case "launch": from = V(-.2f, 1.5f, 3.7f); to = V(.2f, 1.4f, 3.35f); look = target = V(-.05f, 1.08f, .6f); duration = 1.5f; break;
                 case "lab": from = V(-.8f, 2.1f, 8.8f); to = V(.1f, 1.9f, 7.8f); look = target = V(0, 1.45f, -.4f); duration = 6.4f; break;
                 case "ready": from = to = V(.1f, 2.1f, 8.6f); look = target = V(0, 1.5f, -.4f); break;
-                case "hearing": from = V(-.25f, 2.1f, 8.4f); to = V(-.2f, 2.0f, 7.6f); look = target = V(.05f, 1.4f, .35f); duration = 5.3f; break;
-                case "deflate": from = V(-.55f, 1.65f, 3.5f); to = V(-.4f, 1.3f, 4); look = V(-.65f, 1.8f, .5f); target = V(-.3f, 1.1f, .5f); duration = 3.5f; break;
+                case "hearing": from = V(-.25f, 2.1f, 8.4f); to = V(-.2f, 2.0f, 7.6f); look = target = V(.05f, 1.4f, .35f); duration = 5.8f; break;
+                case "deflate": from = V(-.55f, 1.65f, 3.5f); to = V(-.4f, 1.3f, 4); look = V(-.65f, 1.8f, .5f); target = V(-.3f, 1.1f, .5f); duration = 4.4f; break;
                 case "recruit": from = to = V(-2.65f, 1.8f, 5); look = target = V(-2.7f, 1.35f, .8f); break;
             }
             float q = Mathf.Clamp01(t / duration);

@@ -34,6 +34,20 @@ def main():
             raise ValueError(f"No shots parsed for {name}; check the source story format.")
         sequences[key] = shots
     TARGET.mkdir(parents=True, exist_ok=True)
+    # The Unity film extends the web story with timed dialogue ("lines"), longer shots to read
+    # them, and fuller descriptions. Keep those Unity-authored fields; take the rest from the web.
+    existing_path = TARGET / "Story.json"
+    if existing_path.exists():
+        existing = json.loads(existing_path.read_text())
+        for key, shots in sequences.items():
+            authored = {shot["id"]: shot for shot in existing.get(key, [])}
+            for shot in shots:
+                unity = authored.get(shot["id"])
+                if unity and unity.get("lines"):
+                    shot.pop("line", None)
+                    for field in ("lines", "seconds", "description"):
+                        shot[field] = unity[field]
+                    shot["cues"] = unity.get("cues", shot["cues"])
     (TARGET / "Story.json").write_text(json.dumps(sequences, ensure_ascii=False, indent=2) + "\n")
     crew = TARGET / "Crew"
     crew.mkdir(exist_ok=True)

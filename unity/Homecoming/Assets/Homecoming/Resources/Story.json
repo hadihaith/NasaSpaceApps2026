@@ -1,0 +1,196 @@
+{
+  "prologue": [
+    {
+      "id": "signal",
+      "description": "A pinprick in the dark becomes the Moon as the camera races toward it.",
+      "seconds": 4.5,
+      "cues": [
+        {
+          "at": 0.08,
+          "name": "radio"
+        },
+        {
+          "at": 2.9,
+          "name": "orbit"
+        }
+      ]
+    },
+    {
+      "id": "apollo",
+      "description": "Apollo 11 television footage shows Neil Armstrong in the lunar module's shadow.",
+      "label": "1969",
+      "seconds": 5.7,
+      "cues": []
+    },
+    {
+      "id": "reveal",
+      "description": "The picture shrinks into a television. On an alien ship, Zorvax springs forward to greet the astronaut.",
+      "line": "Zorvax: They’re coming!",
+      "seconds": 4.0,
+      "cues": [
+        {
+          "at": 1.3,
+          "name": "orbit"
+        },
+        {
+          "at": 2.35,
+          "name": "voice"
+        }
+      ]
+    },
+    {
+      "id": "correction",
+      "description": "Nyxen holds up a finger. Zorvax is already turning toward the party cannon.",
+      "line": "Nyxen: That’s one.",
+      "seconds": 2.6,
+      "cues": [
+        {
+          "at": 0.45,
+          "name": "quiet"
+        }
+      ]
+    },
+    {
+      "id": "party",
+      "description": "The cadet fires the party cannon. Foil strips and balloons fly as the crew dances beneath a welcome banner.",
+      "seconds": 4.0,
+      "cues": [
+        {
+          "at": 0.72,
+          "name": "party-hit"
+        },
+        {
+          "at": 1.0,
+          "name": "celebrate"
+        }
+      ]
+    },
+    {
+      "id": "jam",
+      "description": "One last streamer lodges in the cannon. The cannon coughs.",
+      "seconds": 1.7,
+      "cues": [
+        {
+          "at": 0.58,
+          "name": "sputter"
+        },
+        {
+          "at": 1.08,
+          "name": "sputter"
+        }
+      ]
+    },
+    {
+      "id": "years",
+      "description": "The same banner sags. In the same room, the crew is still waiting.",
+      "label": "2026",
+      "seconds": 3.8,
+      "cues": [
+        {
+          "at": 0.18,
+          "name": "sputter"
+        }
+      ]
+    },
+    {
+      "id": "return",
+      "description": "The television reports the Artemis missions. The crew turns to watch. Zorvax stares in disbelief.",
+      "line": "Zorvax: The Moon? Again?",
+      "seconds": 4.2,
+      "cues": [
+        {
+          "at": 0.18,
+          "name": "radio"
+        },
+        {
+          "at": 2.0,
+          "name": "quiet"
+        }
+      ]
+    },
+    {
+      "id": "earth",
+      "description": "Through the window, Earth rolls into the light. Zorvax takes a long look at the planet humans keep coming home to.",
+      "seconds": 4.0,
+      "cues": [
+        {
+          "at": 0.3,
+          "name": "orbit"
+        }
+      ]
+    },
+    {
+      "id": "launch",
+      "description": "Zorvax slams a red switch. The lights kick on.",
+      "seconds": 2.0,
+      "cues": [
+        {
+          "at": 0.74,
+          "name": "stamp"
+        }
+      ]
+    },
+    {
+      "id": "title",
+      "description": "Operation: The Great Homecoming.",
+      "seconds": 2.8,
+      "cues": [
+        {
+          "at": 0.14,
+          "name": "discover"
+        }
+      ]
+    }
+  ],
+  "briefing": [
+    {
+      "id": "lab",
+      "description": "Nyxen switches on the projector. A miniature Earth hangs over the research bench. The scanner sweeps across it.",
+      "line": "Nyxen: Your planet. Try the dials.",
+      "seconds": 6.4,
+      "cues": [
+        {
+          "at": 0.45,
+          "name": "scan"
+        },
+        {
+          "at": 1.5,
+          "name": "orbit"
+        },
+        {
+          "at": 4.4,
+          "name": "voice"
+        }
+      ]
+    }
+  ],
+  "ending": [
+    {
+      "id": "hearing",
+      "description": "Zorvax presents your report and reaches for the party cannon. Nyxen points to the word SIMULATION.",
+      "line": "Nyxen: We ran a simulation.",
+      "seconds": 5.3,
+      "cues": [
+        {
+          "at": 0.6,
+          "name": "stamp"
+        },
+        {
+          "at": 3.1,
+          "name": "quiet"
+        }
+      ]
+    },
+    {
+      "id": "deflate",
+      "description": "The last party balloon deflates with a squeak. The crew is still waiting.",
+      "seconds": 3.5,
+      "cues": [
+        {
+          "at": 0.84,
+          "name": "deflate"
+        }
+      ]
+    }
+  ]
+}

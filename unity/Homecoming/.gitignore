@@ -1,0 +1,54 @@
+# Unity-generated caches and local settings
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# Player builds, exports and captures
+/[Bb]uild/
+/[Bb]uilds/
+/[Ee]xported[Oo]bj/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/[Cc]aptures/
+/[Aa]rtifacts/
+/*.apk
+/*.aab
+/*.app/
+/*.unitypackage
+
+# Unity Package Manager restores dependencies from these two files.
+# Do not commit downloaded/embedded vendor package contents.
+# Add an explicit exception here for any future package source we author.
+/Packages/*
+!/Packages/manifest.json
+!/Packages/packages-lock.json
+
+# Generated IDE projects and per-user files
+*.csproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+/.vs/
+/.idea/
+/.gradle/
+
+# OS files, logs and crash reports
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+*.stackdump
+/sysinfo.txt
+
+# Keep Assets/, ProjectSettings/ and their .meta files in version control.

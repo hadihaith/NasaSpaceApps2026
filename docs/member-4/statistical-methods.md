@@ -21,7 +21,7 @@ Variable, units and region come from Member 3's metadata. Member 4 supplies time
 
 ## When significance is not established
 
-All real imported datasets default to descriptive-only output until Member 4 supplies a review matching dataset ID, product version, time treatment, month (where relevant) and selected years. Scientific review is not inferred from provenance or redistribution permission. Simulated alien outcomes cannot receive observed-Earth significance claims.
+Imported Earth datasets default to descriptive output. A review must match the dataset ID, product version, time treatment, month where relevant and selected years. Homecoming's reviewed results also bind the exact footprint, variable, unit, aggregation and values through a dataset fingerprint. Scientific review is a separate requirement from provenance and redistribution permission. [Homecoming historical evidence and reviews](../homecoming-evidence.md)
 
 Inference is also withheld for monthly-anomaly mode, irregular intervals/missing periods, near-zero residual variation, or flagged lag-one residual correlation. The exploratory correlation flag is |r1| > 1.96/sqrt(n). This is a screening heuristic, NOT a calibrated proof that remaining samples are independent. It cannot replace checking higher-order dependence, seasonal residuals, heteroscedasticity, outliers, nonlinearity, instrument changes or selection effects. The ten-point minimum is an application threshold, not a guarantee of adequate power or validity.
 
@@ -34,7 +34,7 @@ The deterministic synthetic examples have a known linear plus seasonal mean with
 - Input dates are consecutive YYYY-MM strings. Missing calendar months must be explicit null entries; duplicates, skipped date entries and non-finite values are rejected. The adapter pads partial first/last years with nulls.
 - Annual mode uses the arithmetic mean of twelve complete monthly values. It is an equal-month mean, not a day-weighted annual mean or annual total. Member 3 must supply consistent monthly quantities and Member 4 must decide whether equal-month averaging is scientifically appropriate for that variable. Precipitation totals or rates must not be silently interchanged.
 - Fixed-month mode uses one calendar month each year, including a partial endpoint year if that month is present.
-- Anomaly mode subtracts each calendar month's available-value mean within the selected period. The baseline changes when the period changes. It removes the mean seasonal cycle for visualization, but does not remove dependence or validate inference. Missing or unbalanced samples can affect the estimated slope. A regression with seasonal terms or a separately validated seasonal test is future dataset-specific work, not claimed as implemented here.
+- Anomaly mode subtracts each calendar month's available-value mean within the selected period unless a fixed reference is supplied. Homecoming uses a fixed 1991–2020 baseline when all 30 values for each month are available and labels other anomalies as period-relative. The adjustment removes the mean seasonal cycle for visualization. Dependence and missing or unbalanced samples can still affect the estimated slope. All monthly anomaly results in this release are descriptive.
 - Missing observations are never filled, treated as zero, or compressed onto new timestamps. Annual years with missing months are omitted and any resulting internal gap blocks inference.
 
 ## Comparing regions

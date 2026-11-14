@@ -185,9 +185,11 @@ namespace Homecoming.Editor
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneOSX, true);
             AssetDatabase.SaveAssets();
             EditorSceneManager.SaveScene(scene, "Assets/Scenes/Story.unity");
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene("Assets/Scenes/Story.unity", true) };
+            const string storyPath = "Assets/Scenes/Story.unity";
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(storyPath, true) }
+                .Concat(EditorBuildSettings.scenes.Where(entry => entry.path != storyPath)).ToArray();
             Selection.activeGameObject = directorGo;
-            Debug.Log("HOMECOMING_BUILD_OK: Story.unity, 14 shots, 3 animated character rigs; no simulation scene.");
+            Debug.Log("HOMECOMING_BUILD_OK: Story.unity, 14 shots, 3 animated character rigs.");
         }
 
         static Material Mat(string name, string hex, float metallic, float smooth, bool emission = false)

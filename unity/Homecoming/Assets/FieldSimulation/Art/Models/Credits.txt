@@ -1,0 +1,4 @@
+Kenney Nature Kit — https://kenney.nl/assets/nature-kit
+Kenney Space Kit — https://kenney.nl/assets/space-kit
+Both by Kenney, licensed CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Selected models are distributed as GLB via https://github.com/Hidencod/tge-assets.

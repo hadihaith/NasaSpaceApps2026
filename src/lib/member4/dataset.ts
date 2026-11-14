@@ -65,7 +65,8 @@ export function parseDataset(input: unknown): EarthDataset {
 }
 
 export function analyzeDataset(input: unknown, mode: Mode = "annual", month = 0,
-  period?: { startYear: number; endYear: number }, review?: ScientificReview) {
+  period?: { startYear: number; endYear: number }, review?: ScientificReview,
+  anomalyNormals?: MonthlyRecord["anomalyNormals"]) {
   const dataset = parseDataset(input);
   const firstYear = Number(dataset.observations[0].date.slice(0, 4));
   const lastYear = Number(dataset.observations.at(-1)!.date.slice(0, 4));
@@ -83,7 +84,7 @@ export function analyzeDataset(input: unknown, mode: Mode = "annual", month = 0,
     review.productVersion === dataset.provenance.version && review.mode === mode &&
     (mode !== "month" || review.month === month) && review.startYear === startYear && review.endYear === endYear &&
     Boolean(review.reviewer.trim() && review.rationale.trim()) && dataset.kind !== "simulation";
-  const record: MonthlyRecord = { startYear, monthly, assumptionsReviewed: reviewed };
+  const record: MonthlyRecord = { startYear, monthly, assumptionsReviewed: reviewed, anomalyNormals };
   const result = analyse(record, mode, month);
   const warnings = [...(result.trend?.inference.reasons ?? ["Fewer than ten usable points; significance not established."])];
   if (dataset.kind === "synthetic" || dataset.kind === "simulation") warnings.unshift("Generated values: not observed Earth changes.");

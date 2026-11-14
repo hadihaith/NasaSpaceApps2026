@@ -65,7 +65,7 @@ namespace Homecoming.Editor
             var pressHand = stage.crew[0].rig.GetComponentsInChildren<Transform>().First(t => t.name == "hand.L");
             var pressTarget = stage.switchProp.transform.TransformPoint(new Vector3(0, .28f, 0));
             Require(Vector3.Distance(pressHand.position, pressTarget) < .12f, "Wrist reaches the physical switch");
-            Require(EditorBuildSettings.scenes.Count(s => s.enabled) == 1 && EditorBuildSettings.scenes[0].path == ScenePath, "Story only in build");
+            Require(EditorBuildSettings.scenes.FirstOrDefault(s => s.enabled)?.path == ScenePath, "Story starts the regular build");
             foreach (var renderer in Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include))
                 foreach (var material in renderer.sharedMaterials) Require(material != null && material.shader != null && material.shader.isSupported, "Material " + renderer.name);
 
@@ -100,7 +100,7 @@ namespace Homecoming.Editor
             stage.screen.sharedMaterial = original;
             stage.Lighting.Teardown(); // Runtime-only lights are never left in the editor.
             EditorSceneManager.OpenScene(ScenePath); // Discard sampled poses and preview state.
-            Debug.Log("HOMECOMING_VALIDATION_OK: source shots, cues, 3 skinned rigs, deterministic acting, custom fonts, materials, build isolation; rendered 14 frames to " + outputPath);
+            Debug.Log("HOMECOMING_VALIDATION_OK: source shots, cues, 3 skinned rigs, deterministic acting, custom fonts, materials, story first in build; rendered 14 frames to " + outputPath);
         }
 
         static void Require(bool condition, string message)
@@ -108,15 +108,17 @@ namespace Homecoming.Editor
             if (!condition) throw new InvalidOperationException("Homecoming validation failed: " + message);
         }
 
-        // Optional local player for visual QA. Build output is excluded from version control.
-        [MenuItem("Homecoming/Build macOS preview")]
+        [MenuItem("Homecoming/Build macOS player")]
         public static void BuildMacPreview()
         {
+            var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
+            Require(scenes.FirstOrDefault() == ScenePath &&
+                scenes.Any(scene => Path.GetFileNameWithoutExtension(scene) == StorySession.SimulationScene),
+                "Build starts in Story and includes the laboratory");
             var output = Path.GetFullPath(Path.Combine(Application.dataPath, "../Builds/The Great Homecoming.app"));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = new[] { ScenePath }, locationPathName = output,
-                target = BuildTarget.StandaloneOSX, options = BuildOptions.Development
+                scenes = scenes, locationPathName = output, target = BuildTarget.StandaloneOSX
             });
             if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
                 throw new InvalidOperationException("Player build failed: " + report.summary.result);
@@ -178,7 +180,7 @@ namespace Homecoming.Editor
                 Require(StorySession.BriefingComplete && StorySession.RecruitName == "QA Cadet", "Recruit saved through briefing");
                 director.Play("ending"); Invoke("FinishSequence");
                 Require(StorySession.EndingComplete, "Completion saved");
-                Require(!Application.CanStreamedLevelBeLoaded(StorySession.SimulationScene), "No simulation shipped");
+                Require(Application.CanStreamedLevelBeLoaded(StorySession.SimulationScene), "Simulation is available at the lab handoff");
                 // Verify the real reload, including Awake consuming the pending-hearing request.
                 UnityEngine.Events.UnityAction<Scene, LoadSceneMode> loaded = null;
                 loaded = (scene, mode) =>

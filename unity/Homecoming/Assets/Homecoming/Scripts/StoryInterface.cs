@@ -15,7 +15,7 @@ namespace Homecoming
         readonly Dictionary<(Font, int, Color, TextAnchor, bool), GUIStyle> textStyles = new Dictionary<(Font, int, Color, TextAnchor, bool), GUIStyle>();
         Font displayFont, bodyFont, monoFont;
         GUIStyle micro, body, display, heading, captionStyle, inputStyle, buttonStyle, mono;
-        Texture2D white, disc, gradient, aukLogo, astronautArt, spaceAppsLogo;
+        Texture2D white, disc, gradient;
         bool interfaceReady, focusRecruit;
         string hoveredControl;
         float lastPointerActivity, interfaceClock, uiOpacity = 1;
@@ -68,9 +68,6 @@ namespace Homecoming
             GUI.skin.settings.selectionColor = new Color(.16f, .36f, .4f);
             GUI.skin.settings.cursorColor = orange.linear;
             white = Texture2D.whiteTexture;
-            aukLogo = Resources.Load<Texture2D>("Film/auk");
-            astronautArt = Resources.Load<Texture2D>("Film/astronaut");
-            spaceAppsLogo = Resources.Load<Texture2D>("Film/space-apps-kuwait");
             disc = new Texture2D(96, 96, TextureFormat.RGBA32, false);
             for (int y = 0; y < 96; y++) for (int x = 0; x < 96; x++)
             {
@@ -251,8 +248,6 @@ namespace Homecoming
             var oldMatrix = GUI.matrix;
             var oldColor = GUI.color;
             float scale = Scale;
-            if (page == Page.Film && CurrentShot == "opening")
-                Fill(new Rect(0, 0, Screen.width, Screen.height), Color.black);
             GUI.matrix = Matrix4x4.TRS(new Vector3((Screen.width - 1600 * scale) / 2, (Screen.height - 900 * scale) / 2, 0), Quaternion.identity, Vector3.one * scale);
             uiOpacity = 1;
             if (page == Page.Film) FilmGUI();
@@ -300,23 +295,8 @@ namespace Homecoming
         void FilmGUI()
         {
             var shot = sequence[shotIndex];
-            bool opening = shot.id == "opening";
-            Fill(new Rect(0, 0, 1600, 58), opening ? Color.black : ink);
-            Fill(new Rect(0, 794, 1600, 106), opening ? Color.black : ink);
-            if (opening)
-            {
-                Fill(new Rect(0, 0, 1600, 900), Color.black);
-                if (!stage.IntroFailed && stage.IntroPicture != null)
-                    GUI.DrawTexture(new Rect(0, 0, 1600, 900), stage.IntroPicture, ScaleMode.ScaleToFit, false);
-                else if (stage.IntroFailed)
-                {
-                    float mark = reducedMotion ? (shotTime >= .3f ? 1 : 0) : Ease((shotTime - .3f) / .35f);
-                    float art = reducedMotion ? (shotTime >= .8f ? 1 : 0) : Ease((shotTime - .8f) / .35f);
-                    if (aukLogo != null) TintTexture(new Rect(1009, 248, 112, 230), aukLogo, new Color(1, 1, 1, mark));
-                    if (astronautArt != null) TintTexture(new Rect(362, 197, 445, 406), astronautArt, new Color(1, 1, 1, art));
-                    if (spaceAppsLogo != null) TintTexture(new Rect(879, 510, 372, 154), spaceAppsLogo, new Color(1, 1, 1, art));
-                }
-            }
+            Fill(new Rect(0, 0, 1600, 58), ink);
+            Fill(new Rect(0, 794, 1600, 106), ink);
             if (shot.id == "apollo") Badge(63, 88, "APOLLO 11  /  1969", orange);
             if (shot.id == "years")
                 Badge(63, 88, shotTime < 2.7f ? "1969" : "57 YEARS LATER  /  2026", orange);
@@ -406,7 +386,7 @@ namespace Homecoming
             Header("PERSONNEL / ENLISTMENT");
             uiOpacity = Enter();
             Badge(884, 151, "INCOMING / COMMANDER ZORVAX", orange);
-            Text(878, 211 + (1 - Enter()) * 25, 650, 156, "WELCOME\nABOARD, RECRUIT.", Style(displayFont, 76, paper));
+            Text(878, 211 + (1 - Enter()) * 25, 650, 156, "A SUSPICIOUSLY\nGENEROUS JOB OFFER.", Style(displayFont, 60, paper));
             Text(884, 394, 572, 94, "“The party’s been on hold since 1969. Find out what Earth has that we don’t.”", body);
             Text(884, 524, 530, 25, "01 / RECRUIT DESIGNATION", micro, mint);
             var rect = new Rect(884, 568, 600, 70);

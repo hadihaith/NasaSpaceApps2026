@@ -266,7 +266,7 @@ namespace Homecoming.Field
         void CloseComparison()
         {
             orbitOpen = false;
-            world.Overview(elapsed, reduced);
+            world.Overview(labClock, reduced);
             OpenCase();
         }
 

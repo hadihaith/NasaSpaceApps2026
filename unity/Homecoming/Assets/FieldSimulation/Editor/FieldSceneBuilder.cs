@@ -124,7 +124,7 @@ namespace Homecoming.Field.Editor
             string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../Builds", name));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = storyFirst ? new[] { story, ScenePath } : new[] { ScenePath, story },
+                scenes = storyFirst ? new[] { IntroPlayback.ScenePath, story, ScenePath } : new[] { ScenePath, story },
                 locationPathName = output, target = BuildTarget.StandaloneOSX, extraScriptingDefines = new[] { "HOMECOMING_FIELD_PREVIEW" }
             });
             if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)

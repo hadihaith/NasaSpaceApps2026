@@ -154,18 +154,17 @@ namespace Homecoming
         {
             if (source == null || paused) return;
             if (dialogueActive && (!dialogue.isPlaying || AudioSettings.dspTime >= dialogueEnd)) StopDialogue();
-            bool opening = id == "opening";
             bool space = id == "signal" || id == "earth";
             bool quiet = Time.unscaledTime < quietUntil || id == "deflate";
             float duck = dialogueActive && dialogue.volume > 0 ? .56f : 1;
             float musicLevel = levels[(int)Bus.Music] * duck;
             music.volume = Mathf.MoveTowards(music.volume, musicLevel, Time.unscaledDeltaTime * 4);
-            float score = opening || music.isPlaying ? 0 :
+            float score = music.isPlaying ? 0 :
                 (id == "title" ? .42f : id == "party" ? .3f : .21f) * musicLevel * (quiet ? .2f : 1);
             scoreA.volume = Mathf.MoveTowards(scoreA.volume, aIsTarget ? score : 0, Time.unscaledDeltaTime * .3f);
             scoreB.volume = Mathf.MoveTowards(scoreB.volume, aIsTarget ? 0 : score, Time.unscaledDeltaTime * .3f);
-            room.volume = Mathf.MoveTowards(room.volume, (opening ? 0 : space ? .015f : quiet ? .15f : id == "launch" && t > .74f ? .5f : .36f) * levels[(int)Bus.Ambience] / .16f, Time.unscaledDeltaTime);
-            air.volume = Mathf.MoveTowards(air.volume, (space || opening ? 0 : .24f) * levels[(int)Bus.Ambience] / .16f, Time.unscaledDeltaTime);
+            room.volume = Mathf.MoveTowards(room.volume, (space ? .015f : quiet ? .15f : id == "launch" && t > .74f ? .5f : .36f) * levels[(int)Bus.Ambience] / .16f, Time.unscaledDeltaTime);
+            air.volume = Mathf.MoveTowards(air.volume, (space ? 0 : .24f) * levels[(int)Bus.Ambience] / .16f, Time.unscaledDeltaTime);
         }
         public void SetMuted(bool mute)
         {

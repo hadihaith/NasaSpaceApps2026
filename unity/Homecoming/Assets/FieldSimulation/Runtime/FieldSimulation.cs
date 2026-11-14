@@ -14,7 +14,7 @@ namespace Homecoming.Field
         public Texture2D commander;
 
         public const string SaveKey = "homecoming.unity.field.v1";
-        enum View { Lab, Descent, Field, Journal, Archive, Report }
+        enum View { Lab, Descent, Field, Journal, Archive, Report, SiteTransfer }
         View view;
         ClimateData data;
         FieldSave save;
@@ -34,7 +34,12 @@ namespace Homecoming.Field
         Forcing settings;
         FieldTrial trial;
         FieldMonth displayed, before;
-        float elapsed, runClock, descentClock, landingVeil;
+        float elapsed, labClock, runClock, descentClock, landingVeil;
+        const float PullbackEnd = 1.65f, OrbitEntryEnd = 2.55f, OrbitTravelEnd = 4.95f, OrbitExitEnd = 5.9f, TransferEnd = 7.65f;
+        int transferTarget = -1;
+        Pose transferOrigin;
+        float transferFov, transferTime, transferVeil;
+        bool transferTerrainReady;
         bool reduced, muted, running, paused, lookHeld, showResult, showTelemetry, comparing;
         readonly List<Discovery> added = new();
         Discovery primary;
@@ -67,7 +72,8 @@ namespace Homecoming.Field
         void Load()
         {
 #if HOMECOMING_FIELD_PREVIEW || UNITY_EDITOR
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "--investigation-preview") >= 0)
+            var args = Environment.GetCommandLineArgs();
+            if (Array.IndexOf(args, "--investigation-preview") >= 0 || Array.IndexOf(args, "--site-transfer-preview") >= 0)
             {
                 campaign = FieldCampaign.Open(data, selectedSiteId: Region.id);
                 RestoreJournal();
@@ -137,38 +143,116 @@ namespace Homecoming.Field
         public void Select(int index)
         {
             if (index < 0 || index >= data.regions.Length) throw new ArgumentOutOfRangeException(nameof(index));
+            if (view == View.SiteTransfer || !TrySelectSite(index)) return;
+            ApplySelectedSite(index);
+        }
+
+        bool TrySelectSite(int index)
+        {
             if (campaign != null && !loading && campaign.SelectedSiteId != data.regions[index].id)
             {
                 try { campaign.SelectSite(data.regions[index].id); }
                 catch (Exception error) when (IsCampaignError(error))
                 {
                     SimulationStatus = error.Message;
-                    return;
+                    return false;
                 }
             }
+            return true;
+        }
+
+        void ApplySelectedSite(int index)
+        {
             siteIndex = index;
             world.SelectRegion(index, Region);
-            if (campaign != null)
-            {
-                var revision = campaign.Current;
-                var site = revision.Site(Region.id);
-                settings = site?.ActiveAt(revision.nextMonth) ?? default;
-                displayed = StartFrame(site?.current ?? ClimateModel.Initial(Region), revision.nextMonth, settings);
-            }
-            else
-            {
-                var land = save.sites.Find(site => site.id == Region.id)?.land ?? ClimateModel.Initial(Region);
-                displayed = StartFrame(land, FieldCalendar.StartMonth + land.elapsed, default);
-            }
-            world.Overview(elapsed, reduced);
+            displayed = SavedSiteFrame(Region);
+            if (campaign != null) settings = displayed.forcing;
+            world.Overview(labClock, reduced);
             world.Apply(displayed, 0, true, muted, false, reduced);
         }
 
-        FieldMonth StartFrame(LandState land, int month, Forcing forcing)
+        FieldMonth SavedSiteFrame(RegionClimate region)
         {
-            var normal = ClimateModel.Normal(Region, month);
+            if (campaign != null)
+            {
+                var revision = campaign.Current;
+                var site = revision.Site(region.id);
+                return StartFrame(region,site.current,revision.nextMonth,site.ActiveAt(revision.nextMonth));
+            }
+            var land = save.sites.Find(site => site.id == region.id)?.land ?? ClimateModel.Initial(region);
+            return StartFrame(region,land,FieldCalendar.StartMonth+land.elapsed,default);
+        }
+
+        FieldMonth StartFrame(RegionClimate region, LandState land, int month, Forcing forcing)
+        {
+            var normal = ClimateModel.Normal(region, month);
             return new FieldMonth { land = land, normal = normal, weather = ClimateModel.ApplyForcing(normal, forcing),
                 monthIndex = month, forcing = forcing };
+        }
+
+        bool BeginSiteTransfer(int index)
+        {
+            if (view != View.Lab || index == siteIndex || index < 0 || index >= data.regions.Length) return false;
+            showSites = branchesOpen = branchComparisonOpen = false;
+            if (reduced)
+            {
+                Select(index);
+                return siteIndex == index;
+            }
+            var camera = world.fieldCamera;
+            transferOrigin = new Pose(camera.transform.position,camera.transform.rotation);
+            transferFov = camera.fieldOfView;
+            transferTarget = index;
+            transferTime = transferVeil = 0;
+            transferTerrainReady = false;
+            Go(View.SiteTransfer);
+            return true;
+        }
+
+        void TickSiteTransfer(float time)
+        {
+            transferTime = Mathf.Min(TransferEnd,transferTime+time);
+            if (transferTime < PullbackEnd)
+            {
+                transferVeil = world.TransferDeparture(transferOrigin,transferFov,transferTime/PullbackEnd);
+                return;
+            }
+            if (transferTime < OrbitExitEnd)
+            {
+                float route = Mathf.InverseLerp(OrbitEntryEnd,OrbitTravelEnd,transferTime);
+                float entry = 1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(PullbackEnd,OrbitEntryEnd,transferTime));
+                float exit = Mathf.SmoothStep(0,1,Mathf.InverseLerp(OrbitTravelEnd,OrbitExitEnd,transferTime));
+                world.TransferOrbit(Region,data.regions[transferTarget],route,Mathf.Max(entry,exit));
+                transferVeil = Mathf.Max(entry*entry,Mathf.SmoothStep(0,1,Mathf.InverseLerp(.65f,1,exit)));
+                return;
+            }
+            if (!transferTerrainReady)
+            {
+                var destination = data.regions[transferTarget];
+                world.SelectRegion(transferTarget,destination);
+                world.Apply(SavedSiteFrame(destination),0,true,muted,false,reduced);
+                transferTerrainReady = true;
+            }
+            transferVeil = world.TransferArrival(labClock,reduced,Mathf.InverseLerp(OrbitExitEnd,TransferEnd,transferTime));
+            if (transferTime >= TransferEnd) FinishSiteTransfer(true);
+        }
+
+        void FinishSiteTransfer(bool arrive)
+        {
+            if (view != View.SiteTransfer) return;
+            int destination = transferTarget;
+            view = View.Lab;
+            transferTarget = -1;
+            transferVeil = 0;
+            focusIndex = 0;
+            if (arrive && TrySelectSite(destination))
+            {
+                ApplySelectedSite(destination);
+                return;
+            }
+            if (transferTerrainReady) world.SelectRegion(siteIndex,Region);
+            world.RestoreTerrainCamera(transferOrigin,transferFov);
+            world.Apply(displayed,0,true,muted,false,reduced);
         }
 
         public void Launch()
@@ -177,7 +261,7 @@ namespace Homecoming.Field
             if (legacyPlayback)
             {
                 var land = save.sites.Find(site => site.id == Region.id)?.land ?? ClimateModel.Initial(Region);
-                before = StartFrame(land, FieldCalendar.StartMonth + land.elapsed, default);
+                before = StartFrame(Region,land,FieldCalendar.StartMonth+land.elapsed,default);
                 trial = ClimateModel.Run(Region, land, settings, duration);
                 referenceTrial = null;
             }
@@ -195,7 +279,7 @@ namespace Homecoming.Field
                     pendingPreview = preview;
                     trial = projection.scenario;
                     referenceTrial = projection.reference;
-                    before = StartFrame(site.current, revision.nextMonth, inherited);
+                    before = StartFrame(Region,site.current,revision.nextMonth,inherited);
                     SimulationStatus = null;
                 }
                 catch (Exception error) when (IsCampaignError(error))
@@ -332,6 +416,7 @@ namespace Homecoming.Field
 
         void Go(View next)
         {
+            if (view == View.SiteTransfer) return;
             ReleaseLook();
             paused = false;
             hotDial = -1;
@@ -375,6 +460,13 @@ namespace Homecoming.Field
 #endif
             elapsed += dt;
             if (Input.GetKeyDown(KeyCode.M)) ToggleMute();
+            if (view == View.SiteTransfer)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape)) FinishSiteTransfer(false);
+                else if (Input.GetKeyDown(KeyCode.Space)) FinishSiteTransfer(true);
+                else TickSiteTransfer(dt);
+                return;
+            }
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 if (lookHeld) ReleaseLook();
@@ -382,12 +474,14 @@ namespace Homecoming.Field
                 else if (view == View.Field && showResult) showResult = false;
                 else if (view == View.Field && running) paused = !paused;
                 else if (view != View.Lab) Go(View.Lab);
+                else if (showSites) showSites = false;
             }
 
             switch (view)
             {
                 case View.Lab:
-                    world.Overview(elapsed, reduced);
+                    labClock += dt;
+                    world.Overview(labClock, reduced);
                     if (legacyPlayback && !keyboardNavigation && Input.GetKeyDown(KeyCode.Return)) Launch();
                     break;
                 case View.Descent:

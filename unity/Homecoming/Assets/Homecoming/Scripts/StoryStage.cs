@@ -16,11 +16,6 @@ namespace Homecoming
         public Light practical;
         public Material televisionMaterial;
         RenderTexture videoTexture;
-        VideoPlayer introPlayer;
-        public Texture IntroPicture => introPlayer != null && introPlayer.frame >= 0 ? introPlayer.texture : null;
-        public float IntroTime => introPlayer == null ? 0 : (float)introPlayer.time;
-        public bool IntroFailed { get; private set; }
-        public bool IntroFinished { get; private set; }
         Texture poster;
         Texture2D artemisOut, artemisMoon, artemisHome;
         Transform jammedStreamer, trigger;
@@ -100,49 +95,6 @@ namespace Homecoming
             television.errorReceived += OnVideoError;
             television.Prepare();
         }
-        public void StartIntro(bool reduced)
-        {
-            StopIntro();
-            IntroFailed = reduced;
-            if (reduced) return;
-            var clip = Resources.Load<VideoClip>("Film/auk-intro");
-            if (clip == null) { IntroFailed = true; return; }
-            if (introPlayer == null)
-            {
-                introPlayer = gameObject.AddComponent<VideoPlayer>();
-                introPlayer.playOnAwake = false;
-                // IMGUI draws the decoded frame at its native resolution.
-                introPlayer.renderMode = VideoRenderMode.APIOnly;
-                introPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
-                introPlayer.waitForFirstFrame = true;
-                introPlayer.loopPointReached += IntroEnded;
-                introPlayer.errorReceived += IntroErrored;
-                introPlayer.prepareCompleted += IntroPrepared;
-            }
-            introPlayer.clip = clip;
-            introPlayer.Prepare();
-        }
-        void IntroPrepared(VideoPlayer player)
-        {
-            if (!paused && current == "opening") player.Play();
-        }
-        void IntroEnded(VideoPlayer player) => IntroFinished = true;
-        void IntroErrored(VideoPlayer player, string error)
-        {
-            IntroFailed = true;
-            Debug.LogWarning("AUK intro unavailable. Showing the logo card. " + error);
-        }
-        public void FailIntro()
-        {
-            StopIntro();
-            IntroFailed = true;
-        }
-        public void StopIntro()
-        {
-            if (introPlayer != null) introPlayer.Stop();
-            IntroFinished = false;
-        }
-
         void PrepareStoryProps()
         {
             if (jammedStreamer != null) return;
@@ -239,11 +191,6 @@ namespace Homecoming
         public void SetPaused(bool paused)
         {
             this.paused = paused;
-            if (introPlayer != null && current == "opening" && introPlayer.isPrepared)
-            {
-                if (paused) introPlayer.Pause();
-                else if (!IntroFailed && !IntroFinished) introPlayer.Play();
-            }
             if (!television.isActiveAndEnabled) return;
             if (paused) television.Pause();
             else if (UsesFilm(current) && television.isPrepared) television.Play();
@@ -254,7 +201,6 @@ namespace Homecoming
         {
             var previous = current;
             current = id;
-            if (previous == "opening" && current != "opening") StopIntro();
             bridge.SetActive(id != "signal" && id != "earth");
             if (!television.isActiveAndEnabled) return;
             if (UsesFilm(id) && television.isPrepared)
@@ -270,16 +216,6 @@ namespace Homecoming
         public void Evaluate(string id, float t, bool reducedMotion, bool mute, float archiveVolume = .45f)
         {
             if (current != id) SetShot(id);
-            filmCamera.enabled = id != "opening";
-            if (id == "opening")
-            {
-                if (introPlayer != null)
-                {
-                    introPlayer.SetDirectAudioMute(0, mute);
-                    introPlayer.SetDirectAudioVolume(0, archiveVolume);
-                }
-                return;
-            }
             if (!SpaceShot(id)) PrepareStoryProps();
             bool space = SpaceShot(id);
             bridge.SetActive(!space);
@@ -578,12 +514,6 @@ namespace Homecoming
             {
                 television.prepareCompleted -= OnVideoPrepared;
                 television.errorReceived -= OnVideoError;
-            }
-            if (introPlayer != null)
-            {
-                introPlayer.loopPointReached -= IntroEnded;
-                introPlayer.errorReceived -= IntroErrored;
-                introPlayer.prepareCompleted -= IntroPrepared;
             }
             if (videoTexture != null) { videoTexture.Release(); Destroy(videoTexture); }
             if (videoTexture != null && televisionMaterial != null) Destroy(televisionMaterial);

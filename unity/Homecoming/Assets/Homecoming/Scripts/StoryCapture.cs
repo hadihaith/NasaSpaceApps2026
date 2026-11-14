@@ -56,9 +56,6 @@ namespace Homecoming
             }
             yield return new WaitForSecondsRealtime(1);
             Show("Home"); yield return Capture("01-title");
-            Frame("opening", 2.4f);
-            director.stage.FailIntro();
-            yield return Capture("opening");
             Frame("party", 1.5f);
             yield return Capture("02-party");
             Frame("correction", 2);

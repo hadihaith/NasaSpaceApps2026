@@ -5,7 +5,7 @@ The Unity game for the NASA Space Apps 2026 challenge
 Join the crew, run climate experiments, and file evidence from real NASA records.
 
 Open `unity/Homecoming` in **Unity 6000.6.9f1**. Start with
-`Assets/Scenes/Story.unity` and press **Play**, or open `Assets/Scenes/Simulation.unity`
+`Assets/Scenes/Intro.unity` and press **Play**, or open `Assets/Scenes/Simulation.unity`
 for direct lab access. The [Unity guide](unity/README.md) covers the macOS build and investigation controls.
 
 ## Browser companion

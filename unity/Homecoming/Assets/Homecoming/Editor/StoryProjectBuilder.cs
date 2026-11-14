@@ -181,13 +181,18 @@ namespace Homecoming.Editor
             PlayerSettings.defaultScreenHeight = 900;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
             PlayerSettings.runInBackground = false;
+            PlayerSettings.SplashScreen.show = false;
             PlayerSettings.colorSpace = ColorSpace.Linear;
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneOSX, true);
             AssetDatabase.SaveAssets();
             EditorSceneManager.SaveScene(scene, "Assets/Scenes/Story.unity");
             const string storyPath = "Assets/Scenes/Story.unity";
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(storyPath, true) }
-                .Concat(EditorBuildSettings.scenes.Where(entry => entry.path != storyPath)).ToArray();
+            EditorBuildSettings.scenes = new[]
+                {
+                    new EditorBuildSettingsScene(IntroPlayback.ScenePath, true),
+                    new EditorBuildSettingsScene(storyPath, true)
+                }
+                .Concat(EditorBuildSettings.scenes.Where(entry => entry.path != storyPath && entry.path != IntroPlayback.ScenePath)).ToArray();
             Selection.activeGameObject = directorGo;
             Debug.Log("HOMECOMING_BUILD_OK: Story.unity, 14 shots, 3 animated character rigs.");
         }

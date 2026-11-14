@@ -96,6 +96,89 @@ namespace Homecoming.Field
 
 #if HOMECOMING_FIELD_PREVIEW || UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        static void StartSiteTransferValidation()
+        {
+            var args = Environment.GetCommandLineArgs();
+            int flag = Array.IndexOf(args,"--site-transfer-preview");
+            if (flag < 0 || flag+1 >= args.Length) return;
+            var field = FindAnyObjectByType<FieldSimulation>();
+            if (field != null) field.StartCoroutine(field.ValidateSiteTransfers(args[flag+1]));
+        }
+
+        IEnumerator ValidateSiteTransfers(string output)
+        {
+            investigationTest = caseLoaded = capture = muted = true;
+            reduced = false;
+            Application.runInBackground = true;
+            Directory.CreateDirectory(output);
+            yield return null;
+            Select(0);
+            var camera = world.fieldCamera;
+            var start = camera.transform.position;
+            var startRotation = camera.transform.rotation;
+            var revision = Campaign.Current.id;
+            var branch = Campaign.ActiveBranchId;
+            var startSite = Campaign.SelectedSiteId;
+            settings.heat = 3;
+            CheckInvestigation(!BeginSiteTransfer(0) && BeginSiteTransfer(3) && !BeginSiteTransfer(4),
+                "The transfer did not reject the current site or overlapping input");
+            TickSiteTransfer(0);
+            CheckInvestigation(Vector3.Distance(camera.transform.position,start) < .001f &&
+                Quaternion.Angle(camera.transform.rotation,startRotation) < .01f && !world.globe.activeSelf,
+                "Departure did not start at the current terrain camera pose");
+            TickSiteTransfer(OrbitExitEnd+.3f);
+            CheckInvestigation(transferTerrainReady && !world.globe.activeSelf && Campaign.SelectedSiteId == startSite,
+                "The destination preview changed the committed site before arrival");
+            FinishSiteTransfer(false);
+            CheckInvestigation(view == View.Lab && Campaign.SelectedSiteId == startSite && settings.heat == 3 &&
+                Campaign.Current.id == revision && Vector3.Distance(camera.transform.position,start) < .001f,
+                "Cancel did not restore the originating terrain, draft and camera");
+
+            CheckInvestigation(BeginSiteTransfer(3),"The cinematic transfer could not start");
+            yield return new WaitUntil(() => transferTime >= .9f);
+            yield return CaptureInvestigation(output,"01-terrain-pullback");
+            yield return new WaitUntil(() => transferTime >= 3.65f);
+            CheckInvestigation(world.globe.activeSelf && world.stars.activeSelf && transferVeil == 0 &&
+                Campaign.SelectedSiteId == startSite,"Orbital travel did not reveal the clear globe or committed early");
+            yield return CaptureInvestigation(output,"02-globe-transit");
+            yield return new WaitUntil(() => transferTime >= 6.7f);
+            CheckInvestigation(transferTerrainReady && !world.globe.activeSelf,"Terrain was not visible on final approach");
+            yield return CaptureInvestigation(output,"03-destination-descent");
+            yield return new WaitUntil(() => view == View.Lab);
+            CheckInvestigation(Campaign.SelectedSiteId == data.regions[3].id && settings.heat == 0,
+                "Arrival did not select the destination or restore its own inherited weather");
+            yield return CaptureInvestigation(output,"04-destination-lab");
+
+            for (int from = 0; from < data.regions.Length; from++)
+            for (int to = 0; to < data.regions.Length; to++)
+            {
+                if (from == to) continue;
+                Select(from);
+                CheckInvestigation(BeginSiteTransfer(to),"Could not begin a preset transfer");
+                TickSiteTransfer(OrbitEntryEnd);
+                var origin = new Vector2(Region.latitude,Region.longitude);
+                var target = data.regions[to];
+                var destination = new Vector2(target.latitude,target.longitude);
+                bool Centered(Vector2 point) => world.ProjectFootprint(point,point,0,out var projected) &&
+                    Vector2.Distance(new Vector2(projected.x,projected.y),new Vector2(Screen.width,Screen.height)*.5f) < 2;
+                CheckInvestigation(Centered(origin),"The origin was not centered at orbital entry");
+                TickSiteTransfer(OrbitTravelEnd-OrbitEntryEnd+.01f);
+                CheckInvestigation(Centered(destination),"The destination was not centered at orbital exit");
+                FinishSiteTransfer(true);
+                CheckInvestigation(Campaign.SelectedSiteId == target.id && Campaign.Current.id == revision && Campaign.ActiveBranchId == branch,
+                    "Skipping a preset transfer changed campaign history or selected the wrong site");
+            }
+            reduced = true;
+            CheckInvestigation(BeginSiteTransfer(0) && view == View.Lab && Campaign.SelectedSiteId == startSite &&
+                Campaign.Current.id == revision && Campaign.RunIds.Length == 0 && !world.globe.activeSelf,
+                "Reduced motion did not select the site immediately without committing a scenario");
+            Debug.Log("SITE_TRANSFER_OK: cinematic frames, all 30 preset routes, geographic centering, camera continuity, cancel, skip, reduced motion and campaign isolation.");
+#if !UNITY_EDITOR
+            Application.Quit(0);
+#endif
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void StartInvestigationValidation()
         {
             string[] args = Environment.GetCommandLineArgs();

@@ -1,9 +1,10 @@
 # The Great Homecoming — Unity
 
 Open **`unity/Homecoming`** in Unity Hub with **6000.6.9f1**. Open
-`Assets/Scenes/Story.unity` and press **Play**. The Unity macOS player is the Homecoming release.
+`Assets/Scenes/Intro.unity` and press **Play**. The Unity macOS player is the Homecoming release.
 
-The 15-shot Unity story opens with the full AUK Space Apps title film. The rest of the story follows
+The game opens in a separate 2D scene with the full AUK Space Apps title film. The story scene
+loads in the background and activates after the video. The 14-shot story follows
 Apollo 11, the crew's misunderstanding, the party,
 the 57-year wait, Artemis, recruitment, the laboratory introduction, the final
 hearing and the deflating balloon. Recruitment and the epilogue retain the
@@ -23,6 +24,7 @@ are used.
 - Scene descriptions and reduced camera motion are available in playback options.
 - Designation, story progress and options are saved locally using `PlayerPrefs`.
   **Start a new operation** clears only this story's designation and progress.
+- During the AUK intro, **Space** pauses, **Right Arrow** or **Esc** skips, and **M** toggles sound.
 - The AUK and Apollo clips are bundled. The title card and archival still are available
   when their videos cannot play. Dialogue has captions and uses the packaged voice takes.
 - The current spoken takes use local eSpeak NG synthesis. `VoiceTakes.json` lists the
@@ -30,7 +32,7 @@ are used.
 
 ## Field simulation
 
-Open **`Assets/Scenes/Story.unity`** for the full story and choose **Enter laboratory** after the briefing. Open **`Assets/Scenes/Simulation.unity`** and press **Play** to start in the lab. The curated records and scenarios work offline.
+Open **`Assets/Scenes/Intro.unity`** for the full opening and choose **Enter laboratory** after the briefing. Open **`Assets/Scenes/Story.unity`** to preview the story directly or **`Assets/Scenes/Simulation.unity`** to start in the lab. The curated records and scenarios work offline.
 
 ### Play the cases
 
@@ -46,6 +48,10 @@ monitor. Drag a dial or focus it and use the arrow keys. **Preview 12 months**
 opens the simulation playback. **Advance & save 12 months** commits the weather
 and end state to the active branch.
 
+**Change site** pulls back from the terrain, crosses the KU Exchange Earth globe,
+and descends to the destination. **Space** skips the flight and **Esc** cancels it.
+Reduced motion changes sites immediately.
+
 ### Read the numbers
 
 The Arizona scenario uses a 150 mm teaching bucket and FAO-56 reference evapotranspiration, driven by monthly NASA POWER climate normals with a documented estimate of temperature range. The 150 mm capacity is uncalibrated. The model starts from a normals-based spin-up, then carries local storage and weather forward. The other five sites and migrated v1 snapshots use illustrative indices. Ground visuals are illustrative throughout. The paired flight shows a historical comparison. The Potomac routing screen and Phoenix benchmark replay remain research checks. [Historical evidence and provenance](../docs/homecoming-evidence.md) · [Routing and forecast verification](../docs/homecoming-routing-forecast.md)
@@ -54,7 +60,7 @@ Campaign data and exported JSON reports use Unity's application data folder. On 
 
 ### Build and check
 
-Run `node scripts/prepare-unity-simulation.mjs --check` from the repository root to verify the pinned pack. Run without `--check` to regenerate it. **Homecoming → Field simulation → Build scene** recreates `Simulation.unity`. **Homecoming → Build macOS player** builds the complete game with `Story.unity` first and `Simulation.unity` second. **Homecoming → Field simulation → Build macOS preview** produces a local player with direct lab entry.
+Run `node scripts/prepare-unity-simulation.mjs --check` from the repository root to verify the pinned pack. Run without `--check` to regenerate it. **Homecoming → Field simulation → Build scene** recreates `Simulation.unity`. **Homecoming → Build macOS player** builds the scenes in launch order `Intro`, `Story`, and `Simulation`. **Homecoming → Field simulation → Build macOS preview** produces a local player with direct lab entry.
 
 Run **Homecoming → Field simulation → Validate model and campaign** and
 **Homecoming → Run playback smoke check** before building the release. The latter

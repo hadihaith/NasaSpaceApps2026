@@ -157,6 +157,7 @@ namespace Homecoming.Field
         {
             if (!world.ProjectFootprint(position,position,0,out var point)) return;
             Vector2 p = ScreenToField(point);
+            if (p.x < 0 || p.x > 1600 || p.y < 0 || p.y > 900) return;
             Fill(Box(p.x-6,p.y-6,12,12),color);
             Fill(Box(p.x-1,p.y-1,2,2),Ink);
             Fill(Box(p.x,p.y,1,21),color);

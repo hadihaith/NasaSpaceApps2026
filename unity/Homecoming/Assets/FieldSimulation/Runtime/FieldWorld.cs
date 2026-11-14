@@ -77,8 +77,11 @@ namespace Homecoming.Field
         }
 
         static Quaternion OrbitRotation(float latitude, float longitude) =>
+            OrbitRotation(GlobePoint(latitude, longitude));
+
+        static Quaternion OrbitRotation(Vector3 point) =>
             Quaternion.LookRotation(Vector3.back, Vector3.up) *
-            Quaternion.Inverse(Quaternion.LookRotation(GlobePoint(latitude, longitude), Vector3.up));
+            Quaternion.Inverse(Quaternion.LookRotation(point, Vector3.up));
 
         public void SelectRegion(int index, RegionClimate data)
         {
@@ -446,9 +449,63 @@ namespace Homecoming.Field
 
         public void Overview(float t, bool reduced)
         {
+            var pose = OverviewPose(t,reduced);
             SetField(true);
+            SetCamera(pose,48);
+        }
+
+        static Pose OverviewPose(float t, bool reduced)
+        {
             float drift = reduced ? 0 : Mathf.Sin(t * .23f) * 2.1f;
-            Aim(new Vector3(17 + drift, 19, -33), new Vector3(-7, 1, 17), 48);
+            Vector3 position = new(17 + drift, 19, -33);
+            return new Pose(position, Quaternion.LookRotation(new Vector3(-7, 1, 17) - position));
+        }
+
+        public float TransferDeparture(Pose origin, float fov, float progress)
+        {
+            SetField(true);
+            float t = Smooth(progress);
+            Vector3 position = Vector3.Lerp(origin.position,new Vector3(29,137,-58),t);
+            position.x += Mathf.Sin(t*Mathf.PI)*9;
+            Quaternion high = Quaternion.LookRotation(new Vector3(-7,0,17)-new Vector3(29,137,-58));
+            SetCamera(new Pose(position,Quaternion.Slerp(origin.rotation,high,t)),Mathf.Lerp(fov,54,t));
+            return Smooth((progress-.64f)/.36f);
+        }
+
+        public void TransferOrbit(RegionClimate from, RegionClimate to, float route, float close)
+        {
+            SetField(false);
+            var point = Vector3.Slerp(GlobePoint(from.latitude,from.longitude),GlobePoint(to.latitude,to.longitude),Smooth(route));
+            globe.transform.rotation = OrbitRotation(point);
+            Vector3 center = globe.transform.position;
+            float radius = globeRadius * globe.transform.lossyScale.x;
+            float distance = radius * Mathf.Lerp(3.4f,1.12f,close);
+            Aim(center + Vector3.back*distance,center,43);
+        }
+
+        public float TransferArrival(float labTime, bool reduced, float progress)
+        {
+            SetField(true);
+            float t = Smooth(progress);
+            var destination = OverviewPose(labTime,reduced);
+            Vector3 high = new(31,129,-49);
+            Vector3 position = Vector3.Lerp(high,destination.position,t);
+            position.x += Mathf.Sin(t*Mathf.PI)*7;
+            Quaternion rotation = Quaternion.Slerp(Quaternion.LookRotation(new Vector3(-7,0,17)-high),destination.rotation,t);
+            SetCamera(new Pose(position,rotation),Mathf.Lerp(54,48,t));
+            return 1-Smooth(progress/.37f);
+        }
+
+        public void RestoreTerrainCamera(Pose pose, float fov)
+        {
+            SetField(true);
+            SetCamera(pose,fov);
+        }
+
+        void SetCamera(Pose pose, float fov)
+        {
+            fieldCamera.transform.SetPositionAndRotation(pose.position,pose.rotation);
+            fieldCamera.fieldOfView = fov;
         }
 
         public float Descend(float seconds, bool reduced)

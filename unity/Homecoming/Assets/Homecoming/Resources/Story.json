@@ -1,12 +1,6 @@
 {
   "prologue": [
     {
-      "id": "opening",
-      "seconds": 27.2,
-      "description": "The AUK Space Apps Kuwait intro video plays before the story begins.",
-      "cues": []
-    },
-    {
       "id": "signal",
       "description": "A pinprick in the dark becomes the Moon as the camera races toward it. A radio signal crackles.",
       "seconds": 4.5,

@@ -25,8 +25,9 @@ namespace Homecoming.Editor
             stage.ApplyTypography();
             _ = stage.Environment;
             var story = JsonUtility.FromJson<StoryScript>(director.script.text);
-            Require(story.prologue.Length == 12 && story.briefing.Length == 1 && story.ending.Length == 2, "All 15 source shots exist");
-            Require(story.prologue.Select(s => s.id).Distinct().Count() == 12, "Unique prologue shots");
+            Require(story.prologue.Length == 11 && story.briefing.Length == 1 && story.ending.Length == 2, "All 14 story shots exist");
+            Require(story.prologue.Select(s => s.id).Distinct().Count() == story.prologue.Length, "Unique prologue shots");
+            Require(story.prologue[0].id == "signal", "The story starts on the Moon after the intro scene");
             foreach (var shot in story.prologue.Concat(story.briefing).Concat(story.ending))
             {
                 Require(shot.seconds > 0 && !string.IsNullOrWhiteSpace(shot.description), "Valid shot " + shot.id);
@@ -40,9 +41,9 @@ namespace Homecoming.Editor
                     }
                 }
             }
-            Require(Mathf.Abs(story.prologue.Sum(s => s.seconds) - 74.4f) < .001f, "Prologue matches shared cut");
-            var intro = Resources.Load<UnityEngine.Video.VideoClip>("Film/auk-intro");
-            Require(intro != null && Math.Abs(intro.length - story.prologue[0].seconds) < .05, "AUK intro movie matches opening duration");
+            Require(Mathf.Abs(story.prologue.Sum(s => s.seconds) - 47.2f) < .001f, "Prologue matches authored cut");
+            var intro = Resources.Load<UnityEngine.Video.VideoClip>(IntroPlayback.VideoPath);
+            Require(intro != null && Math.Abs(intro.length - 27.2) < .05, "AUK intro retains the complete movie");
             Require(intro.width == 1920 && intro.height == 1080, "AUK intro retains the original 1080p frame");
             Require(Mathf.Abs(story.ending.Sum(s => s.seconds) - 10.2f) < .001f, "Ending matches shared cut");
             foreach (StoryEvidence kind in Enum.GetValues(typeof(StoryEvidence)))
@@ -72,7 +73,7 @@ namespace Homecoming.Editor
             var pressHand = stage.crew[0].rig.GetComponentsInChildren<Transform>().First(t => t.name == "hand.L");
             var pressTarget = stage.switchProp.transform.TransformPoint(new Vector3(0, .28f, 0));
             Require(Vector3.Distance(pressHand.position, pressTarget) < .12f, "Wrist reaches the physical switch");
-            Require(EditorBuildSettings.scenes.FirstOrDefault(s => s.enabled)?.path == ScenePath, "Story starts the regular build");
+            RequireBootOrder(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray());
             foreach (var renderer in Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include))
                 foreach (var material in renderer.sharedMaterials) Require(material != null && material.shader != null && material.shader.isSupported, "Material " + renderer.name);
 
@@ -205,9 +206,7 @@ namespace Homecoming.Editor
         static void BuildMacPlayer(BuildOptions options)
         {
             var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
-            Require(scenes.FirstOrDefault() == ScenePath &&
-                scenes.Any(scene => Path.GetFileNameWithoutExtension(scene) == StorySession.SimulationScene),
-                "Build starts in Story and includes the laboratory");
+            RequireBootOrder(scenes);
             var output = Path.GetFullPath(Path.Combine(Application.dataPath, "../Builds/The Great Homecoming.app"));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
@@ -216,6 +215,14 @@ namespace Homecoming.Editor
             if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
                 throw new InvalidOperationException("Player build failed: " + report.summary.result);
             Debug.Log("HOMECOMING_PLAYER_OK: " + output);
+        }
+
+        static void RequireBootOrder(string[] scenes)
+        {
+            Require(scenes.Length >= 3 && scenes[0] == IntroPlayback.ScenePath && scenes[1] == ScenePath &&
+                scenes.Any(scene => Path.GetFileNameWithoutExtension(scene) == StorySession.SimulationScene),
+                "Build starts in Intro, preloads Story, and includes the laboratory");
+            Require(!PlayerSettings.SplashScreen.show, "The AUK video is the first player presentation");
         }
 
         [MenuItem("Homecoming/Run playback smoke check")]
@@ -317,7 +324,7 @@ namespace Homecoming.Editor
                         Require(returned != null && returned.CurrentShot == "hearing", "Return API starts final hearing after scene reload");
                         Require(StorySession.HearingEvidence == StoryEvidence.Historical, "Hearing received the evidence type");
                         Require(!StorySession.ConsumeHearingRequest(), "Return request consumed once");
-                        Debug.Log("HOMECOMING_SMOKE_OK: 15 story shots, discovery cutscene, deterministic atmosphere, unclipped score, motion options, pause, chapter routes, save, preview isolation, simulation-return scene reload.");
+                        Debug.Log("HOMECOMING_SMOKE_OK: 14 story shots, discovery cutscene, deterministic atmosphere, unclipped score, motion options, pause, chapter routes, save, preview isolation, simulation-return scene reload.");
                     }
                     catch (Exception error) { reloadResult = 1; Debug.LogException(error); }
                     FinishSmoke(reloadResult, recruit, briefing, ending);

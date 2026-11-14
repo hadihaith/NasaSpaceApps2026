@@ -30,7 +30,6 @@ namespace Homecoming
         string sequenceName, designation = "";
         int shotIndex, cueIndex;
         float shotTime, pageTime;
-        float introStall;
         bool paused, preview, captions = true, descriptions, reducedMotion;
         StorySound sound;
         float Scale => Mathf.Min(Screen.width / 1600f, Screen.height / 900f);
@@ -93,11 +92,6 @@ namespace Homecoming
             }
             stage.SetShot(CurrentShot);
             sound.SetShot(CurrentShot, stage);
-            if (CurrentShot == "opening")
-            {
-                introStall = 0;
-                stage.StartIntro(reducedMotion);
-            }
             stage.SetPaused(paused);
             stage.Evaluate(CurrentShot, shotTime, reducedMotion, sound.Muted);
         }
@@ -147,26 +141,13 @@ namespace Homecoming
                 if (!paused)
                 {
                     var shot = sequence[shotIndex];
-                    if (shot.id == "opening" && !stage.IntroFailed)
-                    {
-                        if (stage.IntroFinished) { Advance(); return; }
-                        float currentTime = stage.IntroTime;
-                        introStall = currentTime > shotTime ? 0 : introStall + Time.unscaledDeltaTime;
-                        if (introStall > 4.5f)
-                        {
-                            shotTime = 0;
-                            stage.FailIntro();
-                        }
-                        else shotTime = currentTime;
-                    }
-                    else shotTime += Time.unscaledDeltaTime;
+                    shotTime += Time.unscaledDeltaTime;
                     var spoken = shot.ActiveLine(shotTime, StorySession.HearingEvidence);
                     sound.UpdateDialogue(spoken?.id, spoken == null ? 0 : shotTime - spoken.at,
                         spoken == null ? 0 : spoken.end - shotTime);
                     while (shot.cues != null && cueIndex < shot.cues.Length && shotTime >= shot.cues[cueIndex].at)
                         sound.Cue(shot.cues[cueIndex++].name);
-                    float duration = shot.id == "opening" && stage.IntroFailed ? 3.2f : shot.seconds;
-                    if (shotTime >= duration && (shot.id != "opening" || stage.IntroFailed)) Advance();
+                    if (shotTime >= shot.seconds) Advance();
                 }
             }
             else

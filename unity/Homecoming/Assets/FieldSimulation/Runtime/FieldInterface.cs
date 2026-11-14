@@ -70,6 +70,7 @@ namespace Homecoming.Field
                 case View.Journal: DrawJournal(); break;
                 case View.Archive: DrawArchive(); break;
                 case View.Report: if (LegacyCapture) DrawReport(); else DrawInvestigation(); break;
+                case View.SiteTransfer: DrawSiteTransfer(); break;
             }
             if (demoActive) DrawDemoControls();
             GUI.matrix = matrix;
@@ -196,7 +197,9 @@ namespace Homecoming.Field
                 for (int i = 0; i < data.regions.Length; i++)
                     if (Button(Box(60,392 + i*39,278,35),data.regions[i].name,false,siteIndex == i,true,17))
                     {
-                        Select(i); showSites = branchComparisonOpen = false;
+                        if (LegacyCapture) Select(i);
+                        else BeginSiteTransfer(i);
+                        showSites = branchComparisonOpen = false;
                     }
             }
 
@@ -221,6 +224,50 @@ namespace Homecoming.Field
             Tag(54,836,"1991–2020 NASA POWER NORMALS   /   CONDITIONAL SCENARIOS",White);
             if (Button(Box(1134,828,210,34),reduced ? "Motion reduced" : "Motion full",false,false,true,16)) ToggleMotion();
             if (Button(Box(1355,828,209,34),muted ? "Sound off" : "Sound on",false,false,true,16)) ToggleMute();
+        }
+
+        void DrawSiteTransfer()
+        {
+            var destination = data.regions[transferTarget];
+            if (transferVeil > 0)
+                Fill(Box(0,0,1600,900),Alpha(Rgb("#adcfd5"),transferVeil));
+
+            if (transferTime >= PullbackEnd && transferTime < OrbitExitEnd)
+            {
+                var from = new Vector2(Region.latitude,Region.longitude);
+                var to = new Vector2(destination.latitude,destination.longitude);
+                DrawTransferTrack(from,to);
+                DrawFootprintPin(from,Region.name,White);
+                DrawFootprintPin(to,destination.name,Mint);
+            }
+
+            Fade(Box(0,0,1600,208),Alpha(Ink,.96f),0);
+            Fade(Box(0,682,1600,218),Alpha(Ink,.98f),180);
+            Tag(53,34,"HOMECOMING  /  SITE TRANSFER",Mint);
+            Text(Box(51,59,1225,56),Region.name+" → "+destination.name,44,White,headingFont);
+            Text(Box(54,114,930,32),Coordinates(Region)+"     →     "+Coordinates(destination),19,Dim,dataFont);
+
+            string phase = transferTime < PullbackEnd ? "Climbing from the survey site" :
+                transferTime < OrbitEntryEnd ? "Establishing Earth orbit" :
+                transferTime < OrbitTravelEnd ? "Crossing the globe" : "Approaching the next survey site";
+            Text(Box(54,757,900,46),phase,28,White,headingFont);
+            float progress = transferTime / TransferEnd;
+            Fill(Box(54,825,965,3),Line);
+            Fill(Box(54,825,965*progress,3),Mint);
+
+            bool cancel = Button(Box(1095,797,202,49),"Cancel  /  Esc",false,false,true,21);
+            bool skip = Button(Box(1311,797,235,49),"Skip flight  /  Space",true,false,true,21);
+            if (cancel || skip) FinishSiteTransfer(skip);
+        }
+
+        void DrawTransferTrack(Vector2 from, Vector2 to)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            const int segments = 40;
+            for (int i = 0; i < segments; i+=2)
+                if (world.ProjectFootprint(from,to,i/(float)segments,out var a) &&
+                    world.ProjectFootprint(from,to,(i+.7f)/segments,out var b))
+                    DrawChartSegment(ScreenToField(a),ScreenToField(b),Mint);
         }
 
         void DrawWeatherConsole()

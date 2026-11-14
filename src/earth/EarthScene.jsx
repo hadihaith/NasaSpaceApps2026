@@ -46,12 +46,14 @@ const identity = new Quaternion();
 
 function GlobeControls({ region, autoRotate, reducedMotion, flight }) {
   const { camera, gl, size } = useThree();
+  const immersive = Boolean(flight);
   const controlsRef = useRef(null);
   const focusPending = useRef(true);
   const refocusAfter = useRef(0);
   const distanceBeforeFlight = useRef(null);
   const flightAngle = useRef(0);
   const flightDirection = useRef(new Vector3());
+  const initialized = useRef(false);
   const lookDirection = useMemo(() => {
     const point = regionDirection(region ?? EARTH_REGIONS[0]);
     return point.applyAxisAngle(up, MathUtils.degToRad(-10)).normalize();
@@ -82,14 +84,14 @@ function GlobeControls({ region, autoRotate, reducedMotion, flight }) {
   }, [camera, gl]);
 
   useEffect(() => {
-    const widthRatio = Math.max(1, size.height / Math.max(1, size.width));
+    const widthRatio = Math.max(1, (immersive ? .89 : 1) * size.height / Math.max(1, size.width));
     const snugDistance = 3.92 * widthRatio;
     const controls = controlsRef.current;
     controls.minDistance = 1.96 * widthRatio;
     controls.maxDistance = 7.5 * widthRatio;
     camera.position.setLength(snugDistance);
     controls.update();
-  }, [camera, size.height, size.width]);
+  }, [camera, size.height, size.width, immersive]);
 
   useEffect(() => {
     focusPending.current = true;
@@ -100,6 +102,10 @@ function GlobeControls({ region, autoRotate, reducedMotion, flight }) {
     const controls = controlsRef.current;
     if (!controls) return;
     const step = Math.min(delta, 0.05);
+    if (!initialized.current) {
+      initialized.current = true;
+      if (flight) camera.position.copy(cameraAid.copy(lookDirection).multiplyScalar(camera.position.length()));
+    }
     if (flight) {
       const wide = size.width / Math.max(1, size.height);
       const fit = Math.max(1, .89 / wide);
@@ -225,6 +231,8 @@ function MapFallback({ region, values, loading = false }) {
   );
 }
 
+/** @param {{regionId?: string, environment?: import('../homecoming/model').Environment, onRegionSelect: (region: string) => void,
+ * presentation?: string, flight?: {weather: import('../homecoming/model').Climate, settings: import('../homecoming/model').Settings, running: boolean, pulse: number} | null}} props */
 export function EarthScene({ regionId, environment, onRegionSelect, presentation = 'default', flight = null }) {
   const viewport = useRef(null);
   const [ready, setReady] = useState(false);

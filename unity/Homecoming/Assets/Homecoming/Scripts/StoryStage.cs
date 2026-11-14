@@ -20,11 +20,14 @@ namespace Homecoming
         string current;
         bool videoFailed;
         float videoPrepareAge;
+        Transform switchButton;
 
         public bool VideoFallback => videoFailed;
         public void Initialize()
         {
             foreach (var actor in crew) actor.Initialize();
+            switchButton = switchProp.transform.Find("Red pushbutton");
+            ApplyTypography();
             poster = Resources.Load<Texture2D>("Film/apollo11");
             // Clone per player; the asset is never modified by playback.
             televisionMaterial = new Material(televisionMaterial);
@@ -39,6 +42,18 @@ namespace Homecoming
             television.prepareCompleted += OnVideoPrepared;
             television.errorReceived += OnVideoError;
             television.Prepare();
+        }
+        public void ApplyTypography()
+        {
+            // Scene lettering uses the same authored typography as the interface.
+            foreach (var text in GetComponentsInChildren<TextMesh>(true))
+            {
+                bool display = text.name == "Welcome lettering" || text.name == "Broadcast title" || text.name == "Report heading";
+                var font = Resources.Load<Font>(display ? "Fonts/Display" : "Fonts/Mono");
+                if (font == null) continue;
+                text.font = font;
+                text.GetComponent<Renderer>().sharedMaterial = font.material;
+            }
         }
         void OnVideoPrepared(VideoPlayer player)
         {
@@ -81,31 +96,44 @@ namespace Homecoming
             bool old = id == "years" || id == "return" || id == "hearing" || id == "deflate" ||
                 id == "home" || id == "recruit" || id == "epilogue";
             banner.SetActive(old || id == "party");
-            banner.transform.localRotation = Quaternion.Euler(0, 0, old ? -9 : -2);
-            banner.transform.localScale = new Vector3(1, old ? .83f : Mathf.SmoothStep(.02f, 1, (t - .7f) / .5f), 1);
+            float unfurl = Mathf.Clamp01((t - .72f) / .58f);
+            float overshoot = reducedMotion ? 0 : Mathf.Sin(unfurl * Mathf.PI * 2) * Mathf.Exp(-unfurl * 3) * .17f;
+            banner.transform.localRotation = Quaternion.Euler(0, 0, old ? -9 : -2 + (reducedMotion ? 0 : Mathf.Sin(t * 5) * Mathf.Exp(-Mathf.Max(0, t - 1.2f) * 2) * 2));
+            banner.transform.localScale = new Vector3(1, old ? .83f : Mathf.Max(.02f, Mathf.SmoothStep(0, 1, unfurl) + overshoot), 1);
             report.SetActive(id == "hearing");
             switchProp.SetActive(id == "launch");
             balloon.SetActive((old || id == "party") && id != "recruit");
-            float deflate = id == "deflate" ? Mathf.SmoothStep(0, 1, (t - .84f) / 1.8f) : 0;
-            balloon.transform.localPosition = new Vector3(-.65f + deflate * .52f,
-                1.9f - deflate * 1.1f + (reducedMotion ? 0 : Mathf.Sin(t * 1.6f) * .035f), .5f);
-            balloon.transform.localScale = Vector3.Scale(new Vector3(.48f, .62f, .48f), Vector3.one * (1 - deflate * .88f));
-            balloon.transform.localRotation = Quaternion.Euler(0, 0, -deflate * 74);
+            float deflateAge = id == "deflate" ? Mathf.Max(0, t - .84f) : 0;
+            float deflate = Mathf.SmoothStep(0, 1, deflateAge / 1.8f);
+            float flutter = reducedMotion ? 0 : Mathf.Sin(deflateAge * 24) * Mathf.Sin(deflate * Mathf.PI);
+            balloon.transform.localPosition = new Vector3(-.65f + deflate * .7f + flutter * .07f,
+                1.9f - deflate * 1.15f + (reducedMotion ? 0 : Mathf.Sin(t * 1.6f) * .035f), .5f);
+            balloon.transform.localScale = new Vector3(.48f * (1 - deflate * .86f) * (1 + flutter * .15f),
+                .62f * (1 - deflate * .93f), .48f * (1 - deflate * .86f));
+            balloon.transform.localRotation = Quaternion.Euler(0, 0, -deflate * 85 + flutter * 16);
             cannon.SetActive(id != "lab" && id != "ready" && id != "apollo" && id != "recruit");
-            float recoil = id == "party" ? Pulse(t, .75f, .15f) : id == "jam" ? Pulse(t, .58f, .12f) + Pulse(t, 1.08f, .1f) : 0;
-            cannon.transform.localRotation = Quaternion.Euler(-22 - recoil * 14, -18, 0);
-            switchProp.transform.localScale = new Vector3(1, 1 - Pulse(t, .74f, .12f) * .15f, 1);
+            float recoil = id == "party" ? Spring(t - .74f, 8, 24) * 19 : id == "jam" ? Spring(t - .58f, 14, 36) * 7 + Spring(t - 1.08f, 14, 36) * 5 : 0;
+            cannon.transform.localRotation = Quaternion.Euler(-22 - recoil, -18, 0);
+            switchProp.transform.localScale = Vector3.one;
+            if (switchButton != null) switchButton.localPosition = new Vector3(0, .19f - Pulse(t, .74f, .1f) * .075f, 0);
             practical.intensity = old ? .65f : id == "launch" ? Mathf.Lerp(.65f, 3, Mathf.SmoothStep(0, 1, (t - .74f) / .15f)) : 1.5f;
             foreach (var actor in crew) actor.Pose(id, t, reducedMotion);
+            if (id == "hearing" && crew[0].ReportGrip != null)
+            {
+                report.transform.position = crew[0].ReportGrip.position + new Vector3(.03f, .16f, .09f);
+                report.transform.localRotation = Quaternion.Euler(-7, -8 + Mathf.Sin(t * .8f) * 3, -4 - 5 * Mathf.SmoothStep(0, 1, (t - 2.4f) / .6f));
+            }
             for (int i = 0; i < confetti.Length; i++)
             {
                 bool flying = id == "party" && t > .72f;
                 confetti[i].gameObject.SetActive(flying);
                 if (!flying) continue;
                 float age = reducedMotion ? 1 : t - .72f;
-                float vx = Hash(i, 0) * 5 - 2.5f, vy = 2.6f + Hash(i, 1) * 3.5f;
-                confetti[i].localPosition = new Vector3(.8f + vx * age, .9f + vy * age - 2.1f * age * age,
-                    .5f + (Hash(i, 2) - .5f) * age * 2);
+                float vx = Hash(i, 0) * 5 - 2.5f, vy = 2.9f + Hash(i, 1) * 3.5f;
+                float drag = (1 - Mathf.Exp(-age * .8f)) / .8f;
+                float flutterPaper = Mathf.Sin(age * (7 + Hash(i, 3) * 4) + i) * .08f * age;
+                confetti[i].localPosition = new Vector3(.8f + vx * drag + flutterPaper,
+                    Mathf.Max(.025f, .9f + vy * age - 2.6f * age * age), .5f + (Hash(i, 2) - .5f) * drag * 2);
                 confetti[i].localRotation = Quaternion.Euler(age * (80 + i * 7), age * 150, i * 28 + age * 120);
             }
             if (moon.activeSelf) moon.transform.localRotation = Quaternion.Euler(-6, 225 + (reducedMotion ? 0 : t * 7), 8);
@@ -133,6 +161,7 @@ namespace Homecoming
             EvaluateCamera(id, t, reducedMotion);
         }
         static float Hash(int i, int n) => Mathf.Repeat(Mathf.Sin((i + 1) * 12.9898f + n * 78.233f) * 43758.5453f, 1);
+        static float Spring(float age, float damping, float frequency) => age < 0 ? 0 : Mathf.Exp(-age * damping) * Mathf.Sin(age * frequency);
         static float Pulse(float t, float at, float width) => Mathf.Exp(-Mathf.Pow((t - at) / width, 2));
         static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
 
@@ -159,9 +188,24 @@ namespace Homecoming
                 case "deflate": from = V(-.55f, 1.65f, 3.5f); to = V(-.4f, 1.3f, 4); look = V(-.65f, 1.8f, .5f); target = V(-.3f, 1.1f, .5f); duration = 3.5f; break;
                 case "recruit": from = to = V(-2.65f, 1.8f, 5); look = target = V(-2.7f, 1.35f, .8f); break;
             }
-            float p = reduced ? 1 : Mathf.SmoothStep(0, 1, t / duration);
+            float q = Mathf.Clamp01(t / duration);
+            float p = reduced ? 1 : q * q * q * (q * (6 * q - 15) + 10);
+            if (!reduced && id == "reveal") p = 1 - Mathf.Pow(1 - q, 3);
             filmCamera.transform.position = Vector3.Lerp(from, to, p);
+            if (!reduced && id == "signal")
+            {
+                float distance = Mathf.Exp(Mathf.Lerp(Mathf.Log(from.z), Mathf.Log(to.z), p));
+                filmCamera.transform.position = new Vector3(Mathf.Lerp(from.x, to.x, p), Mathf.Lerp(from.y, to.y, p), distance);
+            }
+            if (!reduced && id == "home")
+                filmCamera.transform.position += new Vector3(Mathf.Sin(t * .16f) * .09f, Mathf.Sin(t * .22f) * .025f, 0);
             filmCamera.transform.LookAt(Vector3.Lerp(look, target, p));
+            if (!reduced && id == "launch")
+            {
+                float impulse = Pulse(t, .77f, .11f);
+                filmCamera.transform.position += new Vector3(Mathf.Sin(t * 93) * .025f, Mathf.Cos(t * 77) * .012f, 0) * impulse;
+                filmCamera.transform.Rotate(0, 0, Spring(t - .74f, 12, 24) * .7f, Space.Self);
+            }
             float aspect = filmCamera.aspect;
             if (aspect < 1.55f && id != "apollo" && id != "jam" && id != "deflate")
                 fov = 2 * Mathf.Atan(Mathf.Tan(fov * Mathf.Deg2Rad / 2) * 1.55f / Mathf.Max(.5f, aspect)) * Mathf.Rad2Deg;

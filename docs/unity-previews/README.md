@@ -14,6 +14,13 @@ Validated with the installed **Unity 6000.6.9f1** on macOS.
 - The player's own frame exporter captured title, dialogue, recruitment,
   laboratory handoff, hearing, epilogue, options and credits. The final title fit
   and recruitment composition were visually checked and corrected.
+- The interface now uses Barlow Condensed, Barlow and IBM Plex Mono, with custom
+  controls, focus/hover/press feedback and restrained page entrances. Font sources
+  and open licenses are bundled in the project.
+- The animation pass checks repeatable bone poses after seeking through other
+  shots, and measures the switch-press wrist position against the physical prop.
+  Gestures blend into idles; report grip, recoil, confetti and balloon follow-through
+  are staged from the same shot timeline.
 
 `player/` contains actual game frames, including the development-build watermark.
 The other PNGs are scene-camera renders for inspecting individual shots.

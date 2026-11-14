@@ -50,8 +50,8 @@ function Insignia() {
 export function Homecoming() {
   const raw = useSyncExternalStore(subscribe, readSave, () => null);
   const save = useMemo(() => parseSave(raw), [raw]);
-  const [stageOverride, setStage] = useState<Stage | null>(null);
-  const stage: Stage = stageOverride ?? (save ? "lab" : "home");
+  const [requestedStage, setStage] = useState<Stage>("home");
+  const stage = !save && !["home", "intro", "recruit"].includes(requestedStage) ? "home" : requestedStage;
   const [sound, setSound] = useState(false);
   const [designation, setDesignation] = useState("");
   const [climate, setClimate] = useState<ClimateCatalog | null>(null);
@@ -186,7 +186,7 @@ export function Homecoming() {
   const inFilm = ["intro", "lab-intro", "ending"].includes(stage);
   return <div className={`hc-app hc-stage-${stage}`}>
     {!inFilm && <header className="hc-topbar">
-      <button className="hc-brand" type="button" disabled={busy} onClick={() => navigate(save ? "lab" : "home")}><Insignia /><span>Intergalactic<br />Affection Department</span></button>
+      <button className="hc-brand" type="button" disabled={busy} onClick={() => navigate("home")}><Insignia /><span>Intergalactic<br />Affection Department</span></button>
       {save && !["home", "epilogue"].includes(stage) && <nav aria-label="Ship navigation">
         <button type="button" aria-current={stage === "lab" ? "page" : undefined} disabled={busy} onClick={() => navigate("lab")}>Laboratory</button>
         <button type="button" aria-current={stage === "archive" ? "page" : undefined} disabled={busy || discoveries < 1} title={discoveries ? undefined : "Unlock with your first discovery"} onClick={() => archive()}>Earth Archive</button>
@@ -202,8 +202,8 @@ export function Homecoming() {
           <p className="hc-kicker hc-transmission"><i /> SIGNAL INTERCEPTED · JULY 1969</p>
           <h1><span>THE GREAT</span><em>HOMECOMING</em></h1>
           <p>One human went to the Moon. An alien welcome party made <em>several</em> assumptions.</p>
-          <div className="hc-home-actions"><button type="button" className="hc-primary" onClick={() => save ? navigate("lab") : begin(true)}><span aria-hidden>▶</span> {save ? "Return to the lab" : "Play transmission"}</button>
-          <button type="button" className="hc-secondary" onClick={() => save ? begin(sound) : navigate("recruit")}>{save ? "Replay prologue" : "Skip to recruitment"} <span aria-hidden>→</span></button></div>
+          <div className="hc-home-actions"><button type="button" className="hc-primary" onClick={() => begin(!save || sound)}><span aria-hidden>▶</span> Play transmission</button>
+          <button type="button" className="hc-secondary" onClick={() => navigate(save ? "lab" : "recruit")}>{save ? "Return to the lab" : "Skip to recruitment"} <span aria-hidden>→</span></button></div>
         </div><div className="hc-landing-bottom"><span>NASA SPACE APPS KUWAIT</span><span><i /> MISSION STATUS <b>57 YEARS BEHIND</b></span></div></div>
       </main>}
       {stage === "intro" && <Cinematic beats={PROLOGUE} complete={save ? showLab : showRecruitment} cue={cue} sound={sound} />}

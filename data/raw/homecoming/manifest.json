@@ -1,0 +1,44 @@
+{
+  "files": [
+    {
+      "regionId": "sahel",
+      "file": "data/raw/homecoming/sahel_monthly_1991_2025.json",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M%2CPRECTOTCORR%2CRH2M%2CWS10M%2CGWETROOT&community=AG&longitude=6&latitude=14&start=1991&end=2025&format=JSON",
+      "retrievedUtc": "2026-11-14T12:57:45Z",
+      "bytes": 33137,
+      "sha256": "4fd5e1538ed08e5e258a3f85bdbdbc1dcdf6d0a29bbb3a1328bda8121755e8fe"
+    },
+    {
+      "regionId": "amazon",
+      "file": "data/raw/homecoming/amazon_monthly_1991_2025.json",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M%2CPRECTOTCORR%2CRH2M%2CWS10M%2CGWETROOT&community=AG&longitude=-61&latitude=-7&start=1991&end=2025&format=JSON",
+      "retrievedUtc": "2026-11-14T12:57:48Z",
+      "bytes": 33419,
+      "sha256": "07016cdfb4cc33bc6e198bd3f1f346622794cfb72d62010ca335741a83594ffc"
+    },
+    {
+      "regionId": "mediterranean",
+      "file": "data/raw/homecoming/mediterranean_monthly_1991_2025.json",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M%2CPRECTOTCORR%2CRH2M%2CWS10M%2CGWETROOT&community=AG&longitude=22.6&latitude=39.7&start=1991&end=2025&format=JSON",
+      "retrievedUtc": "2026-11-14T12:57:51Z",
+      "bytes": 33165,
+      "sha256": "030ccf1004ecc2cf8c183e0ee053ad3c8a968bce8c40b046cb521ba528fea46f"
+    },
+    {
+      "regionId": "south-asia",
+      "file": "data/raw/homecoming/south-asia_monthly_1991_2025.json",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M%2CPRECTOTCORR%2CRH2M%2CWS10M%2CGWETROOT&community=AG&longitude=79&latitude=24&start=1991&end=2025&format=JSON",
+      "retrievedUtc": "2026-11-14T12:57:54Z",
+      "bytes": 33328,
+      "sha256": "a6cbb360d2053a4a0fc61fd14f5c082dc1cd44fcaf738c6ef6c139ca8ef8a30d"
+    },
+    {
+      "regionId": "australia",
+      "file": "data/raw/homecoming/australia_monthly_1991_2025.json",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M%2CPRECTOTCORR%2CRH2M%2CWS10M%2CGWETROOT&community=AG&longitude=145&latitude=-27&start=1991&end=2025&format=JSON",
+      "retrievedUtc": "2026-11-14T12:57:57Z",
+      "bytes": 33325,
+      "sha256": "f077cca2ff37ba6b8bce8d251a905bfd817c3e99d4f24af85a8ca02378ac8572"
+    }
+  ]
+}

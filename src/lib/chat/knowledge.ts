@@ -46,9 +46,11 @@ DATA (all real; versions matter)
 - A MODIS vegetation index was planned but skipped because the NASA AppEEARS request queue would take days.
 
 METHODS
-- Trends are tested on yearly values (or monthly values with the seasonal cycle removed). Rate from the Theil-Sen
-  slope with a 95% range. Significance needs BOTH the Mann-Kendall test and a least-squares regression adjusted for
-  autocorrelation to give p < 0.05; one without the other is reported as "mixed evidence".
+- Rates are descriptive Theil-Sen slopes. Significance is not established until Member 4 supplies a review
+  matching the dataset, version, period and time treatment. Never interpret an unavailable p-value as a
+  nonsignificant test. The primary test is conditional OLS; Mann-Kendall is supplementary. Monthly anomalies
+  remain descriptive. Archive annual precipitation is the equal-month mean of monthly totals (mm/month),
+  not annual accumulation. Inferences uses complete-year precipitation totals (mm/year).
 - What-if model: FAO-56 Penman-Monteith reference evapotranspiration (radiation estimated with the Hargreaves formula),
   vapour pressure deficit from temperature and humidity, and a 150 mm monthly soil-water bucket. Changes are applied
   evenly to every month. The vegetation score is illustrative, not a measurement.
@@ -64,13 +66,14 @@ export function assistantInstructions(): string {
     .map((s) => {
       const perDecade = s.trend.sen.slope * 10;
       const unit = s.unit === "fraction (0-1)" ? "" : ` ${s.unit}`;
-      return `- ${s.label} [${s.kind}], ${s.firstYear}-${s.lastYear}: ${perDecade >= 0 ? "+" : ""}${perDecade.toPrecision(2)}${unit} per decade, ${VERDICT[s.trend.strength].text.toLowerCase()} (Mann-Kendall p=${s.trend.mannKendall.p.toPrecision(2)}, adjusted regression p=${s.trend.ols.pAdjusted.toPrecision(2)})`;
+      const test = s.trend.inference.established ? `OLS p=${s.trend.ols.p.toPrecision(2)}` : `p unavailable: ${s.trend.inference.reasons.join(" ")}`;
+      return `- ${s.label} [${s.kind}], ${s.firstYear}-${s.lastYear}: ${perDecade >= 0 ? "+" : ""}${perDecade.toPrecision(2)}${unit} per decade, ${VERDICT[s.trend.strength].text.toLowerCase()} (${test})`;
     })
     .join("\n");
   const city = cityVsRegionWarming();
   const rain = rainAgreement();
   const cityLine = city
-    ? `City vs region (least-squares slopes, which this comparison test uses; they differ slightly from the Theil-Sen rates on the trend board above): Phoenix Airport station warmed ${city.cityPerDecade.toFixed(2)} °C per decade and the surrounding 2-degree region (MERRA-2) ${city.regionPerDecade.toFixed(2)} °C per decade over ${city.from}-${city.to}; the difference is ${city.significant ? "" : "not "}statistically significant (p=${city.p.toPrecision(2)}). If you quote both kinds of rate in one answer, say which method each comes from.`
+    ? `City vs region (descriptive least-squares slopes): Phoenix Airport station ${city.cityPerDecade.toFixed(2)} °C per decade; surrounding 2-degree region (MERRA-2) ${city.regionPerDecade.toFixed(2)} °C per decade over ${city.from}-${city.to}. ${city.p === null ? `Significance not established; p unavailable. ${city.reason}` : `Paired difference OLS p=${city.p.toPrecision(2)}.`} If you quote Theil-Sen and OLS rates together, identify each method.`
     : "";
   const rainLine = `Over ${rain.from}-${rain.to}: ` +
     rain.records.map((r) => `${r.label} ${r.perDecade.toFixed(1)} mm/year per decade (${VERDICT[r.strength].text.toLowerCase()})`).join("; ") + ".";

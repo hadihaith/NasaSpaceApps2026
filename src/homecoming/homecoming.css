@@ -111,7 +111,8 @@
 .hc-landing-bottom img { width: 121px; height: auto; }
 .hc-landing-bottom i, .hc-landing-bottom b { color: #ffc990; margin-right: .32rem; }
 
-body:has(.hc-film) > :is(nav[aria-label="Main"], .chat-widget) { display: none; }
+body:has(.hc-film) > nav[aria-label="Main"],
+body:has(.hc-film) .chat-widget { display: none; }
 .hc-film { position: relative; min-height: 100svh; background: #03030a; overflow: hidden; isolation: isolate; }
 .hc-film-stage, .hc-film-grade, .hc-film-stage .hc-live-stage { position: absolute !important; inset: 0; }
 .hc-film-stage { background-color: #03030a; background-size: cover; background-position: center 56%; }

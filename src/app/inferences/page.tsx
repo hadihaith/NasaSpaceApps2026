@@ -30,8 +30,9 @@ export default function InferencesPage() {
           <h1 className="display mt-3 text-5xl sm:text-6xl">Inferences</h1>
           <p className="mt-3 max-w-[75ch] text-lg text-ink-2">
             What can we actually conclude from {series.length} real records of this desert region? Each record is
-            averaged to one value per year and tested for a straight-line trend. {significant.length} of{" "}
-            {series.length} pass both significance tests.
+            aggregated to one value per complete year. Rates are descriptive until a dataset-specific
+            scientific review establishes that a significance test is appropriate. {significant.length} of{" "}
+            {series.length} currently have an established significant result.
           </p>
         </header>
 
@@ -50,7 +51,7 @@ export default function InferencesPage() {
 
         <section aria-labelledby="clues-heading" className="mt-16">
           <h2 id="clues-heading" className="display text-4xl">
-            Three clues, tested
+            Three descriptive comparisons
           </h2>
           <div className="mt-6 grid gap-6 lg:grid-cols-3">
             {city && (
@@ -63,14 +64,14 @@ export default function InferencesPage() {
                   <strong className="tabular">{signed(city.regionPerDecade, 2)} °C per decade</strong>.
                 </p>
                 <p className="mt-1 text-xs text-ink-2">
-                  Least-squares rates, which this comparison test needs. They differ slightly from the Theil-Sen
-                  rates on the trend board.
+                  Descriptive least-squares rates. The paired comparison uses common-year differences;
+                  its scientific review is pending. These rates differ slightly from the Theil-Sen trend board.
                 </p>
                 <p className="mt-3">
                   The difference, {signed(city.differencePerDecade, 2)} °C per decade, is{" "}
-                  {city.significant ? "statistically significant" : "not statistically significant"} ({pText(city.p)}
+                  {!city.established ? "not assessed for significance" : city.significant ? "statistically significant" : "not statistically significant"} ({pText(city.p)}
                   ).{" "}
-                  {city.significant
+                  {!city.established ? city.reason : city.significant
                     ? city.differencePerDecade > 0
                       ? "On this evidence the city is warming faster than its surroundings."
                       : "On this evidence the city is warming more slowly than its surroundings."
@@ -80,7 +81,7 @@ export default function InferencesPage() {
                   {city.differencePerDecade > 0
                     ? "A faster-warming city fits the urban heat island idea, but a single station can also change because of new instruments or surroundings."
                     : "Cities are often expected to warm faster than their surroundings (the urban heat island), so this result is worth a closer look. A single station can also change because of new instruments or surroundings."}{" "}
-                  This test alone cannot say why.
+                  These records alone cannot say why.
                 </p>
               </article>
             )}
@@ -105,7 +106,9 @@ export default function InferencesPage() {
                 {new Set(rain.records.map((r) => r.direction)).size === 1
                   ? `All three point the same way (${rain.records[0].direction}).`
                   : "They do not even agree on the direction of change."}{" "}
-                {rain.records.some((r) => r.strength === "significant")
+                {rain.records.some((r) => r.strength === "not-established")
+                  ? "Significance is not established for these unreviewed records."
+                  : rain.records.some((r) => r.strength === "significant")
                   ? "At least one finds a significant trend over these years."
                   : "None finds a significant trend over these years, so the honest verdict is: not proven."}
               </p>
@@ -135,8 +138,8 @@ export default function InferencesPage() {
                 ))}
               </ul>
               <p className="mt-3 text-sm text-ink-2">
-                Moving together is not proof that one causes the other. Both may answer to a third factor, such
-                as a strong monsoon season.
+                These correlations are descriptive; no reviewed significance test is supplied. Moving together
+                is not proof that one causes the other. Both may answer to a third factor, such as a strong monsoon season.
               </p>
             </article>
           </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { EARTH_REGIONS } from "@/earth/regions";
+import { evidenceKey } from "@/lib/earth/member3";
 import { Archive } from "./Archive";
 import { Cinematic, Confetti } from "./Cinematic";
 import { CrewLine, CrewPortrait } from "./Crew";
@@ -37,7 +38,8 @@ function parseSave(raw: string | null): Save | null {
   try {
     const save = JSON.parse(raw) as Save;
     return save.version === 1 && typeof save.name === "string" && EARTH_REGIONS.some(({ id }) => id === save.region) &&
-      Array.isArray(save.trials) && Array.isArray(save.investigations) && save.regions && save.discoveries && save.conditions ? save : null;
+      Array.isArray(save.trials) && Array.isArray(save.investigations) && save.regions && save.discoveries && save.conditions
+      ? { ...save, investigations: save.investigations.filter((entry) => entry.evidenceVersion === 1 && entry.datasetId && entry.productVersion) } : null;
   } catch { return null; }
 }
 
@@ -48,8 +50,8 @@ function Insignia() {
 export function Homecoming() {
   const raw = useSyncExternalStore(subscribe, readSave, () => null);
   const save = useMemo(() => parseSave(raw), [raw]);
-  const [stageOverride, setStage] = useState<Stage | null>(null);
-  const stage: Stage = stageOverride ?? (save ? "lab" : "home");
+  const [requestedStage, setStage] = useState<Stage>("home");
+  const stage = !save && !["home", "intro", "recruit"].includes(requestedStage) ? "home" : requestedStage;
   const [sound, setSound] = useState(false);
   const [designation, setDesignation] = useState("");
   const [climate, setClimate] = useState<ClimateCatalog | null>(null);
@@ -74,7 +76,10 @@ export function Homecoming() {
     const controller = new AbortController();
     fetch("/homecoming/regional-climate.json", { signal: controller.signal })
       .then((response) => { if (!response.ok) throw new Error("Climate records unavailable"); return response.json() as Promise<ClimateCatalog>; })
-      .then((data) => { setClimate(data); setDataError(false); })
+      .then((data) => {
+        for (const { id } of EARTH_REGIONS) toNormals(data[id]);
+        setClimate(data); setDataError(false);
+      })
       .catch(() => { if (!controller.signal.aborted) setDataError(true); });
     return () => controller.abort();
   }, [loadAttempt]);
@@ -172,7 +177,7 @@ export function Homecoming() {
   function recordInvestigation(entry: Investigation) {
     const latest = parseSave(readSave());
     if (!latest) return;
-    const duplicate = latest.investigations.some((item) => item.region === entry.region && item.dataset === entry.dataset && item.variable === entry.variable && item.period === entry.period && item.test === entry.test);
+    const duplicate = latest.investigations.some((item) => evidenceKey(item) === evidenceKey(entry));
     if (duplicate) return;
     writeSave({ ...latest, investigations: [...latest.investigations, entry] });
     cue("stamp");
@@ -197,7 +202,7 @@ export function Homecoming() {
   const inFilm = ["intro", "lab-intro", "ending"].includes(stage);
   return <div className={`hc-app hc-stage-${stage}`}>
     {!inFilm && <header className="hc-topbar">
-      <button className="hc-brand" type="button" disabled={busy} onClick={() => navigate(save ? "lab" : "home")}><Insignia /><span>Intergalactic<br />Affection Department</span></button>
+      <button className="hc-brand" type="button" disabled={busy} onClick={() => navigate("home")}><Insignia /><span>Intergalactic<br />Affection Department</span></button>
       {save && !["home", "epilogue"].includes(stage) && <nav aria-label="Ship navigation">
         <button type="button" aria-current={stage === "lab" ? "page" : undefined} disabled={busy} onClick={() => navigate("lab")}>Laboratory</button>
         <button type="button" aria-current={stage === "archive" ? "page" : undefined} disabled={busy || discoveries < 1} title={discoveries ? undefined : "Unlock with your first discovery"} onClick={() => archive()}>Earth Archive</button>
@@ -230,7 +235,7 @@ export function Homecoming() {
       </div></main>}
       {stage === "lab" && save && <main>{normals ? <Lab save={save} normals={normals} busy={busy} playback={playback} run={run} update={update} openArchive={archive} />
         : <div className="hc-section hc-panel hc-loading" role="status">{dataError ? <>The climate records couldn’t load. <button className="hc-primary" onClick={() => setLoadAttempt((n) => n + 1)}>Retry</button></> : "Calibrating historical climate baselines…"}</div>}</main>}
-      {stage === "archive" && save && climate && <main><Archive key={`${archiveTarget.region}/${archiveTarget.variable}`} climate={climate} initialRegion={archiveTarget.region} initialVariable={archiveTarget.variable} investigations={save.investigations} record={recordInvestigation} /></main>}
+      {stage === "archive" && save && <main><Archive key={`${archiveTarget.region}/${archiveTarget.variable}`} initialRegion={archiveTarget.region} initialVariable={archiveTarget.variable} investigations={save.investigations} record={recordInvestigation} /></main>}
       {stage === "book" && save && <main className="hc-section">
         <div className="hc-section-heading"><span className="hc-kicker"><i /> FIELD RECORDS</span><h1>Galactic Encyclopedia</h1><p>{discoveries} of {DISCOVERIES.length} phenomena recorded. Discoveries can happen in any order.</p></div>
         <div className="hc-book-grid">{DISCOVERIES.map((entry) => save.discoveries[entry.id]

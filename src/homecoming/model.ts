@@ -12,7 +12,15 @@ export const TIMES = [{ label: "Month", months: 1 }, { label: "Season", months: 
 export type Duration = typeof TIMES[number]["months"];
 export type Climate = Record<"temperature" | "rain" | "humidity" | "wind" | "soil", number>;
 export type WeatherKey = keyof Climate;
-export interface RegionalClimate { source: string; series: Record<WeatherKey, Record<string, number>> }
+export interface RegionalClimate {
+  source: string;
+  baseline: {
+    startYear: number; endYear: number; monthly: Climate[];
+    counts: Record<WeatherKey, number[]>;
+    seriesIds: Record<WeatherKey, string>;
+    units: Record<WeatherKey, string>;
+  };
+}
 export type ClimateCatalog = Record<string, RegionalClimate>;
 export type Normals = Record<string, Climate[]>;
 
@@ -54,12 +62,13 @@ export const DISCOVERIES: Discovery[] = [
 export const DISCOVERY_BY_ID = Object.fromEntries(DISCOVERIES.map((entry) => [entry.id, entry]));
 
 export function toNormals(record: RegionalClimate): Climate[] {
-  return Array.from({ length: 12 }, (_, month) => Object.fromEntries(WEATHER_KEYS.map((key) => {
-    const values = Object.entries(record.series[key])
-      .filter(([date]) => +date.slice(0, 4) <= 2020 && +date.slice(-2) === month + 1)
-      .map(([, value]) => value);
-    return [key, values.reduce((sum, value) => sum + value, 0) / values.length];
-  })) as Climate);
+  const b = record.baseline;
+  if (!b || b.startYear !== 1991 || b.endYear !== 2020 || b.monthly.length !== 12 || b.units.rain !== "mm/month" ||
+      WEATHER_KEYS.some((key) => b.counts[key]?.length !== 12 || b.counts[key].some((n) => n < 20)) ||
+      b.monthly.some((month) => WEATHER_KEYS.some((key) => !Number.isFinite(month[key])))) {
+    throw new Error("Expected documented 1991–2020 monthly normals and precipitation in mm/month.");
+  }
+  return b.monthly;
 }
 
 export function initialState(normals: Climate[]): RegionState {
@@ -79,6 +88,13 @@ export interface Trial {
   outcome: "discovery" | "change" | "quiet";
 }
 export interface Investigation {
+  evidenceVersion?: 1;
+  datasetId?: string;
+  productVersion?: string;
+  mode?: "annual" | "anomaly" | "month";
+  month?: number;
+  providerKind?: "station" | "satellite" | "reanalysis";
+  inferenceStatus?: "not-established";
   region: string;
   dataset: string;
   variable: string;

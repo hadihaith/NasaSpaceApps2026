@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "generatedUtc": "2026-11-14T09:19:38Z",
+  "generatedUtc": "2026-11-14T13:06:08Z",
   "generatedBy": "scripts/process_data.py build",
   "notes": [
     "Real Earth data only. Nothing in this file is simulated or invented.",

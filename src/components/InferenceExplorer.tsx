@@ -111,9 +111,10 @@ export function InferenceExplorer({ series }: { series: ExplorerSeries[] }) {
 
         <p className="mt-4 text-sm text-ink-2">
           {t.n} complete years. 95% range of the rate: {withUnit(signed(t.sen.ci[0] * 10, 2), unit)} to{" "}
-          {withUnit(signed(t.sen.ci[1] * 10, 2), unit)} per decade. Mann-Kendall {pText(t.mannKendall.p)};
-          regression after allowing for year-to-year memory {pText(t.ols.pAdjusted)}. A trend counts as
-          significant only when both tests give p &lt; 0.05.
+          {withUnit(signed(t.sen.ci[1] * 10, 2), unit)} per decade (conditional slope interval).
+          {t.inference.established
+            ? ` Primary OLS test: ${pText(t.ols.p)}.`
+            : ` Significance not established; p-value unavailable. ${t.inference.reasons.join(" ")}`}
         </p>
         <details className="mt-3 text-sm text-ink-2">
           <summary className="cursor-pointer font-bold text-ink">Source and caveats</summary>

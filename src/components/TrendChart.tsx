@@ -33,11 +33,12 @@ interface Props {
   relative: boolean;
   /** Draw the lines in the first time the chart appears */
   animate?: boolean;
+  valueLabel?: string;
 }
 
 const byTime = bisector<SeriesPoint, number>((d) => d.t).center;
 
-export function TrendChart({ series, axisLabel, unit, showMarkers, relative, animate = false }: Props) {
+export function TrendChart({ series, axisLabel, unit, showMarkers, relative, animate = false, valueLabel = "Data values" }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(720);
   const [hoverT, setHoverT] = useState<number | null>(null);
@@ -56,7 +57,7 @@ export function TrendChart({ series, axisLabel, unit, showMarkers, relative, ani
 
   useEffect(() => {
     if (!wrap.current) return;
-    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(280, entry.contentRect.width)));
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(200, entry.contentRect.width)));
     observer.observe(wrap.current);
     return () => observer.disconnect();
   }, []);
@@ -74,16 +75,9 @@ export function TrendChart({ series, axisLabel, unit, showMarkers, relative, ani
     const drawn = series.map((s) => {
       const [s0, s1] = extent(s.points, (d) => d.t) as [number, number];
       const trendAt = (t: number) => s.trend.sen.intercept + s.trend.sen.slope * t - s.offset;
-      // The slope's 95% range, drawn as a wedge pivoting on the middle of the record.
-      const mid = (s0 + s1) / 2;
-      const wedge = [s0, s1].map((t) => ({
-        t,
-        lo: trendAt(mid) + s.trend.sen.ci[0] * (t - mid),
-        hi: trendAt(mid) + s.trend.sen.ci[1] * (t - mid),
-      }));
       for (const d of s.points) values.push(d.v - s.offset);
-      for (const w of wedge) values.push(w.lo, w.hi);
-      return { ...s, s0, s1, trendAt, wedge };
+      values.push(trendAt(s0), trendAt(s1));
+      return { ...s, s0, s1, trendAt };
     });
 
     const [v0, v1] = extent(values) as [number, number];
@@ -147,19 +141,11 @@ export function TrendChart({ series, axisLabel, unit, showMarkers, relative, ani
           ))}
         <li className="flex items-center gap-2">
           <LegendLine color={comparing ? "var(--ink-2)" : series[0].color} thin />
-          {comparing ? "Measured" : `Measured ${series[0].label.toLowerCase()}`}
+          {valueLabel}
         </li>
         <li className="flex items-center gap-2">
           <LegendLine color={comparing ? "var(--ink-2)" : series[0].color} />
           Trend line
-        </li>
-        <li className="flex items-center gap-2">
-          <span
-            className="inline-block h-3 w-5 rounded-sm opacity-25"
-            style={{ background: comparing ? "var(--ink-2)" : series[0].color }}
-            aria-hidden
-          />
-          Range the trend could plausibly lie in (95%)
         </li>
       </ul>
 
@@ -189,23 +175,6 @@ export function TrendChart({ series, axisLabel, unit, showMarkers, relative, ani
               </text>
             ))}
             {relative && <line x2={innerW} y1={y(0)} y2={y(0)} stroke="var(--line-strong)" strokeWidth={1} />}
-
-            {drawn.map((s) => (
-              <polygon
-                key={s.letter}
-                className={fadeInLate}
-                fill={s.color}
-                opacity={0.15}
-                points={[
-                  [x(s.wedge[0].t), y(s.wedge[0].lo)],
-                  [x(s.wedge[1].t), y(s.wedge[1].lo)],
-                  [x(s.wedge[1].t), y(s.wedge[1].hi)],
-                  [x(s.wedge[0].t), y(s.wedge[0].hi)],
-                ]
-                  .map((p) => p.join(","))
-                  .join(" ")}
-              />
-            ))}
 
             {drawn.map((s, i) => (
               <g key={s.letter}>

@@ -743,6 +743,7 @@ def cmd_build(_args):
     for name in ("earth-observations.json", "regions.json", "baselines.json"):
         p = os.path.join(OUT, name)
         print("Wrote %s (%.1f KB)" % (rel(p), os.path.getsize(p) / 1024))
+    release_module().build_release(sys.modules[__name__])
 
 
 # ---------------------------------------------------------------------------
@@ -849,15 +850,27 @@ def cmd_validate(_args):
         print("ERROR:", e)
     if errors:
         sys.exit(1)
+    release_module().validate_release(sys.modules[__name__])
     print("Validation passed.")
+
+
+def release_module():
+    # Explicit path also works with Python's isolated (-I) mode in CI.
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("prepare_member3", os.path.join(ROOT, "scripts", "prepare_member3.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("step", choices=["fetch", "build", "validate", "all"])
+    ap.add_argument("step", choices=["fetch", "fetch-regions", "build", "validate", "all"])
     args = ap.parse_args()
     if args.step in ("fetch", "all"):
         cmd_fetch(args)
+    if args.step in ("fetch-regions", "all"):
+        release_module().fetch_points(sys.modules[__name__])
     if args.step in ("build", "all"):
         cmd_build(args)
     if args.step in ("validate", "all"):

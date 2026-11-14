@@ -1,7 +1,7 @@
 /**
  * Linear trend detection for a time series.
  *
- * Three complementary methods, as the challenge suggests:
+ * Three complementary summaries (not a challenge-mandated combination):
  *  - Mann-Kendall test: is there a consistent direction? (rank based, no normality assumption)
  *  - Theil-Sen slope: how fast, robust to outliers, with a confidence interval
  *  - Least-squares regression: slope, t-test and confidence interval, plus a
@@ -58,9 +58,11 @@ export interface SenResult {
 }
 
 export type Direction = "rising" | "falling" | "flat";
-export type Strength = "significant" | "borderline" | "not-significant";
+export type Strength = "significant" | "borderline" | "not-significant" | "not-established";
 
 export interface TrendResult {
+  inference: { established: boolean; reasons: string[]; method: string };
+  magnitude: number;
   n: number;
   alpha: number;
   spanYears: number;
@@ -72,10 +74,11 @@ export interface TrendResult {
   sen: SenResult;
 }
 
-/** Fewest points for which the tests are worth reporting. */
+/** Application minimum, not a universal scientific sufficiency threshold. */
 export const MIN_POINTS = 10;
 
 export function ols(points: Point[], alpha = 0.05): OlsResult {
+  validatePoints(points, 3, alpha);
   const n = points.length;
   let sumT = 0;
   let sumV = 0;
@@ -98,7 +101,7 @@ export function ols(points: Point[], alpha = 0.05): OlsResult {
   const slope = sxy / sxx;
   const intercept = meanV - slope * meanT;
 
-  const residuals = points.map((p) => p.v - (intercept + slope * p.t));
+  const residuals = points.map((p) => p.v - meanV - slope * (p.t - meanT));
   const sse = residuals.reduce((acc, r) => acc + r * r, 0);
   const df = n - 2;
   const se = Math.sqrt(sse / df / sxx);
@@ -108,7 +111,7 @@ export function ols(points: Point[], alpha = 0.05): OlsResult {
   const r2 = syy === 0 ? 0 : 1 - sse / syy;
 
   // Residuals that resemble their neighbours carry less independent
-  // information than n suggests. Following Santer et al. (2008), shrink n to an
+  // information than n suggests. As an exploratory AR(1) sensitivity, shrink n to an
   // effective sample size and widen the standard error accordingly.
   let num = 0;
   for (let i = 1; i < n; i++) num += residuals[i] * residuals[i - 1];
@@ -141,6 +144,9 @@ export function ols(points: Point[], alpha = 0.05): OlsResult {
 
 /** Mann-Kendall trend test with tie correction and continuity correction. */
 export function mannKendall(values: number[]): MannKendallResult {
+  if (values.length < 2 || values.some((v) => !Number.isFinite(v))) {
+    throw new RangeError("Mann-Kendall needs at least two finite values in time order.");
+  }
   const n = values.length;
   let s = 0;
   for (let i = 0; i < n - 1; i++) {
@@ -165,6 +171,8 @@ export function mannKendall(values: number[]): MannKendallResult {
 
 /** Theil-Sen slope: the median of the slopes between every pair of points. */
 export function senSlope(points: Point[], varS: number, alpha = 0.05): SenResult {
+  validatePoints(points, 2, alpha);
+  if (!Number.isFinite(varS) || varS < 0) throw new RangeError("Invalid rank variance.");
   const n = points.length;
   const slopes = new Float64Array((n * (n - 1)) / 2);
   let k = 0;
@@ -180,63 +188,110 @@ export function senSlope(points: Point[], varS: number, alpha = 0.05): SenResult
 
   // Confidence limits from the Mann-Kendall variance (Gilbert, 1987).
   const c = normalCritical(alpha) * Math.sqrt(varS);
-  const lower = valueAt(sorted, (k - c) / 2 - 1);
-  const upper = valueAt(sorted, (k + c) / 2);
+  // Discrete order-statistic bounds, matching scipy.stats.theilslopes.
+  const lower = valueAt(sorted, Math.round((k - c) / 2) - 1);
+  const upper = valueAt(sorted, Math.round((k + c) / 2));
   return { slope, intercept, ci: [lower, upper] };
 }
 
 export interface SlopeDifference {
-  /** Slope of the first series minus slope of the second */
   difference: number;
-  p: number;
+  p: number | null;
   significant: boolean;
+  established: boolean;
+  reason: string;
+  n?: number;
 }
 
-/**
- * Do two series change at different rates? A t-test on the difference of the
- * two regression slopes, using the autocorrelation-adjusted standard errors.
- * It treats the series as independent, which makes it cautious for
- * neighbouring regions that rise and fall together.
- */
-export function compareSlopes(a: OlsResult, b: OlsResult, alpha = 0.05): SlopeDifference {
+/** Independent-series Welch approximation. Prefer comparePairedSeries for regions. */
+export function compareSlopes(a: OlsResult, b: OlsResult, alpha = 0.05,
+  independenceReviewed = false): SlopeDifference {
+  validateAlpha(alpha);
   const difference = a.slope - b.slope;
-  const se = Math.hypot(a.seAdjusted, b.seAdjusted);
-  const df = a.dfAdjusted + b.dfAdjusted;
-  const p = se === 0 ? (difference === 0 ? 1 : 0) : studentTTwoSidedP(difference / se, df);
-  return { difference, p, significant: p < alpha };
+  const va = a.seAdjusted ** 2;
+  const vb = b.seAdjusted ** 2;
+  const denominator = va ** 2 / a.dfAdjusted + vb ** 2 / b.dfAdjusted;
+  const established = independenceReviewed && denominator > 0 && Number.isFinite(denominator);
+  const df = (va + vb) ** 2 / denominator;
+  const p = established ? studentTTwoSidedP(difference / Math.sqrt(va + vb), df) : null;
+  return { difference, p, significant: p !== null && p < alpha, established,
+    reason: established ? "Welch approximation; independent series assumed." : "Independence or uncertainty has not been established." };
 }
 
-export function analyzeTrend(points: Point[], alpha = 0.05): TrendResult | null {
+export interface InferenceOptions {
+  /** Explicit scientific review of independence, linearity, residual variance and distribution.
+   * This is not a user confidence slider. Default is descriptive analysis only. */
+  assumptionsReviewed?: boolean;
+  /** Monthly anomalies are descriptive until a seasonal inference model is validated. */
+  seasonalAdjustment?: boolean;
+}
+
+/** Analyze the paired A-B series on shared timestamps, retaining spatial covariance. */
+export function comparePairedSeries(a: Point[], b: Point[], alpha = 0.05,
+  options: InferenceOptions = {}): SlopeDifference {
+  validatePoints(a, 2, alpha);
+  validatePoints(b, 2, alpha);
+  const bByTime = new Map(b.map((p) => [p.t, p.v]));
+  const paired = a.filter((p) => bByTime.has(p.t)).map((p) => ({ t: p.t, v: p.v - bByTime.get(p.t)! }));
+  const result = analyzeTrend(paired, alpha, options);
+  const established = result?.inference.established ?? false;
+  return { difference: result?.ols.slope ?? NaN, p: established ? result!.ols.p : null,
+    significant: established && result!.ols.p < alpha, established, n: paired.length,
+    reason: result ? result.inference.reasons.join(" ") || "OLS test of paired A minus B values on common dates." : "Too few shared dates." };
+}
+
+export function analyzeTrend(points: Point[], alpha = 0.05,
+  options: InferenceOptions = {}): TrendResult | null {
+  validateAlpha(alpha);
+  if (points.some((p) => !Number.isFinite(p.t) || !Number.isFinite(p.v))) {
+    throw new RangeError("Times and values must be finite; remove missing values explicitly.");
+  }
+  if (new Set(points.map((p) => p.t)).size !== points.length) throw new RangeError("Duplicate times are not allowed.");
+  if (points.length > 2400) throw new RangeError("This browser analysis supports at most 2400 points.");
   if (points.length < MIN_POINTS) return null;
   const sorted = [...points].sort((a, b) => a.t - b.t);
+  validatePoints(sorted, MIN_POINTS, alpha);
   const regression = ols(sorted, alpha);
   const mk = mannKendall(sorted.map((p) => p.v));
   const sen = senSlope(sorted, mk.varS, alpha);
-
-  const direction: Direction =
-    sen.slope > 0 ? "rising" : sen.slope < 0 ? "falling" : "flat";
-
-  // Call a trend significant only when the rank test and the
-  // autocorrelation-adjusted regression agree. One without the other is borderline.
-  const pMk = mk.p;
-  const pReg = regression.pAdjusted;
-  let strength: Strength = "not-significant";
-  if (pMk < alpha && pReg < alpha) strength = "significant";
-  else if (Math.min(pMk, pReg) < alpha || Math.max(pMk, pReg) < 2 * alpha) {
-    strength = "borderline";
+  const direction: Direction = sen.slope > 0 ? "rising" : sen.slope < 0 ? "falling" : "flat";
+  const reasons: string[] = [];
+  if (!options.assumptionsReviewed) reasons.push("Model assumptions have not been reviewed for this dataset.");
+  if (options.seasonalAdjustment) reasons.push("Monthly anomaly inference requires a validated seasonal model.");
+  const step = sorted[1].t - sorted[0].t;
+  if (sorted.slice(2).some((p, i) => Math.abs(p.t - sorted[i + 1].t - step) > Math.abs(step) * 1e-6)) {
+    reasons.push("Irregular intervals or missing periods require a separate dependence model.");
   }
-
-  return {
-    n: sorted.length,
-    alpha,
-    spanYears: sorted[sorted.length - 1].t - sorted[0].t,
+  // An exploratory flag, not a proof of independence or a calibrated eligibility test.
+  if (Math.abs(regression.r1) > 1.96 / Math.sqrt(sorted.length)) {
+    reasons.push("Residual serial correlation is flagged; ordinary test assumptions may not hold.");
+  }
+  if (regression.se <= Number.EPSILON * Math.max(1, Math.abs(regression.slope))) {
+    reasons.push("Residual variation is zero or numerically negligible; uncertainty cannot be estimated reliably.");
+  }
+  const established = reasons.length === 0;
+  // One prespecified primary test, not a custom combination of multiple p-values.
+  const strength: Strength = !established ? "not-established"
+    : regression.p < alpha ? "significant" : "not-significant";
+  const spanYears = sorted[sorted.length - 1].t - sorted[0].t;
+  return { n: sorted.length, alpha, spanYears,
     mean: sorted.reduce((acc, p) => acc + p.v, 0) / sorted.length,
-    direction,
-    strength,
-    ols: regression,
-    mannKendall: mk,
-    sen,
-  };
+    direction, strength, ols: regression, mannKendall: mk, sen,
+    magnitude: sen.slope * spanYears,
+    inference: { established, reasons, method: "Two-sided OLS slope t-test, conditional on reviewed assumptions" } };
+}
+
+function validateAlpha(alpha: number) {
+  if (!Number.isFinite(alpha) || alpha <= 0 || alpha >= 1) throw new RangeError("alpha must be between 0 and 1.");
+}
+
+function validatePoints(points: Point[], minimum: number, alpha: number) {
+  validateAlpha(alpha);
+  if (points.length < minimum || points.some((p) => !Number.isFinite(p.t) || !Number.isFinite(p.v))) {
+    throw new RangeError(`At least ${minimum} finite points are required.`);
+  }
+  if (new Set(points.map((p) => p.t)).size !== points.length) throw new RangeError("Duplicate times are not allowed.");
+  if (points.some((p, i) => i > 0 && p.t <= points[i - 1].t)) throw new RangeError("Points must be in increasing time order.");
 }
 
 function median(values: number[]): number {

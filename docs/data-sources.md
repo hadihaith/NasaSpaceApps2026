@@ -221,3 +221,21 @@ If the AppEEARS request completes in time, add its per-month statistics CSV as a
 | Vegetation index | MODIS/Terra `MOD13A3` V061, 1 km monthly, from 2000-02 | AppEEARS | Scale factor 0.0001, fill −3000. Use the quality layer to drop bad pixels. kind `satellite` |
 
 This becomes another series with `kind: "satellite"`; the contract does not change.
+
+## 8. Member 3 integration delivery (14 November 2026)
+
+See [the implementation handoff](member-3/handoff.md), [quality summary](member-3/quality-report.md),
+[full quality report](member-3/quality-report.json), and [versioned dataset index](member-3/dataset-index.json).
+The original 13-series Phoenix collection remains canonical. Five additional point requests are now saved
+unchanged in `data/raw/homecoming/` with a separate manifest, checksums and actual retrieval times. They
+are individual POWER grid estimates, not broad-region averages. Build converts their precipitation rates
+using calendar days and generates consistent 1991–2020 simulation normals.
+
+`process_data.py build` now also generates 38 Member 4-compatible files in `data/processed/member4/`,
+a 32-record NASA Archive bundle, and the game's normal-only climate catalog. `validate` verifies these
+outputs against pinned raw inputs and fails on stale derived files. Station exports retain UNKNOWN
+redistribution and remain outside the new Archive bundle. See the handoff for the exact release scope.
+
+The Archive explicitly uses Member 4's equal-month annual mean; rainfall remains mm/month, not mm/year.
+The Inferences page continues to use complete-year rainfall sums. All real-data scientific reviews remain
+pending; QA does not establish statistical significance. The handoff specifies the remaining Member 4 review.

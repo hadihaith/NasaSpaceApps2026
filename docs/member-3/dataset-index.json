@@ -1,0 +1,270 @@
+{
+  "datasets": [
+    {
+      "id": "region_01.merra2.precipitation.member3-v1-10b25fd9bafe",
+      "seriesId": "region_01.merra2.precipitation",
+      "path": "data/processed/member4/region_01.merra2.precipitation.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.merra2.air_temperature_2m.member3-v1-ff4bc680ad16",
+      "seriesId": "region_01.merra2.air_temperature_2m",
+      "path": "data/processed/member4/region_01.merra2.air_temperature_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.merra2.relative_humidity_2m.member3-v1-27ed1af0576d",
+      "seriesId": "region_01.merra2.relative_humidity_2m",
+      "path": "data/processed/member4/region_01.merra2.relative_humidity_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.merra2.wind_speed_10m.member3-v1-0a7a666083ac",
+      "seriesId": "region_01.merra2.wind_speed_10m",
+      "path": "data/processed/member4/region_01.merra2.wind_speed_10m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.merra2.root_zone_soil_wetness.member3-v1-09cd1b08aa3b",
+      "seriesId": "region_01.merra2.root_zone_soil_wetness",
+      "path": "data/processed/member4/region_01.merra2.root_zone_soil_wetness.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.merra2.surface_soil_wetness.member3-v1-7e7f6fc4b88f",
+      "seriesId": "region_01.merra2.surface_soil_wetness",
+      "path": "data/processed/member4/region_01.merra2.surface_soil_wetness.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.imerg.precipitation.member3-v1-774da1656423",
+      "seriesId": "region_01.imerg.precipitation",
+      "path": "data/processed/member4/region_01.imerg.precipitation.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.station.USW00023183.precipitation.member3-v1-2c081cc18dfa",
+      "seriesId": "region_01.station.USW00023183.precipitation",
+      "path": "data/processed/member4/region_01.station.USW00023183.precipitation.json",
+      "inArchive": false,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.station.USW00023183.air_temperature_mean.member3-v1-792aca50e343",
+      "seriesId": "region_01.station.USW00023183.air_temperature_mean",
+      "path": "data/processed/member4/region_01.station.USW00023183.air_temperature_mean.json",
+      "inArchive": false,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.station.USW00023183.air_temperature_daily_max_mean.member3-v1-fc0a08632362",
+      "seriesId": "region_01.station.USW00023183.air_temperature_daily_max_mean",
+      "path": "data/processed/member4/region_01.station.USW00023183.air_temperature_daily_max_mean.json",
+      "inArchive": false,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.station.USW00023183.air_temperature_daily_min_mean.member3-v1-8ae20e818464",
+      "seriesId": "region_01.station.USW00023183.air_temperature_daily_min_mean",
+      "path": "data/processed/member4/region_01.station.USW00023183.air_temperature_daily_min_mean.json",
+      "inArchive": false,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.station.USW00023183.wind_speed.member3-v1-17035ec55032",
+      "seriesId": "region_01.station.USW00023183.wind_speed",
+      "path": "data/processed/member4/region_01.station.USW00023183.wind_speed.json",
+      "inArchive": false,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "region_01.station.USW00023183.relative_humidity.member3-v1-3bd0c81094a5",
+      "seriesId": "region_01.station.USW00023183.relative_humidity",
+      "path": "data/processed/member4/region_01.station.USW00023183.relative_humidity.json",
+      "inArchive": false,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "sahel.merra2.precipitation.member3-v1-ab55a16ab194",
+      "seriesId": "sahel.merra2.precipitation",
+      "path": "data/processed/member4/sahel.merra2.precipitation.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "sahel.merra2.air_temperature_2m.member3-v1-9258baba5b1b",
+      "seriesId": "sahel.merra2.air_temperature_2m",
+      "path": "data/processed/member4/sahel.merra2.air_temperature_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "sahel.merra2.relative_humidity_2m.member3-v1-1073f8a00ec0",
+      "seriesId": "sahel.merra2.relative_humidity_2m",
+      "path": "data/processed/member4/sahel.merra2.relative_humidity_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "sahel.merra2.wind_speed_10m.member3-v1-1de1202fc5b4",
+      "seriesId": "sahel.merra2.wind_speed_10m",
+      "path": "data/processed/member4/sahel.merra2.wind_speed_10m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "sahel.merra2.root_zone_soil_wetness.member3-v1-df9cca44894d",
+      "seriesId": "sahel.merra2.root_zone_soil_wetness",
+      "path": "data/processed/member4/sahel.merra2.root_zone_soil_wetness.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "amazon.merra2.precipitation.member3-v1-4e478222a7e5",
+      "seriesId": "amazon.merra2.precipitation",
+      "path": "data/processed/member4/amazon.merra2.precipitation.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "amazon.merra2.air_temperature_2m.member3-v1-daed41fb2633",
+      "seriesId": "amazon.merra2.air_temperature_2m",
+      "path": "data/processed/member4/amazon.merra2.air_temperature_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "amazon.merra2.relative_humidity_2m.member3-v1-1e9a62c06470",
+      "seriesId": "amazon.merra2.relative_humidity_2m",
+      "path": "data/processed/member4/amazon.merra2.relative_humidity_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "amazon.merra2.wind_speed_10m.member3-v1-5a96ec141350",
+      "seriesId": "amazon.merra2.wind_speed_10m",
+      "path": "data/processed/member4/amazon.merra2.wind_speed_10m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "amazon.merra2.root_zone_soil_wetness.member3-v1-1949b75d5d1c",
+      "seriesId": "amazon.merra2.root_zone_soil_wetness",
+      "path": "data/processed/member4/amazon.merra2.root_zone_soil_wetness.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "mediterranean.merra2.precipitation.member3-v1-4fe9a9df74a8",
+      "seriesId": "mediterranean.merra2.precipitation",
+      "path": "data/processed/member4/mediterranean.merra2.precipitation.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "mediterranean.merra2.air_temperature_2m.member3-v1-dfb7775092c6",
+      "seriesId": "mediterranean.merra2.air_temperature_2m",
+      "path": "data/processed/member4/mediterranean.merra2.air_temperature_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "mediterranean.merra2.relative_humidity_2m.member3-v1-9d1afe4e5d78",
+      "seriesId": "mediterranean.merra2.relative_humidity_2m",
+      "path": "data/processed/member4/mediterranean.merra2.relative_humidity_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "mediterranean.merra2.wind_speed_10m.member3-v1-32f01a48ed97",
+      "seriesId": "mediterranean.merra2.wind_speed_10m",
+      "path": "data/processed/member4/mediterranean.merra2.wind_speed_10m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "mediterranean.merra2.root_zone_soil_wetness.member3-v1-e614b990c39f",
+      "seriesId": "mediterranean.merra2.root_zone_soil_wetness",
+      "path": "data/processed/member4/mediterranean.merra2.root_zone_soil_wetness.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "south-asia.merra2.precipitation.member3-v1-a4e2a2561f63",
+      "seriesId": "south-asia.merra2.precipitation",
+      "path": "data/processed/member4/south-asia.merra2.precipitation.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "south-asia.merra2.air_temperature_2m.member3-v1-a858f3856d3f",
+      "seriesId": "south-asia.merra2.air_temperature_2m",
+      "path": "data/processed/member4/south-asia.merra2.air_temperature_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "south-asia.merra2.relative_humidity_2m.member3-v1-e6d48cbf11b4",
+      "seriesId": "south-asia.merra2.relative_humidity_2m",
+      "path": "data/processed/member4/south-asia.merra2.relative_humidity_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "south-asia.merra2.wind_speed_10m.member3-v1-7bc51d8886a1",
+      "seriesId": "south-asia.merra2.wind_speed_10m",
+      "path": "data/processed/member4/south-asia.merra2.wind_speed_10m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "south-asia.merra2.root_zone_soil_wetness.member3-v1-bd1c87cf95d6",
+      "seriesId": "south-asia.merra2.root_zone_soil_wetness",
+      "path": "data/processed/member4/south-asia.merra2.root_zone_soil_wetness.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "australia.merra2.precipitation.member3-v1-d56b79d5fa00",
+      "seriesId": "australia.merra2.precipitation",
+      "path": "data/processed/member4/australia.merra2.precipitation.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "australia.merra2.air_temperature_2m.member3-v1-8a512c7d0cfb",
+      "seriesId": "australia.merra2.air_temperature_2m",
+      "path": "data/processed/member4/australia.merra2.air_temperature_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "australia.merra2.relative_humidity_2m.member3-v1-81a0bd303ba6",
+      "seriesId": "australia.merra2.relative_humidity_2m",
+      "path": "data/processed/member4/australia.merra2.relative_humidity_2m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "australia.merra2.wind_speed_10m.member3-v1-58a16ce181b4",
+      "seriesId": "australia.merra2.wind_speed_10m",
+      "path": "data/processed/member4/australia.merra2.wind_speed_10m.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "id": "australia.merra2.root_zone_soil_wetness.member3-v1-50a8c629d027",
+      "seriesId": "australia.merra2.root_zone_soil_wetness",
+      "path": "data/processed/member4/australia.merra2.root_zone_soil_wetness.json",
+      "inArchive": true,
+      "reviewStatus": "pending-member-4"
+    }
+  ]
+}

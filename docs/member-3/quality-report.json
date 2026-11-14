@@ -1,0 +1,3684 @@
+{
+  "processingVersion": "member3-v1",
+  "note": "Cross-source monthly correlations are sanity checks and may reflect shared seasonality, not matching trends or causation.",
+  "series": [
+    {
+      "seriesId": "region_01.merra2.precipitation",
+      "datasetId": "region_01.merra2.precipitation.member3-v1-10b25fd9bafe",
+      "kind": "reanalysis",
+      "units": "mm/month",
+      "spatial": {
+        "type": "area-mean",
+        "bbox": {
+          "latMin": 32.5,
+          "latMax": 34.5,
+          "lonMin": -113.0,
+          "lonMax": -111.0
+        },
+        "gridCells": 15,
+        "gridCellCenters": [
+          [
+            -112.5,
+            32.5
+          ],
+          [
+            -111.875,
+            32.5
+          ],
+          [
+            -111.25,
+            32.5
+          ],
+          [
+            -112.5,
+            33.0
+          ],
+          [
+            -111.875,
+            33.0
+          ],
+          [
+            -111.25,
+            33.0
+          ],
+          [
+            -112.5,
+            33.5
+          ],
+          [
+            -111.875,
+            33.5
+          ],
+          [
+            -111.25,
+            33.5
+          ],
+          [
+            -112.5,
+            34.0
+          ],
+          [
+            -111.875,
+            34.0
+          ],
+          [
+            -111.25,
+            34.0
+          ],
+          [
+            -112.5,
+            34.5
+          ],
+          [
+            -111.875,
+            34.5
+          ],
+          [
+            -111.25,
+            34.5
+          ]
+        ],
+        "nativeResolution": "0.5° latitude x 0.625° longitude"
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Area-weighted mean of 15 MERRA-2 grid cells inside the region box, weighted by cos(latitude).",
+        "A month is kept only if cells holding at least half the total weight have data; otherwise null.",
+        "POWER's month '13' (annual value) is dropped.",
+        "Converted from mm/day (monthly mean daily rate) to mm/month by multiplying by the number of days in that month.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Each value averages over roughly 50 km grid cells, so it is smoother than any single place and cooler than the Phoenix urban core.",
+        "Reanalysis can shift when the observing system changes; check large jumps against the station record.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.merra2.air_temperature_2m",
+      "datasetId": "region_01.merra2.air_temperature_2m.member3-v1-ff4bc680ad16",
+      "kind": "reanalysis",
+      "units": "°C",
+      "spatial": {
+        "type": "area-mean",
+        "bbox": {
+          "latMin": 32.5,
+          "latMax": 34.5,
+          "lonMin": -113.0,
+          "lonMax": -111.0
+        },
+        "gridCells": 15,
+        "gridCellCenters": [
+          [
+            -112.5,
+            32.5
+          ],
+          [
+            -111.875,
+            32.5
+          ],
+          [
+            -111.25,
+            32.5
+          ],
+          [
+            -112.5,
+            33.0
+          ],
+          [
+            -111.875,
+            33.0
+          ],
+          [
+            -111.25,
+            33.0
+          ],
+          [
+            -112.5,
+            33.5
+          ],
+          [
+            -111.875,
+            33.5
+          ],
+          [
+            -111.25,
+            33.5
+          ],
+          [
+            -112.5,
+            34.0
+          ],
+          [
+            -111.875,
+            34.0
+          ],
+          [
+            -111.25,
+            34.0
+          ],
+          [
+            -112.5,
+            34.5
+          ],
+          [
+            -111.875,
+            34.5
+          ],
+          [
+            -111.25,
+            34.5
+          ]
+        ],
+        "nativeResolution": "0.5° latitude x 0.625° longitude"
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Area-weighted mean of 15 MERRA-2 grid cells inside the region box, weighted by cos(latitude).",
+        "A month is kept only if cells holding at least half the total weight have data; otherwise null.",
+        "POWER's month '13' (annual value) is dropped.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Each value averages over roughly 50 km grid cells, so it is smoother than any single place and cooler than the Phoenix urban core.",
+        "Reanalysis can shift when the observing system changes; check large jumps against the station record.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.merra2.relative_humidity_2m",
+      "datasetId": "region_01.merra2.relative_humidity_2m.member3-v1-27ed1af0576d",
+      "kind": "reanalysis",
+      "units": "%",
+      "spatial": {
+        "type": "area-mean",
+        "bbox": {
+          "latMin": 32.5,
+          "latMax": 34.5,
+          "lonMin": -113.0,
+          "lonMax": -111.0
+        },
+        "gridCells": 15,
+        "gridCellCenters": [
+          [
+            -112.5,
+            32.5
+          ],
+          [
+            -111.875,
+            32.5
+          ],
+          [
+            -111.25,
+            32.5
+          ],
+          [
+            -112.5,
+            33.0
+          ],
+          [
+            -111.875,
+            33.0
+          ],
+          [
+            -111.25,
+            33.0
+          ],
+          [
+            -112.5,
+            33.5
+          ],
+          [
+            -111.875,
+            33.5
+          ],
+          [
+            -111.25,
+            33.5
+          ],
+          [
+            -112.5,
+            34.0
+          ],
+          [
+            -111.875,
+            34.0
+          ],
+          [
+            -111.25,
+            34.0
+          ],
+          [
+            -112.5,
+            34.5
+          ],
+          [
+            -111.875,
+            34.5
+          ],
+          [
+            -111.25,
+            34.5
+          ]
+        ],
+        "nativeResolution": "0.5° latitude x 0.625° longitude"
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Area-weighted mean of 15 MERRA-2 grid cells inside the region box, weighted by cos(latitude).",
+        "A month is kept only if cells holding at least half the total weight have data; otherwise null.",
+        "POWER's month '13' (annual value) is dropped.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Each value averages over roughly 50 km grid cells, so it is smoother than any single place and cooler than the Phoenix urban core.",
+        "Reanalysis can shift when the observing system changes; check large jumps against the station record.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.merra2.wind_speed_10m",
+      "datasetId": "region_01.merra2.wind_speed_10m.member3-v1-0a7a666083ac",
+      "kind": "reanalysis",
+      "units": "m/s",
+      "spatial": {
+        "type": "area-mean",
+        "bbox": {
+          "latMin": 32.5,
+          "latMax": 34.5,
+          "lonMin": -113.0,
+          "lonMax": -111.0
+        },
+        "gridCells": 15,
+        "gridCellCenters": [
+          [
+            -112.5,
+            32.5
+          ],
+          [
+            -111.875,
+            32.5
+          ],
+          [
+            -111.25,
+            32.5
+          ],
+          [
+            -112.5,
+            33.0
+          ],
+          [
+            -111.875,
+            33.0
+          ],
+          [
+            -111.25,
+            33.0
+          ],
+          [
+            -112.5,
+            33.5
+          ],
+          [
+            -111.875,
+            33.5
+          ],
+          [
+            -111.25,
+            33.5
+          ],
+          [
+            -112.5,
+            34.0
+          ],
+          [
+            -111.875,
+            34.0
+          ],
+          [
+            -111.25,
+            34.0
+          ],
+          [
+            -112.5,
+            34.5
+          ],
+          [
+            -111.875,
+            34.5
+          ],
+          [
+            -111.25,
+            34.5
+          ]
+        ],
+        "nativeResolution": "0.5° latitude x 0.625° longitude"
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Area-weighted mean of 15 MERRA-2 grid cells inside the region box, weighted by cos(latitude).",
+        "A month is kept only if cells holding at least half the total weight have data; otherwise null.",
+        "POWER's month '13' (annual value) is dropped.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Each value averages over roughly 50 km grid cells, so it is smoother than any single place and cooler than the Phoenix urban core.",
+        "Reanalysis can shift when the observing system changes; check large jumps against the station record.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.merra2.root_zone_soil_wetness",
+      "datasetId": "region_01.merra2.root_zone_soil_wetness.member3-v1-09cd1b08aa3b",
+      "kind": "reanalysis",
+      "units": "fraction (0-1)",
+      "spatial": {
+        "type": "area-mean",
+        "bbox": {
+          "latMin": 32.5,
+          "latMax": 34.5,
+          "lonMin": -113.0,
+          "lonMax": -111.0
+        },
+        "gridCells": 15,
+        "gridCellCenters": [
+          [
+            -112.5,
+            32.5
+          ],
+          [
+            -111.875,
+            32.5
+          ],
+          [
+            -111.25,
+            32.5
+          ],
+          [
+            -112.5,
+            33.0
+          ],
+          [
+            -111.875,
+            33.0
+          ],
+          [
+            -111.25,
+            33.0
+          ],
+          [
+            -112.5,
+            33.5
+          ],
+          [
+            -111.875,
+            33.5
+          ],
+          [
+            -111.25,
+            33.5
+          ],
+          [
+            -112.5,
+            34.0
+          ],
+          [
+            -111.875,
+            34.0
+          ],
+          [
+            -111.25,
+            34.0
+          ],
+          [
+            -112.5,
+            34.5
+          ],
+          [
+            -111.875,
+            34.5
+          ],
+          [
+            -111.25,
+            34.5
+          ]
+        ],
+        "nativeResolution": "0.5° latitude x 0.625° longitude"
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Area-weighted mean of 15 MERRA-2 grid cells inside the region box, weighted by cos(latitude).",
+        "A month is kept only if cells holding at least half the total weight have data; otherwise null.",
+        "POWER's month '13' (annual value) is dropped.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Each value averages over roughly 50 km grid cells, so it is smoother than any single place and cooler than the Phoenix urban core.",
+        "Reanalysis can shift when the observing system changes; check large jumps against the station record.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.merra2.surface_soil_wetness",
+      "datasetId": "region_01.merra2.surface_soil_wetness.member3-v1-7e7f6fc4b88f",
+      "kind": "reanalysis",
+      "units": "fraction (0-1)",
+      "spatial": {
+        "type": "area-mean",
+        "bbox": {
+          "latMin": 32.5,
+          "latMax": 34.5,
+          "lonMin": -113.0,
+          "lonMax": -111.0
+        },
+        "gridCells": 15,
+        "gridCellCenters": [
+          [
+            -112.5,
+            32.5
+          ],
+          [
+            -111.875,
+            32.5
+          ],
+          [
+            -111.25,
+            32.5
+          ],
+          [
+            -112.5,
+            33.0
+          ],
+          [
+            -111.875,
+            33.0
+          ],
+          [
+            -111.25,
+            33.0
+          ],
+          [
+            -112.5,
+            33.5
+          ],
+          [
+            -111.875,
+            33.5
+          ],
+          [
+            -111.25,
+            33.5
+          ],
+          [
+            -112.5,
+            34.0
+          ],
+          [
+            -111.875,
+            34.0
+          ],
+          [
+            -111.25,
+            34.0
+          ],
+          [
+            -112.5,
+            34.5
+          ],
+          [
+            -111.875,
+            34.5
+          ],
+          [
+            -111.25,
+            34.5
+          ]
+        ],
+        "nativeResolution": "0.5° latitude x 0.625° longitude"
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Area-weighted mean of 15 MERRA-2 grid cells inside the region box, weighted by cos(latitude).",
+        "A month is kept only if cells holding at least half the total weight have data; otherwise null.",
+        "POWER's month '13' (annual value) is dropped.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Each value averages over roughly 50 km grid cells, so it is smoother than any single place and cooler than the Phoenix urban core.",
+        "Reanalysis can shift when the observing system changes; check large jumps against the station record.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.imerg.precipitation",
+      "datasetId": "region_01.imerg.precipitation.member3-v1-774da1656423",
+      "kind": "satellite",
+      "units": "mm/month",
+      "spatial": {
+        "type": "area-mean",
+        "bbox": {
+          "latMin": 32.5,
+          "latMax": 34.5,
+          "lonMin": -113.0,
+          "lonMax": -111.0
+        },
+        "dataBbox": {
+          "latMin": 32.55,
+          "latMax": 34.45,
+          "lonMin": -112.95,
+          "lonMax": -111.05
+        },
+        "nativeResolution": "0.1° x 0.1°",
+        "method": "Giovanni area average over the 0.1° cells inside the box (Giovanni excludes fill values)."
+      },
+      "quality": {
+        "coverage": [
+          "1998-01",
+          "2025-09"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1998-01",
+        "lastValue": "2025-09",
+        "months": 333,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024
+        ],
+        "excludedAnnualYears": [
+          2025
+        ],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Area average computed by Giovanni; CSV saved unchanged (checksum pinned in scripts/process_data.py).",
+        "Converted from mm/hr (monthly mean rate) to mm/month by multiplying by 24 x the number of days in that month.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Starts in 1998, 17 years after the MERRA-2 and station records, so its trends cover a different period.",
+        "Satellite rain estimates are least reliable for light rain and over complex terrain such as the mountains in the box.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.precipitation",
+      "datasetId": "region_01.station.USW00023183.precipitation.member3-v1-2c081cc18dfa",
+      "kind": "station",
+      "units": "mm/month",
+      "spatial": {
+        "type": "station",
+        "station": {
+          "id": "USW00023183",
+          "name": "PHOENIX AIRPORT, AZ US",
+          "lat": 33.4278,
+          "lon": -112.00365,
+          "elevation_m": 339.2,
+          "wmoId": "72278",
+          "network": "GHCN-Daily (GSN station)"
+        }
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Values as published by NCEI with units=metric; no unit conversion.",
+        "Months NCEI left blank are null. daysMissing (1-5) is copied from the GSOM attribute field when present.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "A single airport station in a large city. Its trend mixes regional climate with urban growth (urban heat island) and any instrument or siting changes.",
+        "A point measurement: do not compare its values directly with the area-mean reanalysis without saying so.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "unknown",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.air_temperature_mean",
+      "datasetId": "region_01.station.USW00023183.air_temperature_mean.member3-v1-792aca50e343",
+      "kind": "station",
+      "units": "°C",
+      "spatial": {
+        "type": "station",
+        "station": {
+          "id": "USW00023183",
+          "name": "PHOENIX AIRPORT, AZ US",
+          "lat": 33.4278,
+          "lon": -112.00365,
+          "elevation_m": 339.2,
+          "wmoId": "72278",
+          "network": "GHCN-Daily (GSN station)"
+        }
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Values as published by NCEI with units=metric; no unit conversion.",
+        "Months NCEI left blank are null. daysMissing (1-5) is copied from the GSOM attribute field when present.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "A single airport station in a large city. Its trend mixes regional climate with urban growth (urban heat island) and any instrument or siting changes.",
+        "A point measurement: do not compare its values directly with the area-mean reanalysis without saying so.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "unknown",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.air_temperature_daily_max_mean",
+      "datasetId": "region_01.station.USW00023183.air_temperature_daily_max_mean.member3-v1-fc0a08632362",
+      "kind": "station",
+      "units": "°C",
+      "spatial": {
+        "type": "station",
+        "station": {
+          "id": "USW00023183",
+          "name": "PHOENIX AIRPORT, AZ US",
+          "lat": 33.4278,
+          "lon": -112.00365,
+          "elevation_m": 339.2,
+          "wmoId": "72278",
+          "network": "GHCN-Daily (GSN station)"
+        }
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Values as published by NCEI with units=metric; no unit conversion.",
+        "Months NCEI left blank are null. daysMissing (1-5) is copied from the GSOM attribute field when present.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "A single airport station in a large city. Its trend mixes regional climate with urban growth (urban heat island) and any instrument or siting changes.",
+        "A point measurement: do not compare its values directly with the area-mean reanalysis without saying so.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "unknown",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.air_temperature_daily_min_mean",
+      "datasetId": "region_01.station.USW00023183.air_temperature_daily_min_mean.member3-v1-8ae20e818464",
+      "kind": "station",
+      "units": "°C",
+      "spatial": {
+        "type": "station",
+        "station": {
+          "id": "USW00023183",
+          "name": "PHOENIX AIRPORT, AZ US",
+          "lat": 33.4278,
+          "lon": -112.00365,
+          "elevation_m": 339.2,
+          "wmoId": "72278",
+          "network": "GHCN-Daily (GSN station)"
+        }
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1981-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Values as published by NCEI with units=metric; no unit conversion.",
+        "Months NCEI left blank are null. daysMissing (1-5) is copied from the GSOM attribute field when present.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "A single airport station in a large city. Its trend mixes regional climate with urban growth (urban heat island) and any instrument or siting changes.",
+        "A point measurement: do not compare its values directly with the area-mean reanalysis without saying so.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "unknown",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.wind_speed",
+      "datasetId": "region_01.station.USW00023183.wind_speed.member3-v1-17035ec55032",
+      "kind": "station",
+      "units": "m/s",
+      "spatial": {
+        "type": "station",
+        "station": {
+          "id": "USW00023183",
+          "name": "PHOENIX AIRPORT, AZ US",
+          "lat": 33.4278,
+          "lon": -112.00365,
+          "elevation_m": 339.2,
+          "wmoId": "72278",
+          "network": "GHCN-Daily (GSN station)"
+        }
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1984-01",
+        "lastValue": "2025-12",
+        "months": 540,
+        "missingMonths": 36,
+        "longestMissingRunMonths": 36,
+        "completeYears": [
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [
+          1981,
+          1982,
+          1983
+        ],
+        "monthsWithMissingDays": 3
+      },
+      "processing": [
+        "Values as published by NCEI with units=metric; no unit conversion.",
+        "Months NCEI left blank are null. daysMissing (1-5) is copied from the GSOM attribute field when present.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "A single airport station in a large city. Its trend mixes regional climate with urban growth (urban heat island) and any instrument or siting changes.",
+        "A point measurement: do not compare its values directly with the area-mean reanalysis without saying so.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "unknown",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.relative_humidity",
+      "datasetId": "region_01.station.USW00023183.relative_humidity.member3-v1-3bd0c81094a5",
+      "kind": "station",
+      "units": "%",
+      "spatial": {
+        "type": "station",
+        "station": {
+          "id": "USW00023183",
+          "name": "PHOENIX AIRPORT, AZ US",
+          "lat": 33.4278,
+          "lon": -112.00365,
+          "elevation_m": 339.2,
+          "wmoId": "72278",
+          "network": "GHCN-Daily (GSN station)"
+        }
+      },
+      "quality": {
+        "coverage": [
+          "1981-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "2006-01",
+        "lastValue": "2024-12",
+        "months": 540,
+        "missingMonths": 314,
+        "longestMissingRunMonths": 300,
+        "completeYears": [
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2014,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024
+        ],
+        "excludedAnnualYears": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2013,
+          2015,
+          2025
+        ],
+        "monthsWithMissingDays": 8
+      },
+      "processing": [
+        "Values as published by NCEI with units=metric; no unit conversion.",
+        "Months NCEI left blank are null. daysMissing (1-5) is copied from the GSOM attribute field when present.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "A single airport station in a large city. Its trend mixes regional climate with urban growth (urban heat island) and any instrument or siting changes.",
+        "A point measurement: do not compare its values directly with the area-mean reanalysis without saying so.",
+        "RHAV is defined for daily data in the GHCN-Daily readme (v3.35), but it is not in NCEI's GSOM data-type list or GSOM description document, so the exact monthly aggregation and completeness rule are not documented. Record starts in 2006.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "unknown",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "sahel.merra2.precipitation",
+      "datasetId": "sahel.merra2.precipitation.member3-v1-ab55a16ab194",
+      "kind": "reanalysis",
+      "units": "mm/month",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Central Sahel",
+        "requestedCoordinates": {
+          "lat": 14,
+          "lon": 6
+        },
+        "returnedCoordinates": [
+          6.0,
+          14.0,
+          348.89
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Converted mm/day to mm/month using calendar days, including leap years.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Central Sahel.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "sahel.merra2.air_temperature_2m",
+      "datasetId": "sahel.merra2.air_temperature_2m.member3-v1-9258baba5b1b",
+      "kind": "reanalysis",
+      "units": "°C",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Central Sahel",
+        "requestedCoordinates": {
+          "lat": 14,
+          "lon": 6
+        },
+        "returnedCoordinates": [
+          6.0,
+          14.0,
+          348.89
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Central Sahel.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "sahel.merra2.relative_humidity_2m",
+      "datasetId": "sahel.merra2.relative_humidity_2m.member3-v1-1073f8a00ec0",
+      "kind": "reanalysis",
+      "units": "%",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Central Sahel",
+        "requestedCoordinates": {
+          "lat": 14,
+          "lon": 6
+        },
+        "returnedCoordinates": [
+          6.0,
+          14.0,
+          348.89
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Central Sahel.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "sahel.merra2.wind_speed_10m",
+      "datasetId": "sahel.merra2.wind_speed_10m.member3-v1-1de1202fc5b4",
+      "kind": "reanalysis",
+      "units": "m/s",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Central Sahel",
+        "requestedCoordinates": {
+          "lat": 14,
+          "lon": 6
+        },
+        "returnedCoordinates": [
+          6.0,
+          14.0,
+          348.89
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Central Sahel.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "sahel.merra2.root_zone_soil_wetness",
+      "datasetId": "sahel.merra2.root_zone_soil_wetness.member3-v1-df9cca44894d",
+      "kind": "reanalysis",
+      "units": "fraction (0-1)",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Central Sahel",
+        "requestedCoordinates": {
+          "lat": 14,
+          "lon": 6
+        },
+        "returnedCoordinates": [
+          6.0,
+          14.0,
+          348.89
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Central Sahel.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "amazon.merra2.precipitation",
+      "datasetId": "amazon.merra2.precipitation.member3-v1-4e478222a7e5",
+      "kind": "reanalysis",
+      "units": "mm/month",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Amazon Basin",
+        "requestedCoordinates": {
+          "lat": -7,
+          "lon": -61
+        },
+        "returnedCoordinates": [
+          -61.0,
+          -7.0,
+          83.33
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Converted mm/day to mm/month using calendar days, including leap years.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Amazon Basin.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "amazon.merra2.air_temperature_2m",
+      "datasetId": "amazon.merra2.air_temperature_2m.member3-v1-daed41fb2633",
+      "kind": "reanalysis",
+      "units": "°C",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Amazon Basin",
+        "requestedCoordinates": {
+          "lat": -7,
+          "lon": -61
+        },
+        "returnedCoordinates": [
+          -61.0,
+          -7.0,
+          83.33
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Amazon Basin.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "amazon.merra2.relative_humidity_2m",
+      "datasetId": "amazon.merra2.relative_humidity_2m.member3-v1-1e9a62c06470",
+      "kind": "reanalysis",
+      "units": "%",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Amazon Basin",
+        "requestedCoordinates": {
+          "lat": -7,
+          "lon": -61
+        },
+        "returnedCoordinates": [
+          -61.0,
+          -7.0,
+          83.33
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Amazon Basin.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "amazon.merra2.wind_speed_10m",
+      "datasetId": "amazon.merra2.wind_speed_10m.member3-v1-5a96ec141350",
+      "kind": "reanalysis",
+      "units": "m/s",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Amazon Basin",
+        "requestedCoordinates": {
+          "lat": -7,
+          "lon": -61
+        },
+        "returnedCoordinates": [
+          -61.0,
+          -7.0,
+          83.33
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Amazon Basin.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "amazon.merra2.root_zone_soil_wetness",
+      "datasetId": "amazon.merra2.root_zone_soil_wetness.member3-v1-1949b75d5d1c",
+      "kind": "reanalysis",
+      "units": "fraction (0-1)",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Amazon Basin",
+        "requestedCoordinates": {
+          "lat": -7,
+          "lon": -61
+        },
+        "returnedCoordinates": [
+          -61.0,
+          -7.0,
+          83.33
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Amazon Basin.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "mediterranean.merra2.precipitation",
+      "datasetId": "mediterranean.merra2.precipitation.member3-v1-4fe9a9df74a8",
+      "kind": "reanalysis",
+      "units": "mm/month",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Mediterranean",
+        "requestedCoordinates": {
+          "lat": 39.7,
+          "lon": 22.6
+        },
+        "returnedCoordinates": [
+          22.6,
+          39.7,
+          204.93
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Converted mm/day to mm/month using calendar days, including leap years.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Mediterranean.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "mediterranean.merra2.air_temperature_2m",
+      "datasetId": "mediterranean.merra2.air_temperature_2m.member3-v1-dfb7775092c6",
+      "kind": "reanalysis",
+      "units": "°C",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Mediterranean",
+        "requestedCoordinates": {
+          "lat": 39.7,
+          "lon": 22.6
+        },
+        "returnedCoordinates": [
+          22.6,
+          39.7,
+          204.93
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Mediterranean.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "mediterranean.merra2.relative_humidity_2m",
+      "datasetId": "mediterranean.merra2.relative_humidity_2m.member3-v1-9d1afe4e5d78",
+      "kind": "reanalysis",
+      "units": "%",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Mediterranean",
+        "requestedCoordinates": {
+          "lat": 39.7,
+          "lon": 22.6
+        },
+        "returnedCoordinates": [
+          22.6,
+          39.7,
+          204.93
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Mediterranean.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "mediterranean.merra2.wind_speed_10m",
+      "datasetId": "mediterranean.merra2.wind_speed_10m.member3-v1-32f01a48ed97",
+      "kind": "reanalysis",
+      "units": "m/s",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Mediterranean",
+        "requestedCoordinates": {
+          "lat": 39.7,
+          "lon": 22.6
+        },
+        "returnedCoordinates": [
+          22.6,
+          39.7,
+          204.93
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Mediterranean.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "mediterranean.merra2.root_zone_soil_wetness",
+      "datasetId": "mediterranean.merra2.root_zone_soil_wetness.member3-v1-e614b990c39f",
+      "kind": "reanalysis",
+      "units": "fraction (0-1)",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Mediterranean",
+        "requestedCoordinates": {
+          "lat": 39.7,
+          "lon": 22.6
+        },
+        "returnedCoordinates": [
+          22.6,
+          39.7,
+          204.93
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Mediterranean.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "south-asia.merra2.precipitation",
+      "datasetId": "south-asia.merra2.precipitation.member3-v1-a4e2a2561f63",
+      "kind": "reanalysis",
+      "units": "mm/month",
+      "spatial": {
+        "type": "grid-point",
+        "name": "South Asia",
+        "requestedCoordinates": {
+          "lat": 24,
+          "lon": 79
+        },
+        "returnedCoordinates": [
+          79.0,
+          24.0,
+          463.02
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Converted mm/day to mm/month using calendar days, including leap years.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole South Asia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "south-asia.merra2.air_temperature_2m",
+      "datasetId": "south-asia.merra2.air_temperature_2m.member3-v1-a858f3856d3f",
+      "kind": "reanalysis",
+      "units": "°C",
+      "spatial": {
+        "type": "grid-point",
+        "name": "South Asia",
+        "requestedCoordinates": {
+          "lat": 24,
+          "lon": 79
+        },
+        "returnedCoordinates": [
+          79.0,
+          24.0,
+          463.02
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole South Asia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "south-asia.merra2.relative_humidity_2m",
+      "datasetId": "south-asia.merra2.relative_humidity_2m.member3-v1-e6d48cbf11b4",
+      "kind": "reanalysis",
+      "units": "%",
+      "spatial": {
+        "type": "grid-point",
+        "name": "South Asia",
+        "requestedCoordinates": {
+          "lat": 24,
+          "lon": 79
+        },
+        "returnedCoordinates": [
+          79.0,
+          24.0,
+          463.02
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole South Asia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "south-asia.merra2.wind_speed_10m",
+      "datasetId": "south-asia.merra2.wind_speed_10m.member3-v1-7bc51d8886a1",
+      "kind": "reanalysis",
+      "units": "m/s",
+      "spatial": {
+        "type": "grid-point",
+        "name": "South Asia",
+        "requestedCoordinates": {
+          "lat": 24,
+          "lon": 79
+        },
+        "returnedCoordinates": [
+          79.0,
+          24.0,
+          463.02
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole South Asia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "south-asia.merra2.root_zone_soil_wetness",
+      "datasetId": "south-asia.merra2.root_zone_soil_wetness.member3-v1-bd1c87cf95d6",
+      "kind": "reanalysis",
+      "units": "fraction (0-1)",
+      "spatial": {
+        "type": "grid-point",
+        "name": "South Asia",
+        "requestedCoordinates": {
+          "lat": 24,
+          "lon": 79
+        },
+        "returnedCoordinates": [
+          79.0,
+          24.0,
+          463.02
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole South Asia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "australia.merra2.precipitation",
+      "datasetId": "australia.merra2.precipitation.member3-v1-d56b79d5fa00",
+      "kind": "reanalysis",
+      "units": "mm/month",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Australia",
+        "requestedCoordinates": {
+          "lat": -27,
+          "lon": 145
+        },
+        "returnedCoordinates": [
+          145.0,
+          -27.0,
+          240.83
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Converted mm/day to mm/month using calendar days, including leap years.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Australia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "australia.merra2.air_temperature_2m",
+      "datasetId": "australia.merra2.air_temperature_2m.member3-v1-8a512c7d0cfb",
+      "kind": "reanalysis",
+      "units": "°C",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Australia",
+        "requestedCoordinates": {
+          "lat": -27,
+          "lon": 145
+        },
+        "returnedCoordinates": [
+          145.0,
+          -27.0,
+          240.83
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Australia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "australia.merra2.relative_humidity_2m",
+      "datasetId": "australia.merra2.relative_humidity_2m.member3-v1-81a0bd303ba6",
+      "kind": "reanalysis",
+      "units": "%",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Australia",
+        "requestedCoordinates": {
+          "lat": -27,
+          "lon": 145
+        },
+        "returnedCoordinates": [
+          145.0,
+          -27.0,
+          240.83
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Australia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "australia.merra2.wind_speed_10m",
+      "datasetId": "australia.merra2.wind_speed_10m.member3-v1-58a16ce181b4",
+      "kind": "reanalysis",
+      "units": "m/s",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Australia",
+        "requestedCoordinates": {
+          "lat": -27,
+          "lon": 145
+        },
+        "returnedCoordinates": [
+          145.0,
+          -27.0,
+          240.83
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Australia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    },
+    {
+      "seriesId": "australia.merra2.root_zone_soil_wetness",
+      "datasetId": "australia.merra2.root_zone_soil_wetness.member3-v1-50a8c629d027",
+      "kind": "reanalysis",
+      "units": "fraction (0-1)",
+      "spatial": {
+        "type": "grid-point",
+        "name": "Eastern Australia",
+        "requestedCoordinates": {
+          "lat": -27,
+          "lon": 145
+        },
+        "returnedCoordinates": [
+          145.0,
+          -27.0,
+          240.83
+        ],
+        "gridCells": 1,
+        "nativeResolution": "0.5° latitude x 0.625° longitude",
+        "footprintNote": "Single POWER point/grid estimate, not an average of the named region. Exact cell bounds are not supplied in this response."
+      },
+      "quality": {
+        "coverage": [
+          "1991-01",
+          "2025-12"
+        ],
+        "cadence": "monthly",
+        "firstValue": "1991-01",
+        "lastValue": "2025-12",
+        "months": 420,
+        "missingMonths": 0,
+        "longestMissingRunMonths": 0,
+        "completeYears": [
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "excludedAnnualYears": [],
+        "monthsWithMissingDays": 0
+      },
+      "processing": [
+        "Selected one POWER point; no regional averaging. POWER annual month 13 is omitted.",
+        "Fill values become null; no interpolation.",
+        "Exported by scripts/prepare_member3.py member3-v1; canonical values and nulls preserved."
+      ],
+      "limitations": [
+        "Reanalysis, not a direct measurement. Changes in the observing system can affect trends.",
+        "One grid estimate cannot represent the whole Eastern Australia.",
+        "No dataset-specific statistical review has been supplied. Significance is not established."
+      ],
+      "redistribution": "permitted",
+      "reviewStatus": "pending-member-4"
+    }
+  ]
+}

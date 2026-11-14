@@ -7,8 +7,7 @@
  * about what the data "show".
  */
 import observations from "../../../public/data/earth-observations.json";
-import { studentTTwoSidedP } from "../stats/distributions";
-import { analyzeTrend, compareSlopes, type TrendResult } from "../stats/trend";
+import { analyzeTrend, comparePairedSeries, type TrendResult } from "../stats/trend";
 import type { SeriesPoint } from "../series";
 
 export type Kind = "reanalysis" | "satellite" | "station";
@@ -109,8 +108,10 @@ export interface CityVsRegion {
   cityPerDecade: number;
   regionPerDecade: number;
   differencePerDecade: number;
-  p: number;
+  p: number | null;
   significant: boolean;
+  established: boolean;
+  reason: string;
 }
 
 /** Is the Phoenix Airport station warming faster than the region as a whole? */
@@ -122,7 +123,7 @@ export function cityVsRegionWarming(): CityVsRegion | null {
   const a = between(city, from, to).trend;
   const b = between(region, from, to).trend;
   if (!a || !b) return null;
-  const diff = compareSlopes(a.ols, b.ols);
+  const diff = comparePairedSeries(between(city, from, to).points, between(region, from, to).points);
   return {
     from,
     to,
@@ -131,6 +132,8 @@ export function cityVsRegionWarming(): CityVsRegion | null {
     differencePerDecade: diff.difference * 10,
     p: diff.p,
     significant: diff.significant,
+    established: diff.established,
+    reason: diff.reason,
   };
 }
 
@@ -177,7 +180,8 @@ export interface Relationship {
   bLabel: string;
   n: number;
   r: number;
-  p: number;
+  /** Descriptive correlation only; no reviewed dependence model is available. */
+  p: null;
   from: number;
   to: number;
 }
@@ -204,7 +208,6 @@ function relationship(aId: string, bId: string): Relationship | null {
   const sxx = xa.reduce((acc, v) => acc + v * v, 0);
   const syy = xb.reduce((acc, v) => acc + v * v, 0);
   const r = sxy / Math.sqrt(sxx * syy);
-  const t = r * Math.sqrt((n - 2) / Math.max(1e-12, 1 - r * r));
   return {
     a: aId,
     b: bId,
@@ -212,7 +215,7 @@ function relationship(aId: string, bId: string): Relationship | null {
     bLabel: b.label,
     n,
     r,
-    p: studentTTwoSidedP(t, n - 2),
+    p: null,
     from: ts[0],
     to: ts[ts.length - 1],
   };

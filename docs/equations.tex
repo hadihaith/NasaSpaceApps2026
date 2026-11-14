@@ -1,0 +1,239 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=16mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{gensymb}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\allowdisplaybreaks
+\title{Equations used in the Inferences and What-if pages}
+\author{Trend Detective $\cdot$ NASA Space Apps Challenge 2026 $\cdot$ region\_01, Phoenix and central Arizona $\cdot$ generated 14 November 2026 from the project source code}
+\date{}
+\begin{document}
+\maketitle
+Every equation below is transcribed from the code that runs in the app, not from a textbook, so the constants and edge cases match what the pages compute. Source files are named under each heading.
+
+Part A covers the statistics behind the Inferences page. On 14 November 2026 a teammate's change to src/lib/stats/trend.ts replaced the earlier significance rule. A.6 and A.7 give the current rule and note the earlier one, which the Inferences page was built on.
+
+Part B covers the What-if model. Everything it produces is hypothetical: a teaching model run on the region's real 1991--2020 climate, not a forecast or an observation.
+
+\section*{Part A $\cdot$ Inferences: trend statistics}
+
+\subsection*{A.1 Building the yearly series}
+{\footnotesize\texttt{scripts/process\_data.py, src/lib/earth/inferences.ts}}
+
+MERRA-2 grid cells inside the box are averaged with latitude weights. A month is kept only if cells holding at least half the total weight have data. D\_m is the number of days in month m. Only calendar years with all 12 months are used.
+\[
+\bar{x}_m = \frac{\sum_i w_i\, x_{i,m}}{\sum_i w_i}, \qquad w_i = \cos\varphi_i, \qquad \text{kept if } \sum_{i\,\in\,\text{valid}} w_i \ge \tfrac12 \sum_i w_i
+\]
+\[
+P_m^{\text{MERRA-2}} = p_m^{[\mathrm{mm\,d^{-1}}]}\, D_m, \qquad P_m^{\text{IMERG}} = p_m^{[\mathrm{mm\,h^{-1}}]}\cdot 24\, D_m
+\]
+\[
+v_y = \frac{1}{12}\sum_{m=1}^{12} x_{y,m} \;\;\text{(means)}, \qquad P_y = \sum_{m=1}^{12} P_{y,m} \;\;\text{(precipitation totals)}
+\]
+
+\subsection*{A.2 Least-squares (OLS) trend}
+{\footnotesize\texttt{src/lib/stats/trend.ts $\cdot$ ols()}}
+
+Times t\_i are years and values v\_i are the yearly values, with n points.
+\[
+\hat\beta = \frac{S_{tv}}{S_{tt}}, \quad \hat\alpha = \bar v - \hat\beta\,\bar t, \quad S_{tt} = \sum_i (t_i-\bar t)^2, \quad S_{tv} = \sum_i (t_i-\bar t)(v_i-\bar v)
+\]
+\[
+e_i = v_i - \bar v - \hat\beta\,(t_i - \bar t), \qquad \mathrm{SSE} = \sum_i e_i^2, \qquad R^2 = 1 - \frac{\mathrm{SSE}}{S_{vv}}
+\]
+\[
+\mathrm{SE}(\hat\beta) = \sqrt{\frac{\mathrm{SSE}}{(n-2)\,S_{tt}}}, \qquad t = \frac{\hat\beta}{\mathrm{SE}(\hat\beta)}, \qquad p = 2\bigl[1 - F_{t,\,n-2}(|t|)\bigr]
+\]
+\[
+\text{CI}_{1-\alpha}:\quad \hat\beta \pm t_{1-\alpha/2,\;n-2}\;\mathrm{SE}(\hat\beta)
+\]
+
+\subsection*{A.3 Allowing for autocorrelation (AR(1) adjustment)}
+{\footnotesize\texttt{src/lib/stats/trend.ts $\cdot$ ols()}}
+
+Neighbouring residuals that resemble each other carry less independent information, so the sample size is shrunk to an effective size and the standard error widened (an exploratory sensitivity, as in Santer et al., 2000).
+\[
+r_1 = \frac{\sum_{i=2}^{n} e_i\, e_{i-1}}{\mathrm{SSE}}, \qquad \rho = \min\!\bigl(\max(r_1, 0),\, 0.99\bigr), \qquad n_{\text{eff}} = \max\!\Bigl(n\,\frac{1-\rho}{1+\rho},\; 3\Bigr)
+\]
+\[
+\mathrm{SE}_{\text{adj}} = \mathrm{SE}(\hat\beta)\sqrt{\frac{n-2}{n_{\text{eff}}-2}}, \qquad t_{\text{adj}} = \frac{\hat\beta}{\mathrm{SE}_{\text{adj}}}, \qquad p_{\text{adj}} = 2\bigl[1 - F_{t,\,n_{\text{eff}}-2}(|t_{\text{adj}}|)\bigr]
+\]
+
+\subsection*{A.4 Mann-Kendall test}
+{\footnotesize\texttt{src/lib/stats/trend.ts $\cdot$ mannKendall()}}
+
+A rank-based test for a consistent direction, with tie and continuity corrections. g\_k is the size of the k-th group of tied values, and $\Phi$ is the standard normal distribution function.
+\[
+S = \sum_{i=1}^{n-1}\sum_{j=i+1}^{n} \operatorname{sgn}(v_j - v_i), \qquad \operatorname{Var}(S) = \frac{n(n-1)(2n+5) - \sum_{k} g_k (g_k-1)(2g_k+5)}{18}
+\]
+\[
+Z = \begin{cases} \dfrac{S-1}{\sqrt{\operatorname{Var}(S)}} & S > 0\\[6pt] 0 & S = 0\\[2pt] \dfrac{S+1}{\sqrt{\operatorname{Var}(S)}} & S < 0 \end{cases} \qquad p_{\text{MK}} = 2\bigl[1-\Phi(|Z|)\bigr], \qquad \tau = \frac{S}{n(n-1)/2}
+\]
+
+\subsection*{A.5 Theil-Sen slope (the rate shown)}
+{\footnotesize\texttt{src/lib/stats/trend.ts $\cdot$ senSlope()}}
+
+The median of the slopes between every pair of points. Its 95\% range comes from the ordered pairwise slopes Q(1) $\le$ \ldots{} $\le$ Q(N), where N is the number of pairs, using the Mann-Kendall variance (Gilbert, 1987).
+\[
+\beta_{\text{TS}} = \operatorname*{median}_{i<j}\; \frac{v_j - v_i}{t_j - t_i}, \qquad \alpha_{\text{TS}} = \operatorname*{median}_i \bigl(v_i - \beta_{\text{TS}}\, t_i\bigr)
+\]
+\[
+C = z_{1-\alpha/2}\sqrt{\operatorname{Var}(S)}, \qquad \beta_{\text{lo}} = Q_{\left(\operatorname{round}\frac{N-C}{2}\right)}, \qquad \beta_{\text{hi}} = Q_{\left(\operatorname{round}\frac{N+C}{2}\,+\,1\right)}
+\]
+\[
+\text{rate per decade} = 10\,\beta_{\text{TS}}, \qquad \text{change over record} = \beta_{\text{TS}}\,(t_n - t_1), \qquad \text{direction} = \operatorname{sgn}(\beta_{\text{TS}})
+\]
+
+\subsection*{A.6 The verdict}
+{\footnotesize\texttt{src/lib/stats/trend.ts $\cdot$ analyzeTrend() (current, after the 14 November 2026 change)}}
+
+The current code uses one prespecified test, the two-sided OLS t-test, and only once the assumptions behind it count as established. Nothing in the app sets the review flag yet, so every record is currently ``not established''. $\alpha$ = 0.05.
+\[
+\text{established} \iff \underbrace{\text{assumptions reviewed}}_{\text{default: false}} \;\wedge\; \text{equal spacing} \;\wedge\; |r_1| \le \frac{1.96}{\sqrt{n}} \;\wedge\; \mathrm{SE}(\hat\beta) > \epsilon
+\]
+\[
+\text{verdict} = \begin{cases} \text{significant} & \text{established} \wedge p < \alpha \\ \text{not significant} & \text{established} \wedge p \ge \alpha \\ \text{not established} & \text{otherwise} \end{cases}
+\]
+
+\emph{Earlier rule, which the Inferences page was built on: significant if both p\_MK < $\alpha$ and p\_adj < $\alpha$; mixed evidence if min(p\_MK, p\_adj) < $\alpha$ or max(p\_MK, p\_adj) < 2$\alpha$; otherwise no clear trend.}
+
+\subsection*{A.7 Is the city warming faster than the region?}
+{\footnotesize\texttt{src/lib/stats/trend.ts $\cdot$ compareSlopes(), comparePairedSeries()}}
+
+A is the Phoenix Airport station and B is the MERRA-2 region mean, over their shared years. The current code uses a Welch approximation and reports p only once independence of the two series has been reviewed. The paired version is the teammate's recommended alternative.
+\[
+\Delta = \hat\beta_A - \hat\beta_B, \qquad V_A = \mathrm{SE}_{\text{adj},A}^2, \qquad V_B = \mathrm{SE}_{\text{adj},B}^2
+\]
+\[
+\nu = \frac{(V_A + V_B)^2}{V_A^2/\nu_A + V_B^2/\nu_B}, \qquad t = \frac{\Delta}{\sqrt{V_A + V_B}}, \qquad p = 2\bigl[1 - F_{t,\,\nu}(|t|)\bigr]
+\]
+\[
+\text{paired alternative:}\quad d_y = v_{A,y} - v_{B,y}, \quad \text{OLS trend of } d_y \text{ as in A.2}
+\]
+
+\emph{Earlier version the page used: t = $\Delta$ / $\surd$(V\_A + V\_B) with $\nu$ = $\nu$\_A + $\nu$\_B degrees of freedom ($\nu$\_A, $\nu$\_B = n\_eff $-$ 2).}
+
+\subsection*{A.8 What moves together?}
+{\footnotesize\texttt{src/lib/earth/inferences.ts $\cdot$ relationship()}}
+
+Each yearly series is first detrended with its own OLS line, so that a shared trend does not create a false link. Correlation is not causation.
+\[
+\tilde a_y = a_y - (\hat\alpha_a + \hat\beta_a t_y), \qquad \tilde b_y = b_y - (\hat\alpha_b + \hat\beta_b t_y)
+\]
+\[
+r = \frac{\sum_y \tilde a_y \tilde b_y}{\sqrt{\sum_y \tilde a_y^2 \,\sum_y \tilde b_y^2}}, \qquad t = r\sqrt{\frac{n-2}{1-r^2}}, \qquad p = 2\bigl[1 - F_{t,\,n-2}(|t|)\bigr]
+\]
+
+\section*{Part B $\cdot$ What if: water-and-heat model}
+
+\subsection*{B.1 Applying the dials}
+{\footnotesize\texttt{src/lib/whatif/model.ts $\cdot$ perturb(); baselines from public/data/baselines.json}}
+
+Monthly means for 1991--2020 from NASA MERRA-2 (region mean) and NOAA GSOM (Phoenix Airport) are changed evenly in every month m. The day-night range comes from the station's average daily high T\_x and low T\_n.
+\[
+T'_m = T_m + \Delta T, \qquad P'_m = \max\!\bigl(0,\; P_m\,(1 + \Delta P/100)\bigr)
+\]
+\[
+RH'_m = \min\!\bigl(100,\, \max(1,\; RH_m + \Delta RH)\bigr), \qquad u'_{10,m} = \max\!\bigl(0,\; u_{10,m}\,(1 + \Delta u/100)\bigr)
+\]
+\[
+\mathrm{DTR}_m = T^{\text{st}}_{x,m} - T^{\text{st}}_{n,m}, \qquad T_{\max} = T' + \tfrac12\mathrm{DTR}, \qquad T_{\min} = T' - \tfrac12\mathrm{DTR}
+\]
+
+\subsection*{B.2 Vapour pressure and air properties (FAO-56)}
+{\footnotesize\texttt{src/lib/whatif/model.ts $\cdot$ satVapourPressure(), referenceEt()}}
+
+z = 600 m is the approximate mean elevation of the box. VPD is the vapour pressure deficit: how thirsty the air is.
+\[
+e^\circ(T) = 0.6108\,\exp\!\left(\frac{17.27\,T}{T + 237.3}\right) \;[\mathrm{kPa}], \qquad e_s = \tfrac12\bigl[e^\circ(T_{\max}) + e^\circ(T_{\min})\bigr]
+\]
+\[
+e_a = \frac{RH'}{100}\, e_s, \qquad \mathrm{VPD} = e_s - e_a = e_s\Bigl(1 - \frac{RH'}{100}\Bigr)
+\]
+\[
+\Delta_s = \frac{4098\, e^\circ(T')}{(T' + 237.3)^2}, \qquad P_{\text{atm}} = 101.3\left(\frac{293 - 0.0065\,z}{293}\right)^{5.26}, \qquad \gamma = 0.000665\, P_{\text{atm}}
+\]
+\[
+u_2 = \max\!\left(0.5,\; u'_{10}\,\frac{4.87}{\ln(67.8\cdot 10 - 5.42)}\right)
+\]
+
+\subsection*{B.3 Radiation}
+{\footnotesize\texttt{src/lib/whatif/model.ts $\cdot$ extraterrestrialRadiation(), referenceEt()}}
+
+$\varphi$ = 33.5\textdegree{} N and J is the day of the year at mid-month. Solar radiation is estimated from the day-night temperature range (FAO-56 eq. 50, Hargreaves), with k\_Rs = 0.16, albedo a = 0.23 and $\sigma$ = 4.903 $\times$ 10$^{-9}$ MJ K$^{-4}$ m$^{-2}$ day$^{-1}$.
+\[
+d_r = 1 + 0.033\cos\frac{2\pi J}{365}, \qquad \delta = 0.409\,\sin\!\Bigl(\frac{2\pi J}{365} - 1.39\Bigr), \qquad \omega_s = \arccos(-\tan\varphi\,\tan\delta)
+\]
+\[
+R_a = \frac{24\cdot 60}{\pi}\, G_{sc}\, d_r \bigl[\omega_s \sin\varphi\sin\delta + \cos\varphi\cos\delta\sin\omega_s\bigr], \qquad G_{sc} = 0.0820
+\]
+\[
+R_s = k_{Rs}\sqrt{T_{\max} - T_{\min}}\; R_a, \qquad R_{so} = (0.75 + 2\times10^{-5} z)\, R_a, \qquad R_{ns} = (1 - a)\,R_s
+\]
+\[
+R_{nl} = \sigma\,\frac{T_{\max,K}^4 + T_{\min,K}^4}{2}\bigl(0.34 - 0.14\sqrt{e_a}\bigr)\Bigl(1.35\,\min\!\Bigl(1, \frac{R_s}{R_{so}}\Bigr) - 0.35\Bigr), \qquad T_K = T + 273.16
+\]
+\[
+R_n = R_{ns} - R_{nl}, \qquad G = 0.14\,(T'_m - T'_{m-1})
+\]
+
+\subsection*{B.4 Evaporative demand: FAO-56 Penman-Monteith reference evapotranspiration}
+{\footnotesize\texttt{src/lib/whatif/model.ts $\cdot$ referenceEt(), monthlyEt0()}}
+
+February uses 28.25 days, the average including leap years.
+\[
+ET_0 = \max\!\left(0,\; \frac{0.408\,\Delta_s\,(R_n - G) + \gamma\,\dfrac{900}{T' + 273}\,u_2\,(e_s - e_a)}{\Delta_s + \gamma\,(1 + 0.34\,u_2)}\right) \;[\mathrm{mm\,d^{-1}}]
+\]
+\[
+ET_{0,m} = ET_0 \cdot D_m, \qquad D = (31,\, 28.25,\, 31,\, 30,\, 31,\, 30,\, 31,\, 31,\, 30,\, 31,\, 30,\, 31)
+\]
+
+\subsection*{B.5 Soil-water bucket}
+{\footnotesize\texttt{src/lib/whatif/model.ts $\cdot$ bucketStep(), run(), simulate()}}
+
+One bucket for the whole region with capacity S\_max = 150 mm. Rain fills it, and evaporation empties it more slowly as it dries. S\_0 comes from a 20-year spin-up on today's climate starting at S\_max/2. The baseline and the what-if both start from that settled state.
+\[
+W_m = S_{m-1} + P'_m, \qquad AET_m = \min\!\Bigl(W_m,\; ET_{0,m}\,\min\!\Bigl(1, \frac{W_m}{S_{\max}}\Bigr)\Bigr), \qquad S_m = \min\bigl(S_{\max},\; W_m - AET_m\bigr)
+\]
+
+\subsection*{B.6 Indicators (final 12 months of the run)}
+{\footnotesize\texttt{src/lib/whatif/model.ts $\cdot$ indicators()}}
+
+H counts months whose average daily high at Phoenix Airport reaches 40 \textdegree{}C. The vegetation score VHI is illustrative only: it is not a measured plant index.
+\[
+\mathrm{SMI} = \frac{1}{12}\sum_{m} \frac{S_m}{S_{\max}}, \qquad \mathrm{DSI} = 1 - \frac{\sum_m AET_m}{\sum_m ET_{0,m}}, \qquad H = \#\{\, m : T^{\text{st}}_{x,m} + \Delta T \ge 40\,^\circ\mathrm{C} \,\}
+\]
+\[
+\mathrm{VHI} = \operatorname{clip}_{[0,1]}\!\Bigl[(1 - \mathrm{DSI})\Bigl(1 - \frac{H}{24}\Bigr)\Bigr], \qquad \overline{\mathrm{VPD}} = \frac{1}{12}\sum_m \mathrm{VPD}_m, \qquad ET_0^{\text{yr}} = \sum_m ET_{0,m}, \qquad P^{\text{yr}} = \sum_m P'_m
+\]
+
+\subsection*{B.7 Discoveries and reported changes}
+{\footnotesize\texttt{src/lib/whatif/model.ts $\cdot$ discover(); src/lib/whatif/report.ts}}
+
+Primed values are the what-if run and unprimed values the baseline run, after the same number of years.
+\[
+\text{soil drought: } \frac{\mathrm{SMI}'}{\mathrm{SMI}} \le 0.8 \;(\text{high if} \le 0.6), \qquad \text{soggier soil: } \frac{\mathrm{SMI}'}{\mathrm{SMI}} \ge 1.25 \;(\text{high if} \ge 1.5)
+\]
+\[
+\text{thirsty air: } \frac{\overline{\mathrm{VPD}}'}{\overline{\mathrm{VPD}}} \ge 1.15 \;(\text{high if} \ge 1.3), \qquad \text{more } 40\,^\circ\mathrm{C} \text{ months: } H' - H \ge 1 \;(\text{high if} \ge 2)
+\]
+\[
+\text{gentler evaporation: } ET_0^{\text{yr}\,\prime} \le 0.9\, ET_0^{\text{yr}}, \qquad \%\ \text{change} = 100\,\frac{x' - x}{x}
+\]
+
+\section*{References}
+\begin{enumerate}
+\item Allen, R. G., Pereira, L. S., Raes, D., \& Smith, M. (1998). Crop evapotranspiration: Guidelines for computing crop water requirements. FAO Irrigation and Drainage Paper 56. FAO, Rome.
+\item Gilbert, R. O. (1987). Statistical Methods for Environmental Pollution Monitoring. Van Nostrand Reinhold, New York.
+\item Kendall, M. G. (1975). Rank Correlation Methods (4th ed.). Charles Griffin, London.
+\item Mann, H. B. (1945). Nonparametric tests against trend. Econometrica, 13, 245--259.
+\item Santer, B. D., et al. (2000). Statistical significance of trends and trend differences in layer-average atmospheric temperature time series. Journal of Geophysical Research, 105(D6), 7337--7356.
+\item Sen, P. K. (1968). Estimates of the regression coefficient based on Kendall's tau. Journal of the American Statistical Association, 63, 1379--1389.
+\item Theil, H. (1950). A rank-invariant method of linear and polynomial regression analysis. Proceedings of the Royal Netherlands Academy of Sciences, 53.
+\item Welch, B. L. (1947). The generalization of ``Student's'' problem when several different population variances are involved. Biometrika, 34, 28--35.
+\end{enumerate}
+\end{document}

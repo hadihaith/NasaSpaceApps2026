@@ -33,7 +33,7 @@ export function Lab({ save, normals, busy, run, update, openArchive }: {
 
   return <section className="hc-section hc-lab">
     <div className="hc-section-heading hc-lab-heading">
-      <div><span className="hc-kicker"><i /> RESEARCH BAY</span><h1>Planetary Persuasion Device</h1><p>Adjust conditions, advance time and see what Earth does.</p></div>
+      <div><span className="hc-kicker"><i /> RESEARCH BAY</span><h1>Planetary Persuasion Device</h1><p>Adjust conditions, advance time and see what Earth does.</p><p>Starting climate: 1991–2020 monthly normals. Rain uses monthly totals.</p></div>
       <span className="hc-status"><i /> {warmUp ? "Calibration" : "Sandbox"} <b>·</b> {save.trials.at(-1)?.number ?? 0} runs</span>
     </div>
     <div className="hc-lab-layout">

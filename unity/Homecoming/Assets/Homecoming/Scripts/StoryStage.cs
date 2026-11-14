@@ -64,13 +64,32 @@ namespace Homecoming
             // Scene lettering uses the same authored typography as the interface.
             foreach (var text in GetComponentsInChildren<TextMesh>(true))
             {
-                bool display = text.name == "Welcome lettering" || text.name == "Broadcast title" || text.name == "Report heading";
+                // The console codes read as noise on screen; the set is cleaner without them.
+                if (text.name == "Console stencil") { text.gameObject.SetActive(false); continue; }
+                // Raised so the hull lettering clears the television from the camera's eye line.
+                if (text.name == "Hull identification") { text.text = "I.A.D."; SetHeight(text.transform, 3.95f); }
+                if (text.name == "Hull stencil")
+                {
+                    // One legible line instead of a tiny two-line stencil.
+                    text.text = "INTERGALACTIC AFFECTION DEPARTMENT";
+                    SetHeight(text.transform, 3.55f);
+                    text.characterSize = .11f * 10 / text.fontSize;
+                }
+                bool display = text.name == "Welcome lettering" || text.name == "Broadcast title" || text.name == "Report heading" ||
+                    text.name == "Hull identification" || text.name == "Hull stencil";
                 var font = Resources.Load<Font>(display ? "Fonts/Display" : "Fonts/Mono");
                 if (font == null) continue;
                 text.font = font;
                 text.GetComponent<Renderer>().sharedMaterial = font.material;
+                // Rasterise glyphs at twice the size and scale down: crisp lettering, same layout.
+                if (text.fontSize < 160)
+                {
+                    text.characterSize *= text.fontSize / 160f;
+                    text.fontSize = 160;
+                }
             }
         }
+        static void SetHeight(Transform t, float y) => t.localPosition = new Vector3(t.localPosition.x, y, t.localPosition.z);
         void OnVideoPrepared(VideoPlayer player)
         {
             if (player.isActiveAndEnabled && UsesFilm(current))
@@ -114,18 +133,21 @@ namespace Homecoming
             banner.SetActive(old || id == "party");
             float unfurl = Mathf.Clamp01((t - .72f) / .58f);
             float overshoot = reducedMotion ? 0 : Mathf.Sin(unfurl * Mathf.PI * 2) * Mathf.Exp(-unfurl * 3) * .17f;
-            banner.transform.localRotation = Quaternion.Euler(0, 0, old ? -9 : -2 + (reducedMotion ? 0 : Mathf.Sin(t * 5) * Mathf.Exp(-Mathf.Max(0, t - 1.2f) * 2) * 2));
-            banner.transform.localScale = new Vector3(1, old ? .83f : Mathf.Max(.02f, Mathf.SmoothStep(0, 1, unfurl) + overshoot), 1);
+            // How far the room has aged: 0 in 1969, 1 in 2026, rolling forward during the time-lapse.
+            float aged = id == "years" ? Lapse(t, reducedMotion) : old ? 1 : 0;
+            banner.transform.localRotation = Quaternion.Euler(0, 0, old ? Mathf.Lerp(-2, -9, aged) : -2 + (reducedMotion ? 0 : Mathf.Sin(t * 5) * Mathf.Exp(-Mathf.Max(0, t - 1.2f) * 2) * 2));
+            banner.transform.localScale = new Vector3(1, old ? Mathf.Lerp(1, .83f, aged) : Mathf.Max(.02f, Mathf.SmoothStep(0, 1, unfurl) + overshoot), 1);
             report.SetActive(id == "hearing");
             switchProp.SetActive(id == "launch");
             balloon.SetActive((old || id == "party") && id != "recruit");
             float deflateAge = id == "deflate" ? Mathf.Max(0, t - .84f) : 0;
             float deflate = Mathf.SmoothStep(0, 1, deflateAge / 1.8f);
             float flutter = reducedMotion ? 0 : Mathf.Sin(deflateAge * 24) * Mathf.Sin(deflate * Mathf.PI);
+            float sag = old ? aged : 0, droop = 1 - .08f * sag;
             balloon.transform.localPosition = new Vector3(-.65f + deflate * .7f + flutter * .07f,
-                1.9f - deflate * 1.15f + (reducedMotion ? 0 : Mathf.Sin(t * 1.6f) * .035f), .5f);
-            balloon.transform.localScale = new Vector3(.48f * (1 - deflate * .86f) * (1 + flutter * .15f),
-                .62f * (1 - deflate * .93f), .48f * (1 - deflate * .86f));
+                1.9f - .2f * sag - deflate * 1.15f + (reducedMotion ? 0 : Mathf.Sin(t * 1.6f) * .035f * (1 - sag)), .5f);
+            balloon.transform.localScale = new Vector3(.48f * droop * (1 - deflate * .86f) * (1 + flutter * .15f),
+                .62f * droop * (1 - deflate * .93f), .48f * droop * (1 - deflate * .86f));
             balloon.transform.localRotation = Quaternion.Euler(0, 0, -deflate * 85 + flutter * 16);
             cannon.SetActive(id != "lab" && id != "ready" && id != "apollo" && id != "recruit");
             float recoil = id == "party" ? Spring(t - .74f, 8, 24) * 19 : id == "jam" ? Spring(t - .58f, 14, 36) * 7 + Spring(t - 1.08f, 14, 36) * 5 : 0;
@@ -142,7 +164,16 @@ namespace Homecoming
             for (int i = 0; i < confetti.Length; i++)
             {
                 bool flying = id == "party" && t > .72f;
-                confetti[i].gameObject.SetActive(flying);
+                bool landed = id == "jam" || (old && id != "recruit");
+                confetti[i].gameObject.SetActive(flying || landed);
+                if (landed)
+                {
+                    // Where each strip came to rest after the party, never swept up.
+                    float restX = .8f + (Hash(i, 0) * 5 - 2.5f) * 1.25f, restZ = .5f + (Hash(i, 2) - .5f) * 2.5f;
+                    confetti[i].localPosition = new Vector3(Mathf.Clamp(restX, -4.5f, 4.5f), .012f, Mathf.Clamp(restZ, -1.5f, 3f));
+                    confetti[i].localRotation = Quaternion.Euler(90, Hash(i, 4) * 360, 0);
+                    continue;
+                }
                 if (!flying) continue;
                 float age = reducedMotion ? 1 : t - .72f;
                 float vx = Hash(i, 0) * 5 - 2.5f, vy = 2.9f + Hash(i, 1) * 3.5f;
@@ -176,6 +207,8 @@ namespace Homecoming
             monitorTitle.text = id == "return" ? "ARTEMIS" : "NO SIGNAL";
             EvaluateCamera(id, t, reducedMotion);
         }
+        // The 2026 time-lapse: 57 years pass between 0.25 s and 2.7 s of the shot.
+        public static float Lapse(float t, bool reduced) => reduced ? 1 : Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.25f, 2.7f, t));
         static float Hash(int i, int n) => Mathf.Repeat(Mathf.Sin((i + 1) * 12.9898f + n * 78.233f) * 43758.5453f, 1);
         static float Spring(float age, float damping, float frequency) => age < 0 ? 0 : Mathf.Exp(-age * damping) * Mathf.Sin(age * frequency);
         static float Pulse(float t, float at, float width) => Mathf.Exp(-Mathf.Pow((t - at) / width, 2));
@@ -189,12 +222,13 @@ namespace Homecoming
             {
                 case "home": from = to = V(1.6f, 2.15f, 9.8f); look = target = V(1.7f, 1.55f, -.2f); break;
                 case "signal": from = V(5, 3, 65); to = V(-.35f, 1.45f, 5.9f); look = target = V(0, 1.2f, 0); duration = 4.5f; break;
-                case "apollo": from = to = V(1.95f, 2.05f, 1.4f); look = target = V(1.95f, 2.05f, -1.5f); fov = 32; break;
-                case "reveal": from = V(1.95f, 2.05f, 1.4f); to = V(.7f, 2.1f, 8.4f); look = V(1.95f, 2.05f, -1.5f); target = V(.25f, 1.45f, .1f); duration = 2.4f; break;
+                // Start back far enough to see the whole 1969 set, then ease toward the screen.
+                case "apollo": from = V(1.95f, 2.0f, 3.6f); to = V(1.95f, 2.03f, 3.0f); look = target = V(1.9f, 2.0f, -1.5f); fov = 34; duration = 5.7f; break;
+                case "reveal": from = V(1.95f, 2.03f, 3.0f); to = V(.7f, 2.1f, 8.4f); look = V(1.9f, 2.0f, -1.5f); target = V(.25f, 1.45f, .1f); fov = 34; duration = 2.8f; break;
                 case "correction": from = V(-.7f, 1.85f, 4.5f); to = V(-.4f, 1.8f, 4.15f); look = target = V(-.35f, 1.65f, .35f); fov = 34; duration = 3.6f; break;
                 case "party": from = V(.2f, 2.2f, 8.4f); to = V(.35f, 2.35f, 9.1f); look = target = V(.2f, 1.6f, 0); break;
                 case "jam": from = V(.05f, 1.45f, 3.7f); to = V(.1f, 1.3f, 3.4f); look = target = V(.8f, 1.08f, .5f); duration = 2.6f; break;
-                case "years": from = V(.35f, 2.35f, 9.1f); to = V(.15f, 2.1f, 8.8f); look = target = V(.2f, 1.6f, 0); duration = 4.8f; break;
+                case "years": from = V(.35f, 2.35f, 9.1f); to = V(.15f, 2.1f, 8.8f); look = target = V(.2f, 1.6f, 0); duration = 6.4f; break;
                 case "return": from = V(.15f, 2.1f, 8.8f); to = V(.9f, 1.95f, 7.4f); duration = 4.8f; break;
                 case "earth": from = V(1.1f, 1.6f, 7.5f); to = V(-.1f, 1.4f, 5.9f); look = target = V(0, 1.2f, 0); duration = 5f; break;
                 case "launch": from = V(-.2f, 1.5f, 3.7f); to = V(.2f, 1.4f, 3.35f); look = target = V(-.05f, 1.08f, .6f); duration = 1.5f; break;
@@ -204,7 +238,9 @@ namespace Homecoming
                 case "deflate": from = V(-.55f, 1.65f, 3.5f); to = V(-.4f, 1.3f, 4); look = V(-.65f, 1.8f, .5f); target = V(-.3f, 1.1f, .5f); duration = 4.4f; break;
                 case "recruit": from = to = V(-2.65f, 1.8f, 5); look = target = V(-2.7f, 1.35f, .8f); break;
             }
-            float q = Mathf.Clamp01(t / duration);
+            // Time-lapse convention: the camera holds still while the years pass.
+            float hold = id == "years" ? 2.7f : 0;
+            float q = Mathf.Clamp01((t - hold) / (duration - hold));
             float p = reduced ? 1 : q * q * q * (q * (6 * q - 15) + 10);
             if (!reduced && id == "reveal") p = 1 - Mathf.Pow(1 - q, 3);
             filmCamera.transform.position = Vector3.Lerp(from, to, p);

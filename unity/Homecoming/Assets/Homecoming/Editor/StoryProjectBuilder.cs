@@ -281,8 +281,8 @@ namespace Homecoming.Editor
             t.localRotation = Quaternion.Euler(0, 180, 0);
             var mesh = t.gameObject.AddComponent<TextMesh>();
             mesh.font = font;
-            mesh.fontSize = 80;
-            mesh.characterSize = size * 10 / 80;
+            mesh.fontSize = 160;
+            mesh.characterSize = size * 10 / 160;
             mesh.text = text;
             mesh.anchor = TextAnchor.MiddleCenter;
             mesh.alignment = TextAlignment.Center;
@@ -335,15 +335,14 @@ namespace Homecoming.Editor
                     Box("Key", console, V(-.7f + j * .27f, .89f, .43f), V(.11f, .04f, .18f), j % 3 == 0 ? amber : cream);
                     Box("Readout", console, V(-.62f + j * .25f, .99f, -.3f), V(.12f, .05f, .17f), j % 2 == 0 ? cyan : dark);
                 }
-                Label("Console stencil", side < 0 ? "SIGNAL / 01" : "RELOCATION / 57", console, V(0, .25f, .711f), .09f, new Color(.65f, .7f, .65f));
             }
             var projector = Group("Research projector", root);
             projector.localPosition = V(0, .22f, -.8f);
             Cylinder("Projector base", projector, Vector3.zero, V(1.7f, .2f, 1.7f), dark);
             Cylinder("Projector rim", projector, V(0, .24f, 0), V(1.4f, .04f, 1.4f), copper);
             Cylinder("Projection lens", projector, V(0, .29f, 0), V(.92f, .025f, .92f), cyan);
-            Label("Hull identification", "I / A / D", root, V(4.2f, 3.6f, -3.56f), .23f, new Color(.5f, .56f, .56f));
-            Label("Hull stencil", "INTERGALACTIC\nAFFECTION DEPARTMENT", root, V(4.2f, 2.95f, -3.56f), .08f, new Color(.5f, .56f, .56f));
+            Label("Hull identification", "I.A.D.", root, V(4.2f, 3.95f, -3.56f), .23f, new Color(.5f, .56f, .56f));
+            Label("Hull stencil", "INTERGALACTIC AFFECTION DEPARTMENT", root, V(4.2f, 3.55f, -3.56f), .11f, new Color(.5f, .56f, .56f));
         }
         static void Line(string name, Transform parent, Vector3[] points, float width, Material mat)
         {

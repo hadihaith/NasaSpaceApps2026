@@ -5,13 +5,19 @@
       "description": "A pinprick in the dark becomes the Moon as the camera races toward it. A radio signal crackles.",
       "seconds": 4.5,
       "cues": [
-        { "at": 0.08, "name": "radio" },
-        { "at": 2.9, "name": "orbit" }
+        {
+          "at": 0.08,
+          "name": "radio"
+        },
+        {
+          "at": 2.9,
+          "name": "orbit"
+        }
       ]
     },
     {
       "id": "apollo",
-      "description": "Apollo 11 television footage shows Neil Armstrong in the lunar module's shadow.",
+      "description": "On an old television set, Apollo 11 footage shows Neil Armstrong in the lunar module's shadow. The camera eases toward the screen.",
       "label": "1969",
       "seconds": 5.7,
       "cues": []
@@ -21,11 +27,20 @@
       "description": "The picture shrinks into a flickering television. On an alien ship, Zorvax springs forward to greet the astronaut.",
       "seconds": 4.2,
       "lines": [
-        { "at": 2.0, "text": "Zorvax: They left Earth! They’re coming!" }
+        {
+          "at": 2.0,
+          "text": "Zorvax: They left Earth! They’re coming!"
+        }
       ],
       "cues": [
-        { "at": 1.3, "name": "orbit" },
-        { "at": 2.35, "name": "voice" }
+        {
+          "at": 1.3,
+          "name": "orbit"
+        },
+        {
+          "at": 2.35,
+          "name": "voice"
+        }
       ]
     },
     {
@@ -33,12 +48,24 @@
       "description": "Nyxen holds up one finger. Zorvax throws his arms wide anyway.",
       "seconds": 3.6,
       "lines": [
-        { "at": 0.3, "text": "Nyxen: Sir, that’s one human." },
-        { "at": 1.75, "text": "Zorvax: The first of many!" }
+        {
+          "at": 0.3,
+          "text": "Nyxen: Sir, that’s one human."
+        },
+        {
+          "at": 1.75,
+          "text": "Zorvax: The first of many!"
+        }
       ],
       "cues": [
-        { "at": 0.45, "name": "quiet" },
-        { "at": 1.8, "name": "voice" }
+        {
+          "at": 0.45,
+          "name": "quiet"
+        },
+        {
+          "at": 1.8,
+          "name": "voice"
+        }
       ]
     },
     {
@@ -46,12 +73,24 @@
       "description": "The cadet fires the party cannon. The lights go rose and teal, foil strips fly, and the crew dances beneath a welcome banner.",
       "seconds": 4.4,
       "lines": [
-        { "at": 0.0, "text": "Zorvax: Cadet! The welcome cannon!" },
-        { "at": 1.5, "text": "Zorvax: WELCOME HOME, HUMANS!" }
+        {
+          "at": 0.0,
+          "text": "Zorvax: Cadet! The welcome cannon!"
+        },
+        {
+          "at": 1.5,
+          "text": "Zorvax: WELCOME HOME, HUMANS!"
+        }
       ],
       "cues": [
-        { "at": 0.72, "name": "party-hit" },
-        { "at": 1.0, "name": "celebrate" }
+        {
+          "at": 0.72,
+          "name": "party-hit"
+        },
+        {
+          "at": 1.0,
+          "name": "celebrate"
+        }
       ]
     },
     {
@@ -59,24 +98,46 @@
       "description": "One last streamer lodges in the cannon. The cannon coughs twice.",
       "seconds": 2.6,
       "lines": [
-        { "at": 1.3, "text": "Cadet B: It’s… resting." }
+        {
+          "at": 1.3,
+          "text": "Cadet B: It’s… resting."
+        }
       ],
       "cues": [
-        { "at": 0.58, "name": "sputter" },
-        { "at": 1.08, "name": "sputter" }
+        {
+          "at": 0.58,
+          "name": "sputter"
+        },
+        {
+          "at": 1.08,
+          "name": "sputter"
+        }
       ]
     },
     {
       "id": "years",
-      "description": "The same banner sags in a dim, faded room. The console bulb flickers. The crew is still waiting.",
+      "description": "A time-lapse: the years roll from 1969 to 2026. The lights fade, the banner sags and the confetti stays where it fell. The crew is still waiting.",
       "label": "2026",
-      "seconds": 4.8,
+      "seconds": 6.4,
       "lines": [
-        { "at": 1.4, "text": "Cadet B: Should I take the banner down?" },
-        { "at": 3.0, "text": "Zorvax: Not until they get here." }
+        {
+          "at": 3.1,
+          "text": "Cadet B: Should I take the banner down?"
+        },
+        {
+          "at": 4.7,
+          "text": "Zorvax: Not until they get here."
+        }
       ],
       "cues": [
-        { "at": 0.18, "name": "sputter" }
+        {
+          "at": 0.18,
+          "name": "sputter"
+        },
+        {
+          "at": 2.75,
+          "name": "quiet"
+        }
       ]
     },
     {
@@ -84,12 +145,24 @@
       "description": "The television lights up with news of the Artemis missions, washing the crew in blue. Zorvax stares in disbelief.",
       "seconds": 4.8,
       "lines": [
-        { "at": 1.5, "text": "Zorvax: The Moon? Again?" },
-        { "at": 3.2, "text": "Nyxen: And then straight back home, sir." }
+        {
+          "at": 1.5,
+          "text": "Zorvax: The Moon? Again?"
+        },
+        {
+          "at": 3.2,
+          "text": "Nyxen: And then straight back home, sir."
+        }
       ],
       "cues": [
-        { "at": 0.18, "name": "radio" },
-        { "at": 2.0, "name": "quiet" }
+        {
+          "at": 0.18,
+          "name": "radio"
+        },
+        {
+          "at": 2.0,
+          "name": "quiet"
+        }
       ]
     },
     {
@@ -97,11 +170,20 @@
       "description": "Through the window, Earth rolls out of the night and into the sunlight. Zorvax takes a long look at the planet humans keep coming home to.",
       "seconds": 5.0,
       "lines": [
-        { "at": 1.2, "text": "Zorvax: Every time. Straight back to that planet." },
-        { "at": 3.1, "text": "Zorvax: What does it have that ours doesn’t?" }
+        {
+          "at": 1.2,
+          "text": "Zorvax: Every time. Straight back to that planet."
+        },
+        {
+          "at": 3.1,
+          "text": "Zorvax: What does it have that ours doesn’t?"
+        }
       ],
       "cues": [
-        { "at": 0.3, "name": "orbit" }
+        {
+          "at": 0.3,
+          "name": "orbit"
+        }
       ]
     },
     {
@@ -109,10 +191,16 @@
       "description": "In the gloom, Zorvax slams a red switch. Every light on the bridge kicks on.",
       "seconds": 2.6,
       "lines": [
-        { "at": 1.0, "text": "Zorvax: Let’s find out." }
+        {
+          "at": 1.0,
+          "text": "Zorvax: Let’s find out."
+        }
       ],
       "cues": [
-        { "at": 0.74, "name": "stamp" }
+        {
+          "at": 0.74,
+          "name": "stamp"
+        }
       ]
     },
     {
@@ -120,7 +208,10 @@
       "description": "Operation: The Great Homecoming. Better together. Love thy human.",
       "seconds": 3.4,
       "cues": [
-        { "at": 0.14, "name": "discover" }
+        {
+          "at": 0.14,
+          "name": "discover"
+        }
       ]
     }
   ],
@@ -130,13 +221,28 @@
       "description": "Nyxen switches on the projector. A miniature Earth rises over the research bench in cyan light. The scanner sweeps across it.",
       "seconds": 6.4,
       "lines": [
-        { "at": 1.6, "text": "Nyxen: A working copy of Earth. Perfectly safe." },
-        { "at": 4.2, "text": "Nyxen: Your planet now. Try the dials." }
+        {
+          "at": 1.6,
+          "text": "Nyxen: A working copy of Earth. Perfectly safe."
+        },
+        {
+          "at": 4.2,
+          "text": "Nyxen: Your planet now. Try the dials."
+        }
       ],
       "cues": [
-        { "at": 0.45, "name": "scan" },
-        { "at": 1.5, "name": "orbit" },
-        { "at": 4.4, "name": "voice" }
+        {
+          "at": 0.45,
+          "name": "scan"
+        },
+        {
+          "at": 1.5,
+          "name": "orbit"
+        },
+        {
+          "at": 4.4,
+          "name": "voice"
+        }
       ]
     }
   ],
@@ -146,12 +252,24 @@
       "description": "Zorvax presents your report and reaches for the party cannon. Nyxen points to the word SIMULATION.",
       "seconds": 5.8,
       "lines": [
-        { "at": 0.7, "text": "Zorvax: Proof! Now they’ll come!" },
-        { "at": 2.5, "text": "Nyxen: Sir, we ran a simulation." }
+        {
+          "at": 0.7,
+          "text": "Zorvax: Proof! Now they’ll come!"
+        },
+        {
+          "at": 2.5,
+          "text": "Nyxen: Sir, we ran a simulation."
+        }
       ],
       "cues": [
-        { "at": 0.6, "name": "stamp" },
-        { "at": 3.1, "name": "quiet" }
+        {
+          "at": 0.6,
+          "name": "stamp"
+        },
+        {
+          "at": 3.1,
+          "name": "quiet"
+        }
       ]
     },
     {
@@ -159,10 +277,16 @@
       "description": "The last party balloon deflates with a squeak. The crew is still waiting.",
       "seconds": 4.4,
       "lines": [
-        { "at": 2.8, "text": "Cadet B: …Same time next year?" }
+        {
+          "at": 2.8,
+          "text": "Cadet B: …Same time next year?"
+        }
       ],
       "cues": [
-        { "at": 0.84, "name": "deflate" }
+        {
+          "at": 0.84,
+          "name": "deflate"
+        }
       ]
     }
   ]

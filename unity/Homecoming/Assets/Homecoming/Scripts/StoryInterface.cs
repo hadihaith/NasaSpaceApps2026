@@ -304,8 +304,16 @@ namespace Homecoming
             {
                 float reveal = reducedMotion ? 1 : Ease(shotTime / .7f);
                 uiOpacity = reveal;
-                Badge(62, 135, shot.label == "1969" ? "THE FIRST TRANSMISSION" : "THE SAME ROOM. STILL WAITING.", orange);
-                Text(54, 171 + (1 - reveal) * 24, 500, 148, shot.label, Style(displayFont, 133, paper));
+                string year = shot.label, badge = shot.label == "1969" ? "THE FIRST TRANSMISSION" : "THE SAME ROOM. STILL WAITING.";
+                if (shot.id == "years")
+                {
+                    // The year rolls forward with the time-lapse, 1969 → 2026.
+                    float lapse = StoryStage.Lapse(shotTime, reducedMotion);
+                    year = Mathf.RoundToInt(Mathf.Lerp(1969, 2026, lapse)).ToString();
+                    if (lapse < 1) badge = "TIME PASSES";
+                }
+                Badge(62, 135, badge, orange);
+                Text(54, 171 + (1 - reveal) * 24, 500, 148, year, Style(displayFont, 133, paper));
                 Rule(63, 325, 75, orange, 3);
                 uiOpacity = 1;
             }

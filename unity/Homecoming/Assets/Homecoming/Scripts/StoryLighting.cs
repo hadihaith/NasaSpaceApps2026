@@ -18,7 +18,7 @@ namespace Homecoming
     {
         static readonly Color Warm = new Color(1f, .85f, .66f), Neutral = new Color(1f, .93f, .84f),
             Cold = new Color(.84f, .87f, .94f), Archive = new Color(.82f, .88f, 1f), Broadcast = new Color(.42f, .66f, 1f),
-            SkyBase = new Color(.24f, .29f, .35f), EquatorBase = new Color(.16f, .18f, .21f), GroundBase = new Color(.07f, .07f, .08f);
+            SkyBase = new Color(.3f, .35f, .42f), EquatorBase = new Color(.2f, .22f, .26f), GroundBase = new Color(.09f, .09f, .1f);
         static readonly int SunId = Shader.PropertyToID("_SunDir");
 
         StoryStage stage;
@@ -95,83 +95,131 @@ namespace Homecoming
         // Deterministic picture-tube flicker in [-1, 1].
         static float Flicker(float t) => .5f * Mathf.Sin(t * 23f) + .3f * Mathf.Sin(t * 57f + 1.3f) + .2f * Mathf.Sin(t * 91f + .7f);
 
+        // Everything a shot's lighting needs, so two looks can be blended (the 2026 time-lapse).
+        struct Look
+        {
+            public float key, fill, rim, tv, practical, party, projector, ambient;
+            public float exposure, saturation, contrast, vignette, bloom, grain;
+            public Color keyColor, tvColor, tint;
+            public static Look Lerp(Look a, Look b, float t) => new Look
+            {
+                key = Mathf.Lerp(a.key, b.key, t), fill = Mathf.Lerp(a.fill, b.fill, t), rim = Mathf.Lerp(a.rim, b.rim, t),
+                tv = Mathf.Lerp(a.tv, b.tv, t), practical = Mathf.Lerp(a.practical, b.practical, t),
+                party = Mathf.Lerp(a.party, b.party, t), projector = Mathf.Lerp(a.projector, b.projector, t),
+                ambient = Mathf.Lerp(a.ambient, b.ambient, t), exposure = Mathf.Lerp(a.exposure, b.exposure, t),
+                saturation = Mathf.Lerp(a.saturation, b.saturation, t), contrast = Mathf.Lerp(a.contrast, b.contrast, t),
+                vignette = Mathf.Lerp(a.vignette, b.vignette, t), bloom = Mathf.Lerp(a.bloom, b.bloom, t),
+                grain = Mathf.Lerp(a.grain, b.grain, t), keyColor = Color.Lerp(a.keyColor, b.keyColor, t),
+                tvColor = Color.Lerp(a.tvColor, b.tvColor, t), tint = Color.Lerp(a.tint, b.tint, t),
+            };
+        }
+
+        // 1969: a bright, warm bridge with the television flickering into the room.
+        static Look Bright(float flicker) => new Look
+        {
+            key = 2.3f, fill = 1.1f, rim = .75f, tv = 1.3f * (1 + .18f * flicker), practical = 1.6f, ambient = 1.15f,
+            exposure = 1.65f, saturation = 1.05f, contrast = 1.05f, vignette = .28f, bloom = .55f, grain = .022f,
+            keyColor = Warm, tvColor = Archive, tint = new Color(1.03f, 1f, .95f),
+        };
+
+        // 2026: the same room, cooler and faded, but still clearly lit. The console bulb is dying.
+        static Look Faded(float t, bool reduced)
+        {
+            bool dying = !reduced && Mathf.Sin(t * 7.3f) + Mathf.Sin(t * 13.1f + 2) > 1.35f;
+            return new Look
+            {
+                key = 1.15f, fill = .75f, rim = .55f, tv = .3f, practical = dying ? .15f : .5f, ambient = .95f,
+                exposure = 1.55f, saturation = .62f, contrast = .98f, vignette = .45f, bloom = .4f, grain = .03f,
+                keyColor = Cold, tvColor = new Color(.7f, .72f, .7f), tint = new Color(.96f, .98f, 1.03f),
+            };
+        }
+
         public void Evaluate(string id, float t, bool reduced)
         {
             if (!ready) Initialize(stage != null ? stage : GetComponent<StoryStage>());
             float flicker = reduced ? 0 : Flicker(t);
-
-            // The 1969 bridge is the reference look; other shots depart from it.
-            float keyI = 1.35f, fillI = .6f, rimI = .6f, tvI = 1.1f * (1 + .18f * flicker), practicalI = 1.1f, party = 0, projectorI = 0, ambient = 1;
-            Color keyColor = Warm, tvColor = Archive;
-            float exposure = 1.45f, saturation = 1.05f, contrast = 1.05f, vignette = .32f, bloom = .55f, grain = .022f;
-            Color tint = new Color(1.03f, 1f, .95f);
+            float beat = .5f;
+            var look = Bright(flicker);
 
             switch (id)
             {
                 case "home": case "recruit":
-                    keyI = .9f; fillI = .5f; rimI = .6f; tvI = .7f * (1 + .12f * flicker); practicalI = .8f; ambient = .85f;
-                    exposure = 1.4f; saturation = .95f; vignette = .42f; break;
+                    look.key = 1.7f; look.fill = .95f; look.rim = .7f; look.tv = .9f * (1 + .12f * flicker); look.practical = 1.2f;
+                    look.ambient = 1.05f; look.exposure = 1.6f; look.saturation = .97f; look.vignette = .38f; break;
                 case "signal":
-                    exposure = 1.1f; saturation = .9f; vignette = .5f; bloom = .6f; tint = new Color(.96f, .99f, 1.04f); break;
+                    look.exposure = 1.25f; look.saturation = .9f; look.vignette = .5f; look.bloom = .6f; look.tint = new Color(.96f, .99f, 1.04f); break;
                 case "apollo":
-                    exposure = 1.2f; saturation = .9f; vignette = .55f; bloom = .35f; grain = .05f; break;
+                    look.tv = 1.6f * (1 + .18f * flicker); look.exposure = 1.5f; look.saturation = .9f; look.vignette = .42f;
+                    look.bloom = .45f; look.grain = .05f; break;
                 case "party":
                 {
-                    float on = Smooth(.68f, .9f, t);
-                    float beat = reduced ? .5f : .5f + .5f * Mathf.Sin((t - .72f) * 7.8f);
-                    keyI = 1.45f; party = on; partyA.intensity = 2.6f * on * (.25f + .75f * beat); partyB.intensity = 2.6f * on * (1 - .75f * beat);
-                    exposure += reduced ? 0 : .55f * Pulse(t, .76f, .09f);
-                    saturation = 1.15f; tint = new Color(1.05f, .99f, .96f); break;
+                    look.party = Smooth(.68f, .9f, t);
+                    beat = reduced ? .5f : .5f + .5f * Mathf.Sin((t - .72f) * 7.8f);
+                    look.key = 2.4f; look.saturation = 1.15f; look.tint = new Color(1.05f, .99f, .96f);
+                    look.exposure += reduced ? 0 : .5f * Pulse(t, .76f, .09f); break;
                 }
                 case "jam":
+                    look.party = (1 - Smooth(.15f, 1.6f, t)) * .65f;
+                    look.key = 2.2f;
+                    look.exposure += reduced ? 0 : .2f * (Pulse(t, .6f, .07f) + Pulse(t, 1.1f, .07f)); break;
+                case "years":
                 {
-                    float fade = (1 - Smooth(.15f, 1.6f, t)) * .65f;
-                    party = fade; partyA.intensity = 2.2f * fade; partyB.intensity = 2.2f * fade;
-                    keyI = 1.25f;
-                    exposure += reduced ? 0 : .22f * (Pulse(t, .6f, .07f) + Pulse(t, 1.1f, .07f)); break;
+                    // Time-lapse: 57 years pass in a couple of seconds. The room fades from the 1969
+                    // look to 2026 while the lights flutter like days going by, then settles.
+                    float lapse = reduced ? 1 : Smooth(.25f, 2.7f, t);
+                    look = Look.Lerp(Bright(flicker), Faded(t, reduced), lapse);
+                    if (!reduced && lapse > 0 && lapse < 1)
+                    {
+                        float days = Mathf.Sin(t * 21f) * Mathf.Sin(lapse * Mathf.PI);
+                        look.practical *= 1 + .6f * days;
+                        look.exposure += .12f * days;
+                    }
+                    break;
                 }
-                case "years": case "deflate": case "epilogue":
-                {
-                    // The same room 57 years on: dim, cold and faded. The console bulb is dying.
-                    bool dying = !reduced && Mathf.Sin(t * 7.3f) + Mathf.Sin(t * 13.1f + 2) > 1.35f;
-                    keyI = .62f; keyColor = Cold; fillI = .4f; rimI = .45f; tvI = .22f; tvColor = new Color(.7f, .72f, .7f);
-                    practicalI = dying ? .1f : .34f; ambient = .75f;
-                    exposure = 1.35f; saturation = .58f; contrast = .98f; vignette = .55f; bloom = .4f;
-                    tint = new Color(.95f, .98f, 1.04f);
-                    if (id != "years") { keyI = .7f; saturation = .64f; } break;
-                }
+                case "deflate": case "epilogue":
+                    look = Faded(t, reduced); look.key = 1.3f; look.saturation = .66f; break;
                 case "return":
                 {
-                    // The Artemis broadcast becomes the main light on the crew.
+                    // The Artemis broadcast leads, washing the crew in blue.
                     float signal = Smooth(.1f, .55f, t);
-                    keyI = .45f; keyColor = Cold; fillI = .35f; rimI = .4f; practicalI = .3f; ambient = .7f;
-                    tvColor = Broadcast; tvI = 1.7f * signal * (1 + .12f * flicker);
-                    exposure = 1.35f; saturation = .8f; vignette = .5f; bloom = .6f; tint = new Color(.94f, .98f, 1.05f); break;
+                    look = Faded(t, reduced);
+                    look.key = 1.0f; look.fill = .8f; look.rim = .5f; look.practical = .5f; look.ambient = .9f;
+                    look.tvColor = Broadcast; look.tv = 2.2f * signal * (1 + .12f * flicker);
+                    look.saturation = .82f; look.bloom = .6f; look.tint = new Color(.95f, .98f, 1.04f); break;
                 }
                 case "earth":
-                    exposure = 1.4f; saturation = .85f; contrast = .97f; vignette = .45f; bloom = .6f; tint = new Color(.99f, 1f, 1.01f); break;
+                    look.exposure = 1.5f; look.saturation = .85f; look.contrast = .97f; look.vignette = .45f; look.bloom = .6f;
+                    look.tint = new Color(.99f, 1f, 1.01f); break;
                 case "launch": case "title":
                 {
-                    // Dim like 2026 until the slam at 0.74 s, then every light kicks on.
+                    // 2026 until the slam at 0.74 s, then every light kicks on, brighter than ever.
                     float on = id == "title" ? 1 : Smooth(.72f, .86f, t);
-                    keyI = Mathf.Lerp(.42f, 1.75f, on); keyColor = Color.Lerp(Cold, Warm, on);
-                    fillI = Mathf.Lerp(.35f, .7f, on); rimI = Mathf.Lerp(.4f, .7f, on); practicalI = Mathf.Lerp(.3f, 3.2f, on); tvI = Mathf.Lerp(.2f, .9f, on);
-                    ambient = Mathf.Lerp(.75f, 1.05f, on);
-                    saturation = Mathf.Lerp(.6f, 1.12f, on); vignette = Mathf.Lerp(.55f, .3f, on);
-                    exposure = 1.35f + (reduced || id == "title" ? 0 : .7f * Pulse(t, .8f, .12f));
-                    tint = Color.Lerp(new Color(.95f, .98f, 1.04f), new Color(1.04f, 1f, .94f), on); break;
+                    var lit = Bright(flicker);
+                    lit.key = 2.8f; lit.practical = 4f; lit.fill = 1.2f; lit.saturation = 1.12f;
+                    look = Look.Lerp(Faded(t, reduced), lit, on);
+                    look.exposure += reduced || id == "title" ? 0 : .6f * Pulse(t, .8f, .12f); break;
                 }
                 case "lab": case "ready":
                 {
                     float rise = id == "ready" ? 1 : Smooth(.6f, 1.9f, t);
-                    keyI = .6f; fillI = .35f; rimI = .5f; practicalI = .55f; tvI = .2f; ambient = .75f;
-                    projectorI = 1.5f * rise * (reduced ? 1 : 1 + .06f * Mathf.Sin(t * 9));
-                    exposure = 1.4f; saturation = .95f; vignette = .45f; bloom = .8f; tint = new Color(.95f, 1.02f, 1.04f); break;
+                    look.key = 1.2f; look.fill = .85f; look.rim = .6f; look.practical = .9f; look.tv = .3f; look.ambient = .95f;
+                    look.projector = 1.8f * rise * (reduced ? 1 : 1 + .06f * Mathf.Sin(t * 9));
+                    look.exposure = 1.6f; look.saturation = .97f; look.vignette = .4f; look.bloom = .8f;
+                    look.tint = new Color(.96f, 1.02f, 1.03f); break;
                 }
                 case "hearing":
-                    keyI = 1.15f; keyColor = Neutral; fillI = .55f; rimI = .55f; tvI = .3f; practicalI = .8f; ambient = .85f;
-                    exposure = 1.4f + (reduced ? 0 : .25f * Pulse(t, .64f, .08f)); saturation = .92f; vignette = .4f; break;
+                    look.key = 2.0f; look.keyColor = Neutral; look.fill = 1.05f; look.rim = .65f; look.tv = .4f; look.practical = 1.2f;
+                    look.ambient = 1.05f; look.saturation = .94f; look.vignette = .36f;
+                    look.exposure = 1.6f + (reduced ? 0 : .25f * Pulse(t, .64f, .08f)); break;
             }
+
+            float keyI = look.key, fillI = look.fill, rimI = look.rim, tvI = look.tv, practicalI = look.practical;
+            float party = look.party, projectorI = look.projector, ambient = look.ambient;
+            Color keyColor = look.keyColor, tvColor = look.tvColor, tint = look.tint;
+            float exposure = look.exposure, saturation = look.saturation, contrast = look.contrast;
+            float vignette = look.vignette, bloom = look.bloom, grain = look.grain;
+            partyA.intensity = 3.4f * party * (.25f + .75f * beat);
+            partyB.intensity = 3.4f * party * (1 - .75f * beat);
 
             bool onBridge = stage.bridge.activeSelf;
             key.enabled = onBridge; fill.enabled = onBridge; rim.enabled = onBridge; tv.enabled = onBridge && tvI > .01f;

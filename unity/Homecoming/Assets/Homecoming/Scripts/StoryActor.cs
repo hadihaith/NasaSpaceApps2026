@@ -63,6 +63,7 @@ namespace Homecoming
         }
         static float Smooth(float from, float to, float t) => Mathf.SmoothStep(0, 1, Mathf.InverseLerp(from, to, t));
         static float Beat(float t, float at, float width) => Mathf.Exp(-Mathf.Pow((t - at) / width, 2));
+        static float Hash(int i, int n) => Mathf.Repeat(Mathf.Sin((i + 1) * 12.9898f + n * 78.233f) * 43758.5453f, 1);
         static float Envelope(float t, float start, float end) => Smooth(start, start + .22f, t) * (1 - Smooth(end - .32f, end, t));
 
         // Every pose is evaluated from time, so seeking, pause and replay agree exactly.
@@ -197,16 +198,28 @@ namespace Homecoming
             }
             if (shot == "years")
             {
-                y = -.06f; torsoPitch = role == 0 ? 8 : 5; headPitch = role == 2 ? 16 : 11;
-                roll = role == 2 ? -5 : 2; headYaw = role == 0 ? -9 : 5;
-                rightArmTilt = role == 0 ? -12 : -5;
+                // Time-lapse: the crew slumps a little more with every year that passes...
+                float lapse = StoryStage.Lapse(t, still);
+                y = -.06f * lapse; torsoPitch = (role == 0 ? 8 : 5) * lapse; headPitch = (role == 2 ? 16 : 11) * lapse;
+                roll = (role == 2 ? -5 : 2) * lapse; headYaw = (role == 0 ? -9 : 5) * lapse;
+                rightArmTilt = (role == 0 ? -12 : -5) * lapse;
+                // ...and jumps between spots and stances, the way a time-lapse skips through days.
+                if (!still && lapse > 0 && lapse < 1)
+                {
+                    int day = Mathf.FloorToInt(t * 6);
+                    float restless = Mathf.Sin(lapse * Mathf.PI);
+                    x += (Hash(role, day) - .5f) * .55f * restless;
+                    z += (Hash(role + 7, day) - .5f) * .35f * restless;
+                    yaw += (Hash(role + 13, day) - .5f) * 70 * restless;
+                    headYaw += (Hash(role + 21, day) - .5f) * 40 * restless;
+                }
                 // "Should I take the banner down?": the cadet looks up at it, then back down.
-                if (role == 2) headPitch = 16 - 30 * Smooth(1.1f, 1.6f, t) * (1 - Smooth(2.9f, 3.5f, t));
+                if (role == 2) headPitch = 16 * lapse - 30 * Smooth(2.9f, 3.4f, t) * (1 - Smooth(4.5f, 5.1f, t));
                 // "Not until they get here.": Zorvax straightens, chin up.
                 if (role == 0)
                 {
-                    float resolve = Smooth(2.8f, 3.3f, t);
-                    torsoPitch = 8 - 9 * resolve; headPitch = 11 - 15 * resolve; rightArmTilt = -12 + 8 * resolve;
+                    float resolve = Smooth(4.5f, 5f, t);
+                    torsoPitch = 8 * lapse - 9 * resolve; headPitch = 11 * lapse - 15 * resolve; rightArmTilt = -12 * lapse + 8 * resolve;
                 }
             }
             if (shot == "return")

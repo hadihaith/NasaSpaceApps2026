@@ -79,6 +79,18 @@ How the route limits cost and misuse:
 - It sets the thinking level to `LOW`, since a short, fact-bound write-up doesn't need deep reasoning.
 - If Gemini blocks the request for safety reasons, the page says so and keeps the model's own report.
 
+## The app assistant (chat in the corner of every page)
+
+A fixed, collapsible chat (`src/components/ChatWidget.tsx`) answers questions about the app through `/api/chat`, using the
+same `GEMINI_API_KEY` and model as the What-if briefing. Without the key it shows "not switched on".
+
+- What it knows comes from `src/lib/chat/knowledge.ts`: a description of the pages, the game, the data and the methods,
+  plus real trend results computed at runtime from `public/data/earth-observations.json`. Update that file when pages change.
+- It is told to stay on the topic of the app and not to invent data. It can still be wrong, and the panel says so.
+- Limits: the last 12 messages, 1,500 characters each and 12,000 in total; 10 questions per minute per IP address
+  (in memory, best-effort); a 45-second timeout. Answers stream as plain text.
+- The conversation is kept only in the visitor's browser tab (sessionStorage) and is not stored on the server.
+
 ## Notes
 
 - `vercel.json` sets `git.deploymentEnabled: false`. That stops Vercel's own GitHub integration from deploying the

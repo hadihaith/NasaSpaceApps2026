@@ -62,6 +62,10 @@ export default function InferencesPage() {
                   surrounding 2° region (NASA MERRA-2) at{" "}
                   <strong className="tabular">{signed(city.regionPerDecade, 2)} °C per decade</strong>.
                 </p>
+                <p className="mt-1 text-xs text-ink-2">
+                  Least-squares rates, which this comparison test needs. They differ slightly from the Theil-Sen
+                  rates on the trend board.
+                </p>
                 <p className="mt-3">
                   The difference, {signed(city.differencePerDecade, 2)} °C per decade, is{" "}
                   {city.significant ? "statistically significant" : "not statistically significant"} ({pText(city.p)}

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Atkinson_Hyperlegible_Next, Bricolage_Grotesque } from "next/font/google";
+import { ChatWidget } from "@/components/ChatWidget";
 import { SiteNav } from "@/components/SiteNav";
+import { geminiKey } from "@/lib/whatif/ai";
 import "./globals.css";
 
 const body = Atkinson_Hyperlegible_Next({
@@ -27,6 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         <SiteNav />
         {children}
+        <ChatWidget enabled={Boolean(geminiKey())} />
       </body>
     </html>
   );

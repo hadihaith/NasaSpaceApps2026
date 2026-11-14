@@ -38,20 +38,28 @@ export interface SeriesPoint extends Point {
 }
 
 export interface MonthlyRecord {
+  /** Set only following Member 4's documented dataset review. */
+  assumptionsReviewed?: boolean;
   startYear: number;
   monthly: (number | null)[];
 }
 
 export function toSeries(record: MonthlyRecord, mode: Mode, month = 6): SeriesPoint[] {
   const { startYear, monthly } = record;
-  const years = Math.floor(monthly.length / 12);
+  if (!Number.isInteger(startYear) || !Array.isArray(monthly) ||
+      monthly.some((v) => v !== null && !Number.isFinite(v))) {
+    throw new RangeError("Use an integer startYear and finite monthly values or null.");
+  }
+  if (!["annual", "anomaly", "month"].includes(mode)) throw new RangeError("Unknown time mode.");
+  if (!Number.isInteger(month) || month < 0 || month > 11) throw new RangeError("month must be 0 through 11.");
+  const years = Math.ceil(monthly.length / 12);
   const out: SeriesPoint[] = [];
 
   if (mode === "annual") {
     for (let y = 0; y < years; y++) {
       const slice = monthly.slice(y * 12, y * 12 + 12);
       // A year with a missing month would be biased toward the seasons it does have.
-      if (slice.some((v) => v === null)) continue;
+      if (slice.length !== 12 || slice.some((v) => v === null)) continue;
       const mean = (slice as number[]).reduce((a, b) => a + b, 0) / 12;
       out.push({ t: startYear + y, v: mean, label: String(startYear + y) });
     }

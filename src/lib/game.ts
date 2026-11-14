@@ -46,6 +46,7 @@ export interface Judgement {
 }
 
 export function answerFor(trend: TrendShape): string {
+  if (trend.strength === "not-established") return "Significance not established";
   if (trend.direction === "flat" || trend.strength === "not-significant") return "No clear trend";
   const direction = trend.direction === "rising" ? "Rising" : "Falling";
   return trend.strength === "significant" ? direction : `Maybe ${direction.toLowerCase()}`;
@@ -58,6 +59,7 @@ export function answerFor(trend: TrendShape): string {
  *  - Mixed evidence: the lean and "no clear trend" are both close.
  */
 export function judge(guess: Guess, trend: TrendShape): Judgement {
+  if (trend.strength === "not-established") return { guess, verdict: "close", answer: "Significance not established", xp: 0 };
   const lean: Guess = trend.direction === "flat" ? "none" : trend.direction;
   let verdict: Verdict;
   if (trend.direction !== "flat" && trend.strength === "significant") {
@@ -193,6 +195,10 @@ export interface RoundResult {
 const LETTERS = ["A", "B"];
 
 export function playRound(before: Progress, round: Round): RoundResult {
+  if (round.trends.some((t) => t.strength === "not-established")) {
+    return { progress: before, judgements: round.guesses.map((guess) => ({ guess, verdict: "close", answer: "Significance not established — round not scored", xp: 0 })),
+      overall: "close", lines: [], xpGained: 0, stars: null, newBadges: [], promotedTo: null };
+  }
   const judgements = round.guesses.map((guess, i) => judge(guess, round.trends[i]));
   const lines: ScoreLine[] = [];
   let { streak, bestStreak, spotOn } = before;

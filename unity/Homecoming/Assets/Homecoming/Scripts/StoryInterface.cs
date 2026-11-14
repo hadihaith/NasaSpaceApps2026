@@ -487,6 +487,8 @@ namespace Homecoming
             if (Toggle("toggle-descriptions", 417, "Scene descriptions", "DESCRIBE ACTION BETWEEN LINES", descriptions)) { descriptions = !descriptions; SaveOptions(); }
             if (Toggle("toggle-motion", 526, "Reduced motion", "STEADY CAMERAS / QUIETER MOVEMENT", reducedMotion)) { reducedMotion = !reducedMotion; SaveOptions(); }
             Text(905, 649, 624, 62, "SPACE  PAUSE     ← / →  SHOTS\nM  AUDIO        C  CAPTIONS     ESC  MENU", micro);
+            Text(904, 722, 624, 24, "DISCOVERY CUTSCENES / PREVIEW", micro, orange);
+            if (Link("cutscene-drought", new Rect(904, 750, 624, 35), "01  THE WELCOME BASKETS  (SOIL DROUGHT)  →")) Play("drought", true);
             if (Link("reset", new Rect(62, 755, 580, 35), "START A NEW OPERATION", orange)) Show(Page.Reset);
         }
         void CreditsGUI()

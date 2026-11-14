@@ -21,12 +21,21 @@ namespace Homecoming
         bool videoFailed;
         float videoPrepareAge;
         Transform switchButton;
+        // Discovery cutscene props, created at runtime so the authored scene stays untouched.
+        const int BasketCount = 18;
+        Transform basketPile;
+        Transform[] basketItems;
+        Material wicker, ribbon;
+        Color practicalColor;
+        bool practicalCaptured;
+        float titleSize = -1;
 
         public bool VideoFallback => videoFailed;
         public void Initialize()
         {
             foreach (var actor in crew) actor.Initialize();
             switchButton = switchProp.transform.Find("Red pushbutton");
+            BuildBaskets();
             ApplyTypography();
             poster = Resources.Load<Texture2D>("Film/apollo11");
             // Clone per player; the asset is never modified by playback.
@@ -93,8 +102,9 @@ namespace Homecoming
             moon.SetActive(id == "signal");
             earth.SetActive(id == "earth");
             projection.SetActive(id == "lab" || id == "ready");
+            bool cutscene = CutsceneScript.IsCutsceneShot(id);
             bool old = id == "years" || id == "return" || id == "hearing" || id == "deflate" ||
-                id == "home" || id == "recruit" || id == "epilogue";
+                id == "home" || id == "recruit" || id == "epilogue" || cutscene;
             banner.SetActive(old || id == "party");
             float unfurl = Mathf.Clamp01((t - .72f) / .58f);
             float overshoot = reducedMotion ? 0 : Mathf.Sin(unfurl * Mathf.PI * 2) * Mathf.Exp(-unfurl * 3) * .17f;
@@ -158,6 +168,14 @@ namespace Homecoming
             monitorTitle.gameObject.SetActive(id == "return" || id == "years");
             monitorSubtitle.gameObject.SetActive(id == "return");
             monitorTitle.text = id == "return" ? "ARTEMIS" : "NO SIGNAL";
+            monitorSubtitle.text = "BACK TO THE MOON";
+            if (titleSize < 0) titleSize = monitorTitle.characterSize;
+            monitorTitle.characterSize = titleSize;
+            // Captured lazily: editor validation evaluates shots without calling Initialize.
+            if (!practicalCaptured) { practicalColor = practical.color; practicalCaptured = true; }
+            practical.color = practicalColor;
+            if (cutscene) EvaluateCutscene(id, t, reducedMotion);
+            else if (basketPile != null) basketPile.gameObject.SetActive(false);
             EvaluateCamera(id, t, reducedMotion);
         }
         static float Hash(int i, int n) => Mathf.Repeat(Mathf.Sin((i + 1) * 12.9898f + n * 78.233f) * 43758.5453f, 1);
@@ -187,6 +205,13 @@ namespace Homecoming
                 case "hearing": from = V(-.25f, 2.1f, 8.4f); to = V(-.2f, 2.0f, 7.6f); look = target = V(.05f, 1.4f, .35f); duration = 5.3f; break;
                 case "deflate": from = V(-.55f, 1.65f, 3.5f); to = V(-.4f, 1.3f, 4); look = V(-.65f, 1.8f, .5f); target = V(-.3f, 1.1f, .5f); duration = 3.5f; break;
                 case "recruit": from = to = V(-2.65f, 1.8f, 5); look = target = V(-2.7f, 1.35f, .8f); break;
+                // Cutscene 1, The Welcome Baskets. Crew marks: Zorvax x -1.5, Nyxen x .35, Cadet B x 2.1.
+                case "drought-alert": from = V(1.2f, 1.95f, 3.6f); to = V(1.0f, 1.9f, 4.7f); look = V(1.95f, 2.0f, -1.5f); target = V(1.2f, 1.6f, -.4f); duration = 2.6f; fov = 34; break;
+                case "drought-welcome": from = V(-.9f, 1.75f, 4.4f); to = V(-1.05f, 1.7f, 3.9f); look = target = V(-1.45f, 1.45f, .85f); duration = 2.6f; fov = 34; break;
+                case "drought-count": from = V(1.6f, 1.55f, 3.6f); to = V(1.65f, 1.5f, 3.3f); look = target = V(2.05f, 1.2f, -.1f); duration = 1.9f; fov = 34; break;
+                case "drought-none": from = to = V(-1.0f, 1.7f, 3.6f); look = target = V(-1.45f, 1.5f, .85f); fov = 32; break;
+                case "drought-how-many": from = V(1.65f, 1.3f, 3.2f); to = V(1.7f, 1.2f, 3.0f); look = V(2.05f, 1.45f, -.1f); target = V(2.05f, 1.9f, -.1f); duration = 1.9f; fov = 34; break;
+                case "drought-all": from = V(.55f, 2.0f, 7.2f); to = V(.95f, 1.85f, 6.0f); look = target = V(.75f, 1.2f, .2f); duration = 3.4f; fov = 38; break;
             }
             float q = Mathf.Clamp01(t / duration);
             float p = reduced ? 1 : q * q * q * (q * (6 * q - 15) + 10);
@@ -211,8 +236,95 @@ namespace Homecoming
                 fov = 2 * Mathf.Atan(Mathf.Tan(fov * Mathf.Deg2Rad / 2) * 1.55f / Mathf.Max(.5f, aspect)) * Mathf.Rad2Deg;
             filmCamera.fieldOfView = fov;
         }
+        // ---- Discovery cutscenes ----
+        void EvaluateCutscene(string id, float t, bool reduced)
+        {
+            // The 1969 television doubles as the ship's alert monitor.
+            bool alert = id == "drought-alert";
+            float flash = alert && !reduced ? (Mathf.Repeat(t * 2.2f, 1) < .55f ? 1 : .35f) : .55f;
+            televisionMaterial.mainTexture = null;
+            televisionMaterial.color = new Color(.78f * flash, .07f * flash, .05f * flash, 1);
+            monitorTitle.gameObject.SetActive(true);
+            monitorSubtitle.gameObject.SetActive(true);
+            monitorTitle.text = "SOIL MOISTURE";
+            monitorTitle.characterSize = titleSize * .62f;
+            monitorSubtitle.text = "DECLINING";
+            if (alert) practical.color = Color.Lerp(practicalColor, new Color(1, .15f, .1f), .6f * flash);
+
+            bool pile = id == "drought-all";
+            BuildBaskets();
+            basketPile.gameObject.SetActive(pile);
+            if (!pile) return;
+            const float startY = 4.2f, gravity = 9.8f;
+            for (int i = 0; i < BasketCount; i++)
+            {
+                // Four layers stacked over Cadet B's mark; each basket drops a beat after the last.
+                int layer = i < 7 ? 0 : i < 12 ? 1 : i < 16 ? 2 : 3;
+                int first = layer == 0 ? 0 : layer == 1 ? 7 : layer == 2 ? 12 : 16;
+                int count = layer == 0 ? 7 : layer == 1 ? 5 : layer == 2 ? 4 : 2;
+                float angle = (i - first) / (float)count * Mathf.PI * 2 + layer * .9f;
+                float radius = .44f - layer * .1f;
+                var rest = new Vector3(2.1f + Mathf.Cos(angle) * radius, layer * .27f, .08f + Mathf.Sin(angle) * radius * .7f);
+                var restRotation = Quaternion.Euler((Hash(i, 4) - .5f) * 24, Hash(i, 5) * 360, (Hash(i, 6) - .5f) * 24);
+                float age = reduced ? 10 : t - (1.0f + i * .055f);
+                var item = basketItems[i];
+                item.gameObject.SetActive(age >= 0);
+                if (age < 0) continue;
+                float fallTime = Mathf.Sqrt(2 * (startY - rest.y) / gravity);
+                float y, settle;
+                if (age < fallTime) { y = startY - .5f * gravity * age * age; settle = 0; }
+                else
+                {
+                    float landed = age - fallTime;
+                    y = rest.y + Mathf.Abs(Mathf.Sin(landed * 14)) * Mathf.Exp(-landed * 7) * .12f;
+                    settle = Mathf.SmoothStep(0, 1, landed / .25f);
+                }
+                var spin = Quaternion.Euler(age * 210 * (Hash(i, 7) - .5f), age * 140, age * 170 * (Hash(i, 8) - .5f));
+                item.localPosition = new Vector3(rest.x, y, rest.z);
+                item.localRotation = Quaternion.Slerp(spin, Quaternion.identity, settle) * restRotation;
+                item.localScale = Vector3.one * (.9f + Hash(i, 9) * .2f);
+            }
+        }
+        void BuildBaskets()
+        {
+            if (basketPile != null) return;
+            var source = cannon.GetComponentInChildren<Renderer>(true).sharedMaterial;
+            wicker = new Material(source) { name = "Wicker (cutscene)", color = new Color(.72f, .52f, .3f) };
+            wicker.SetFloat("_Metallic", 0); wicker.SetFloat("_Glossiness", .15f);
+            ribbon = new Material(source) { name = "Ribbon (cutscene)", color = new Color(.86f, .3f, .34f) };
+            ribbon.SetFloat("_Metallic", 0); ribbon.SetFloat("_Glossiness", .35f);
+            basketPile = new GameObject("Welcome baskets (cutscene)").transform;
+            basketPile.SetParent(bridge.transform, false);
+            basketItems = new Transform[BasketCount];
+            for (int i = 0; i < BasketCount; i++)
+            {
+                var basket = new GameObject("Basket " + i).transform;
+                basket.SetParent(basketPile, false);
+                Part(PrimitiveType.Cylinder, basket, V(0, .1f, 0), V(.34f, .1f, .34f), wicker);
+                Part(PrimitiveType.Cylinder, basket, V(0, .205f, 0), V(.37f, .014f, .37f), wicker);
+                Part(PrimitiveType.Cube, basket, V(-.16f, .3f, 0), V(.025f, .2f, .025f), wicker);
+                Part(PrimitiveType.Cube, basket, V(.16f, .3f, 0), V(.025f, .2f, .025f), wicker);
+                Part(PrimitiveType.Cube, basket, V(0, .4f, 0), V(.345f, .025f, .025f), wicker);
+                Part(PrimitiveType.Sphere, basket, V(.09f, .25f, .07f), V(.1f, .1f, .1f), ribbon);
+                basketItems[i] = basket;
+            }
+            basketPile.gameObject.SetActive(false);
+        }
+        static void Part(PrimitiveType type, Transform parent, Vector3 position, Vector3 scale, Material material)
+        {
+            var go = GameObject.CreatePrimitive(type);
+            var collider = go.GetComponent<Collider>();
+            if (Application.isPlaying) Destroy(collider); else DestroyImmediate(collider);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = position;
+            go.transform.localScale = scale;
+            go.GetComponent<Renderer>().sharedMaterial = material;
+        }
+
         void OnDestroy()
         {
+            if (wicker != null) Destroy(wicker);
+            if (ribbon != null) Destroy(ribbon);
             if (television != null)
             {
                 television.prepareCompleted -= OnVideoPrepared;

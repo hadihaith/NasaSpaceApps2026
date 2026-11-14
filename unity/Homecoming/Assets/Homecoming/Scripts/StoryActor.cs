@@ -133,7 +133,8 @@ namespace Homecoming
             if (!initialized) Initialize();
             bool visible = shot == "home" || (shot == "recruit" && role == 0) || (shot == "ready" && role > 0) || shot == "epilogue" ||
                 shot == "reveal" || shot == "party" || shot == "years" || shot == "return" || shot == "hearing" ||
-                (shot == "correction" && role < 2) || (shot == "launch" && role == 0) || (shot == "lab" && role > 0);
+                (shot == "correction" && role < 2) || (shot == "launch" && role == 0) || (shot == "lab" && role > 0) ||
+                CutsceneScript.IsCutsceneShot(shot);
             gameObject.SetActive(visible);
             if (!visible) return;
             string action = "Idle";
@@ -151,6 +152,12 @@ namespace Homecoming
                 case "lab": if (role == 1) { action = "Explain"; start = .35f; end = 6.5f; rate = .77f; hold = .9f; } break;
                 case "hearing": action = role == 0 ? "Welcome" : role == 1 ? "Eureka" : "Idle"; start = role == 1 ? 2.05f : .08f; end = 5.6f; hold = role == 0 ? 2 : .5f; rate = .9f; break;
                 case "recruit": if (t < 3.4f) { action = "Welcome"; start = .1f; end = 3.5f; hold = .6f; } break;
+                // Cutscene 1, The Welcome Baskets: only Ibrahim's authored clips are used.
+                case "drought-alert": if (role == 1) { action = "Explain"; start = .3f; end = 2.8f; rate = .9f; } break;
+                case "drought-welcome": if (role == 0) { action = "Welcome"; start = .15f; end = 2.8f; hold = .7f; } break;
+                case "drought-count": if (role == 2) { action = "Wave"; start = .1f; end = 1.95f; rate = 1.2f; } break;
+                case "drought-none": if (role == 0) { action = "Nod"; start = .1f; end = 1.5f; } break;
+                case "drought-all": if (role == 0) { action = "Complain"; start = .05f; end = 3.5f; rate = 1.2f; } break;
             }
             Sample(action, t, start, end, rate, loop, hold);
             float x = role == 0 ? -1.5f : role == 1 ? .35f : 2.1f;
@@ -226,6 +233,25 @@ namespace Homecoming
                 if (role == 0) { yaw += 15 * interruption; headYaw = 30 * interruption; headPitch = 9 * interruption; torsoPitch = -4 * interruption; }
                 if (role == 1) { headYaw = -20 * interruption; headPitch = 5 * interruption; }
                 if (role == 2) { headYaw = -17 * interruption; headPitch = 7 * interruption; }
+            }
+            if (CutsceneScript.IsCutsceneShot(shot))
+            {
+                // Glances: positive head yaw looks toward the television side of the set.
+                if (shot == "drought-alert" && role != 1) headYaw = 22 * Smooth(.4f, 1, t);
+                if (shot == "drought-welcome" && role > 0) headYaw = role == 1 ? -18 : -24;
+                if ((shot == "drought-count" || shot == "drought-how-many") && role == 0) headYaw = 18;
+                if (shot == "drought-how-many" && role == 2) { headPitch = -16 * Smooth(.2f, .7f, t); torsoPitch = -4 * Smooth(.2f, .7f, t); }
+                if (shot == "drought-all")
+                {
+                    if (role == 2)
+                    {
+                        float flinch = Smooth(.9f, 1.15f, t);
+                        headPitch = -18 * (1 - flinch) + 6 * flinch;
+                        y -= .05f * flinch;
+                        leftArmTilt = 22 * flinch; rightArmTilt = -22 * flinch;
+                    }
+                    if (role == 1) headYaw = 20 * Smooth(1, 1.4f, t);
+                }
             }
             transform.localPosition = new Vector3(x, y, z);
             transform.localRotation = Quaternion.Euler(0, yaw, roll);

@@ -48,6 +48,22 @@ are included. The ending can be previewed independently.
 The destination scene name is exposed on the `StoryDirector` component. Keep
 the story scene named **Story** unless you also update `StorySession.StoryScene`.
 
+## Discovery cutscenes
+
+Short comic scenes that play when the player makes a discovery. Scripts are in
+`docs/cutscene-scripts.md`; the shot data is in
+`Homecoming/Assets/Homecoming/Resources/Cutscenes.json` (kept separate from `Story.json`,
+which `prepare-unity-story.py` regenerates).
+
+- **Preview:** Play → **Chapters / options** → *Discovery cutscenes / preview*.
+- **From the simulation:** call `Homecoming.StorySession.PlayCutscene("drought");`. The story
+  scene plays it, then loads `Simulation` again.
+- **Done:** 1, *The Welcome Baskets* (`drought`). Camera: `StoryStage.EvaluateCamera`;
+  props and the red alert: `StoryStage.EvaluateCutscene`; acting: `StoryActor.Pose`.
+- **Adding one:** add an array to `Cutscenes.json`, a field and a case in `CutsceneScript`
+  (`StorySession.cs`), shot ids with a shared prefix, and that prefix in
+  `CutsceneScript.IsCutsceneShot`.
+
 ## Edit and verify
 
 - **Story text:** `Homecoming/Assets/Homecoming/Resources/Story.json`.

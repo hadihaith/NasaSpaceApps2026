@@ -26,7 +26,7 @@ Earlier drafts used Zorp, Zib and Bloop. Those names are retired.
 
 | # | Title | Plays when (game discovery id in `src/homecoming/model.ts`) | Length | Status |
 | --- | --- | --- | --- | --- |
-| 1 | The Welcome Baskets | `drought` discovered | 10 s | Script |
+| 1 | The Welcome Baskets | `drought` discovered | 14 s | **In Unity, needs testing** |
 | 2 | Excellent News | `demand` discovered | 10 s | Script |
 | 3 | The Recruitment Campaign | `heat` discovered | 10 s | Script |
 | 4 | The Unfortunate Recovery | `recharge` or `recovery` discovered | 10 s | Script |
@@ -200,6 +200,8 @@ measurement does not show that the whole environment changed.
 
 ## Production notes
 
+- **Cutscenes are built in the Unity project** (`unity/Homecoming`), with Ibrahim's rigs and
+  animations in Hadi's set. No AI video. See "Discovery cutscenes" in `unity/README.md`.
 - Character references come from renders of Ibrahim's `.blend` files, not the 2D concept sheets, so
   the videos match the in-game 3D models.
 - Videos are generated with Higgsfield (keyframes with GPT Image 2.6, animation with Kling 3.0),

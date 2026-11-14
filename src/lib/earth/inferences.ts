@@ -109,7 +109,8 @@ export interface CityVsRegion {
   cityPerDecade: number;
   regionPerDecade: number;
   differencePerDecade: number;
-  p: number;
+  /** Null when the comparison test cannot be established for this record. */
+  p: number | null;
   significant: boolean;
 }
 

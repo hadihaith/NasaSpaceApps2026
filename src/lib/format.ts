@@ -28,7 +28,8 @@ export function pValue(p: number): string {
 }
 
 /** "p < 0.001" or "p = 0.04", ready to drop into a sentence. */
-export function pText(p: number): string {
+export function pText(p: number | null): string {
+  if (p === null) return "p unavailable";
   const v = pValue(p);
   return v.startsWith("<") ? `p ${v}` : `p = ${v}`;
 }

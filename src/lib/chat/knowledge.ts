@@ -70,7 +70,7 @@ export function assistantInstructions(): string {
   const city = cityVsRegionWarming();
   const rain = rainAgreement();
   const cityLine = city
-    ? `City vs region (least-squares slopes, which this comparison test uses; they differ slightly from the Theil-Sen rates on the trend board above): Phoenix Airport station warmed ${city.cityPerDecade.toFixed(2)} °C per decade and the surrounding 2-degree region (MERRA-2) ${city.regionPerDecade.toFixed(2)} °C per decade over ${city.from}-${city.to}; the difference is ${city.significant ? "" : "not "}statistically significant (p=${city.p.toPrecision(2)}). If you quote both kinds of rate in one answer, say which method each comes from.`
+    ? `City vs region (least-squares slopes, which this comparison test uses; they differ slightly from the Theil-Sen rates on the trend board above): Phoenix Airport station warmed ${city.cityPerDecade.toFixed(2)} °C per decade and the surrounding 2-degree region (MERRA-2) ${city.regionPerDecade.toFixed(2)} °C per decade over ${city.from}-${city.to}; the difference is ${city.significant ? "" : "not "}statistically significant (${city.p === null ? "p unavailable" : `p=${city.p.toPrecision(2)}`}). If you quote both kinds of rate in one answer, say which method each comes from.`
     : "";
   const rainLine = `Over ${rain.from}-${rain.to}: ` +
     rain.records.map((r) => `${r.label} ${r.perDecade.toFixed(1)} mm/year per decade (${VERDICT[r.strength].text.toLowerCase()})`).join("; ") + ".";

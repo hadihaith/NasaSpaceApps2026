@@ -49,6 +49,36 @@ Until the three secrets exist, the deploy job is skipped with a notice and the c
 The production URL will be shown on the run and in Deployments. It is usually `https://nasatrenddetective.vercel.app`
 if that name is free; otherwise Vercel adds a suffix.
 
+## Optional: the AI briefing on the What-if page
+
+The What-if page always shows its own report and graphs. It can also show a short AI-written briefing,
+produced by Google Gemini (`gemini-3.5-flash` by default) through `/api/what-if/report` with the official
+`@google/genai` SDK. In testing on 2026-11-14, `gemini-3.8-flash` accepted requests but never replied with the team's key,
+so the default is the model that did reply. The page shows the model version Google reports actually serving each
+briefing. Requests give up after 30 seconds with a "try again" message. This switches on only when the server has a
+Gemini API key:
+
+1. Create a key in Google AI Studio: https://aistudio.google.com/apikey
+2. In Vercel: Project → Settings → Environment Variables → add `GEMINI_API_KEY` for Production and Preview.
+   Never put the key in code, in `.env` files that are committed, or in `NEXT_PUBLIC_*` variables.
+3. Redeploy (push to `main`, or run the workflow). The page is prerendered, so it only notices the key after a new build.
+
+Optional: set `GEMINI_MODEL` to use a different model (for example when Google retires the default).
+
+For local development, put `GEMINI_API_KEY=...` in `.env.local` (git-ignored) and restart `npm run dev`.
+
+Free tier: Google's pricing page (checked 2026-11-14) says free-tier content may be used to improve Google's products,
+and paid-tier content is not. The prompt contains only the model's numbers and fixed instructions, with no personal
+data. Free-tier rate limits are set per Google Cloud project, and the route's cache and per-IP limit help stay within them.
+
+How the route limits cost and misuse:
+- The browser sends only slider values. The server clamps them and re-runs the model itself, so no user text
+  ever reaches the prompt.
+- Identical requests are answered from an in-memory cache.
+- Each IP address is limited to 6 briefings a minute. This is in memory, so it is per server instance and best-effort.
+- It sets the thinking level to `LOW`, since a short, fact-bound write-up doesn't need deep reasoning.
+- If Gemini blocks the request for safety reasons, the page says so and keeps the model's own report.
+
 ## Notes
 
 - `vercel.json` sets `git.deploymentEnabled: false`. That stops Vercel's own GitHub integration from deploying the

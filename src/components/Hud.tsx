@@ -1,7 +1,7 @@
 "use client";
 
 import { BADGES, rankFor, type Progress } from "@/lib/game";
-import { FlameIcon, LogoIcon, MedalIcon } from "./icons";
+import { FlameIcon, MedalIcon } from "./icons";
 
 /** The always-visible player bar: rank, XP toward the next rank, streak, badges. */
 export function Hud({ progress, onOpenBadges }: { progress: Progress; onOpenBadges: () => void }) {
@@ -9,9 +9,8 @@ export function Hud({ progress, onOpenBadges }: { progress: Progress; onOpenBadg
   return (
     <header className="sticky top-0 z-30 -mx-4 border-b-[2.5px] border-edge bg-paper/90 px-4 py-2.5 backdrop-blur sm:-mx-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <a href="#top" className="flex items-center gap-2">
-          <LogoIcon className="h-9 w-9" />
-          <span className="display text-2xl sm:text-3xl">Trend Detective</span>
+        <a href="#top" className="display text-xl">
+          Your detective record
         </a>
 
         <div className="flex items-center gap-3">

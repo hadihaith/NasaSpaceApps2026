@@ -190,7 +190,7 @@ function MapFallback({ region, values, loading = false }) {
   );
 }
 
-export function EarthScene({ regionId, environment, onRegionSelect }) {
+export function EarthScene({ regionId, environment, onRegionSelect, presentation = 'default' }) {
   const viewport = useRef(null);
   const [ready, setReady] = useState(false);
   const [contextLost, setContextLost] = useState(false);
@@ -209,7 +209,7 @@ export function EarthScene({ regionId, environment, onRegionSelect }) {
   }, []);
 
   return (
-    <section className="earth-scene" aria-label="Earth visualization">
+    <section className={`earth-scene earth-scene-${presentation}`} aria-label="Earth visualization">
       <div className="earth-viewport" ref={viewport}>
         <div className="earth-grid" aria-hidden="true" />
         <div className="earth-orbit" aria-hidden="true" />

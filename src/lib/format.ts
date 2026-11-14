@@ -27,6 +27,12 @@ export function pValue(p: number): string {
   return p.toFixed(2);
 }
 
+/** "p < 0.001" or "p = 0.04", ready to drop into a sentence. */
+export function pText(p: number): string {
+  const v = pValue(p);
+  return v.startsWith("<") ? `p ${v}` : `p = ${v}`;
+}
+
 export function withUnit(value: string, unit: string): string {
   if (unit === "") return value;
   return unit === "%" ? `${value}%` : `${value} ${unit}`;

@@ -1,0 +1,1195 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedUtc": "2026-11-14T09:19:38Z",
+  "regionId": "region_01",
+  "notes": [
+    "Monthly reference climate for initialising the simulation. month 1 = January.",
+    "mean/sd/n are computed from the same series as earth-observations.json over the stated period.",
+    "Prefer the reanalysis (area-mean) baselines for the region; station baselines describe one urban point."
+  ],
+  "baselines": [
+    {
+      "seriesId": "region_01.merra2.precipitation",
+      "variable": "precipitation",
+      "label": "Precipitation (rain and snow)",
+      "unit": "mm/month",
+      "kind": "reanalysis",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 38.062,
+          "sd": 42.128,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 37.986,
+          "sd": 32.325,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 29.259,
+          "sd": 25.64,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 10.148,
+          "sd": 10.004,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 7.522,
+          "sd": 10.994,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 4.175,
+          "sd": 5.946,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 40.944,
+          "sd": 20.574,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 48.035,
+          "sd": 20.011,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 27.311,
+          "sd": 16.461,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 19.547,
+          "sd": 25.017,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 21.751,
+          "sd": 21.672,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 33.426,
+          "sd": 28.952,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 318.2,
+        "unit": "mm/year",
+        "aggregation": "sum"
+      }
+    },
+    {
+      "seriesId": "region_01.merra2.air_temperature_2m",
+      "variable": "air_temperature_2m",
+      "label": "Air temperature at 2 m",
+      "unit": "°C",
+      "kind": "reanalysis",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 8.739,
+          "sd": 1.516,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 10.322,
+          "sd": 1.85,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 13.707,
+          "sd": 1.834,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 17.43,
+          "sd": 1.703,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 22.76,
+          "sd": 1.941,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 28.524,
+          "sd": 1.454,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 30.507,
+          "sd": 0.961,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 29.709,
+          "sd": 1.103,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 26.679,
+          "sd": 1.077,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 20.243,
+          "sd": 1.572,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 13.487,
+          "sd": 2.252,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 8.408,
+          "sd": 1.31,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 19.21,
+        "unit": "°C",
+        "aggregation": "mean"
+      }
+    },
+    {
+      "seriesId": "region_01.merra2.relative_humidity_2m",
+      "variable": "relative_humidity_2m",
+      "label": "Relative humidity at 2 m",
+      "unit": "%",
+      "kind": "reanalysis",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 50.421,
+          "sd": 11.399,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 48.697,
+          "sd": 11.641,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 42.828,
+          "sd": 9.898,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 33.864,
+          "sd": 7.401,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 27.005,
+          "sd": 7.763,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 19.894,
+          "sd": 4.25,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 34.579,
+          "sd": 6.474,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 40.853,
+          "sd": 5.958,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 37.402,
+          "sd": 5.891,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 34.748,
+          "sd": 8.716,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 39.483,
+          "sd": 7.32,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 49.01,
+          "sd": 9.518,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 38.232,
+        "unit": "%",
+        "aggregation": "mean"
+      }
+    },
+    {
+      "seriesId": "region_01.merra2.wind_speed_10m",
+      "variable": "wind_speed_10m",
+      "label": "Wind speed at 10 m",
+      "unit": "m/s",
+      "kind": "reanalysis",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 3.271,
+          "sd": 0.294,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 3.239,
+          "sd": 0.219,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 3.287,
+          "sd": 0.204,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 3.599,
+          "sd": 0.261,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 3.534,
+          "sd": 0.276,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 3.52,
+          "sd": 0.187,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 2.984,
+          "sd": 0.241,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 2.649,
+          "sd": 0.194,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 2.919,
+          "sd": 0.203,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 3.143,
+          "sd": 0.228,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 3.235,
+          "sd": 0.255,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 3.211,
+          "sd": 0.228,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 3.216,
+        "unit": "m/s",
+        "aggregation": "mean"
+      }
+    },
+    {
+      "seriesId": "region_01.merra2.root_zone_soil_wetness",
+      "variable": "root_zone_soil_wetness",
+      "label": "Root-zone soil wetness",
+      "unit": "fraction (0-1)",
+      "kind": "reanalysis",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 0.46,
+          "sd": 0.053,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 0.471,
+          "sd": 0.065,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 0.473,
+          "sd": 0.063,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 0.444,
+          "sd": 0.047,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 0.415,
+          "sd": 0.024,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 0.399,
+          "sd": 0.01,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 0.406,
+          "sd": 0.007,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 0.416,
+          "sd": 0.012,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 0.414,
+          "sd": 0.01,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 0.411,
+          "sd": 0.016,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 0.417,
+          "sd": 0.021,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 0.437,
+          "sd": 0.031,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 0.43,
+        "unit": "fraction (0-1)",
+        "aggregation": "mean"
+      }
+    },
+    {
+      "seriesId": "region_01.merra2.surface_soil_wetness",
+      "variable": "surface_soil_wetness",
+      "label": "Surface soil wetness",
+      "unit": "fraction (0-1)",
+      "kind": "reanalysis",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 0.435,
+          "sd": 0.107,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 0.448,
+          "sd": 0.117,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 0.444,
+          "sd": 0.109,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 0.373,
+          "sd": 0.102,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 0.268,
+          "sd": 0.098,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 0.184,
+          "sd": 0.06,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 0.274,
+          "sd": 0.054,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 0.34,
+          "sd": 0.057,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 0.322,
+          "sd": 0.054,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 0.285,
+          "sd": 0.076,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 0.316,
+          "sd": 0.092,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 0.392,
+          "sd": 0.097,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 0.34,
+        "unit": "fraction (0-1)",
+        "aggregation": "mean"
+      }
+    },
+    {
+      "seriesId": "region_01.imerg.precipitation",
+      "variable": "precipitation",
+      "label": "Precipitation (satellite, GPM IMERG)",
+      "unit": "mm/month",
+      "kind": "satellite",
+      "period": {
+        "start": "1998",
+        "end": "2025",
+        "note": "Record starts in 1998, so the full available period 1998-2025 is used instead of 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 30.449,
+          "sd": 28.446,
+          "n": 28
+        },
+        {
+          "month": 2,
+          "mean": 32.62,
+          "sd": 30.62,
+          "n": 28
+        },
+        {
+          "month": 3,
+          "mean": 29.998,
+          "sd": 19.956,
+          "n": 28
+        },
+        {
+          "month": 4,
+          "mean": 11.411,
+          "sd": 10.335,
+          "n": 28
+        },
+        {
+          "month": 5,
+          "mean": 5.656,
+          "sd": 6.742,
+          "n": 28
+        },
+        {
+          "month": 6,
+          "mean": 5.94,
+          "sd": 6.418,
+          "n": 28
+        },
+        {
+          "month": 7,
+          "mean": 43.145,
+          "sd": 21.27,
+          "n": 28
+        },
+        {
+          "month": 8,
+          "mean": 48.562,
+          "sd": 18.068,
+          "n": 28
+        },
+        {
+          "month": 9,
+          "mean": 26.49,
+          "sd": 17.577,
+          "n": 28
+        },
+        {
+          "month": 10,
+          "mean": 22.074,
+          "sd": 28.496,
+          "n": 27
+        },
+        {
+          "month": 11,
+          "mean": 18.253,
+          "sd": 17.542,
+          "n": 27
+        },
+        {
+          "month": 12,
+          "mean": 31.206,
+          "sd": 20.585,
+          "n": 27
+        }
+      ],
+      "annual": {
+        "value": 305.8,
+        "unit": "mm/year",
+        "aggregation": "sum"
+      }
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.precipitation",
+      "variable": "precipitation",
+      "label": "Precipitation (station gauge)",
+      "unit": "mm/month",
+      "kind": "station",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 22.073,
+          "sd": 27.133,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 22.143,
+          "sd": 23.013,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 21.037,
+          "sd": 20.583,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 5.677,
+          "sd": 7.93,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 3.18,
+          "sd": 7.395,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 0.587,
+          "sd": 1.94,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 23.05,
+          "sd": 21.264,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 23.647,
+          "sd": 21.791,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 14.573,
+          "sd": 24.411,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 14.26,
+          "sd": 28.139,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 14.557,
+          "sd": 18.718,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 18.687,
+          "sd": 19.929,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 183.5,
+        "unit": "mm/year",
+        "aggregation": "sum"
+      }
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.air_temperature_mean",
+      "variable": "air_temperature_mean",
+      "label": "Mean air temperature (station)",
+      "unit": "°C",
+      "kind": "station",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 13.787,
+          "sd": 1.15,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 15.523,
+          "sd": 1.77,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 18.993,
+          "sd": 1.661,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 22.79,
+          "sd": 1.537,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 27.747,
+          "sd": 1.774,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 32.983,
+          "sd": 1.394,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 35.207,
+          "sd": 0.941,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 34.587,
+          "sd": 1.043,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 31.76,
+          "sd": 1.039,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 25.183,
+          "sd": 1.51,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 18.32,
+          "sd": 1.873,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 13.21,
+          "sd": 0.955,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 24.174,
+        "unit": "°C",
+        "aggregation": "mean"
+      }
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.air_temperature_daily_max_mean",
+      "variable": "air_temperature_daily_max_mean",
+      "label": "Average daily high (station)",
+      "unit": "°C",
+      "kind": "station",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 19.89,
+          "sd": 1.666,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 21.693,
+          "sd": 2.333,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 25.63,
+          "sd": 2.126,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 29.773,
+          "sd": 1.734,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 34.78,
+          "sd": 1.953,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 40.21,
+          "sd": 1.459,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 41.41,
+          "sd": 0.956,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 40.62,
+          "sd": 1.12,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 38.067,
+          "sd": 1.267,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 31.847,
+          "sd": 1.857,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 24.747,
+          "sd": 2.156,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 19.13,
+          "sd": 1.25,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 30.65,
+        "unit": "°C",
+        "aggregation": "mean"
+      }
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.air_temperature_daily_min_mean",
+      "variable": "air_temperature_daily_min_mean",
+      "label": "Average daily low (station)",
+      "unit": "°C",
+      "kind": "station",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 7.703,
+          "sd": 1.069,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 9.363,
+          "sd": 1.505,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 12.343,
+          "sd": 1.274,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 15.803,
+          "sd": 1.384,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 20.7,
+          "sd": 1.655,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 25.76,
+          "sd": 1.398,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 28.993,
+          "sd": 1.058,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 28.547,
+          "sd": 1.036,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 25.443,
+          "sd": 0.933,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 18.51,
+          "sd": 1.369,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 11.893,
+          "sd": 1.683,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 7.31,
+          "sd": 0.94,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 17.697,
+        "unit": "°C",
+        "aggregation": "mean"
+      }
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.wind_speed",
+      "variable": "wind_speed",
+      "label": "Average wind speed (station)",
+      "unit": "m/s",
+      "kind": "station",
+      "period": {
+        "start": "1991",
+        "end": "2020",
+        "note": "WMO standard normal period 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 2.163,
+          "sd": 0.287,
+          "n": 30
+        },
+        {
+          "month": 2,
+          "mean": 2.473,
+          "sd": 0.198,
+          "n": 30
+        },
+        {
+          "month": 3,
+          "mean": 2.813,
+          "sd": 0.258,
+          "n": 30
+        },
+        {
+          "month": 4,
+          "mean": 3.19,
+          "sd": 0.313,
+          "n": 30
+        },
+        {
+          "month": 5,
+          "mean": 3.197,
+          "sd": 0.286,
+          "n": 30
+        },
+        {
+          "month": 6,
+          "mean": 3.113,
+          "sd": 0.354,
+          "n": 30
+        },
+        {
+          "month": 7,
+          "mean": 3.29,
+          "sd": 0.392,
+          "n": 30
+        },
+        {
+          "month": 8,
+          "mean": 3.027,
+          "sd": 0.203,
+          "n": 30
+        },
+        {
+          "month": 9,
+          "mean": 2.783,
+          "sd": 0.279,
+          "n": 30
+        },
+        {
+          "month": 10,
+          "mean": 2.493,
+          "sd": 0.233,
+          "n": 30
+        },
+        {
+          "month": 11,
+          "mean": 2.207,
+          "sd": 0.306,
+          "n": 30
+        },
+        {
+          "month": 12,
+          "mean": 2.107,
+          "sd": 0.215,
+          "n": 30
+        }
+      ],
+      "annual": {
+        "value": 2.738,
+        "unit": "m/s",
+        "aggregation": "mean"
+      }
+    },
+    {
+      "seriesId": "region_01.station.USW00023183.relative_humidity",
+      "variable": "relative_humidity",
+      "label": "Average relative humidity (station)",
+      "unit": "%",
+      "kind": "station",
+      "period": {
+        "start": "2006",
+        "end": "2024",
+        "note": "Record starts in 2006, so the full available period 2006-2024 is used instead of 1991-2020."
+      },
+      "monthly": [
+        {
+          "month": 1,
+          "mean": 42.737,
+          "sd": 8.51,
+          "n": 19
+        },
+        {
+          "month": 2,
+          "mean": 37.722,
+          "sd": 9.845,
+          "n": 18
+        },
+        {
+          "month": 3,
+          "mean": 30.895,
+          "sd": 7.608,
+          "n": 19
+        },
+        {
+          "month": 4,
+          "mean": 20.474,
+          "sd": 3.949,
+          "n": 19
+        },
+        {
+          "month": 5,
+          "mean": 17.632,
+          "sd": 4.193,
+          "n": 19
+        },
+        {
+          "month": 6,
+          "mean": 15.316,
+          "sd": 2.79,
+          "n": 19
+        },
+        {
+          "month": 7,
+          "mean": 28.632,
+          "sd": 5.367,
+          "n": 19
+        },
+        {
+          "month": 8,
+          "mean": 31.684,
+          "sd": 5.143,
+          "n": 19
+        },
+        {
+          "month": 9,
+          "mean": 29.053,
+          "sd": 6.169,
+          "n": 19
+        },
+        {
+          "month": 10,
+          "mean": 28.389,
+          "sd": 8.819,
+          "n": 18
+        },
+        {
+          "month": 11,
+          "mean": 32.526,
+          "sd": 5.337,
+          "n": 19
+        },
+        {
+          "month": 12,
+          "mean": 45.737,
+          "sd": 8.53,
+          "n": 19
+        }
+      ],
+      "annual": {
+        "value": 30.066,
+        "unit": "%",
+        "aggregation": "mean"
+      }
+    }
+  ]
+}

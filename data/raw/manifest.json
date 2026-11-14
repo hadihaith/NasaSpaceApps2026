@@ -1,0 +1,61 @@
+{
+  "retrievedBy": "scripts/process_data.py fetch",
+  "files": [
+    {
+      "file": "data/raw/noaa_gsom/USW00023183_gsom_1981-01_2025-12.csv",
+      "source": "NOAA NCEI GSOM",
+      "url": "https://www.ncei.noaa.gov/access/services/data/v1?dataset=global-summary-of-the-month&stations=USW00023183&startDate=1981-01-01&endDate=2025-12-31&dataTypes=PRCP%2CTAVG%2CTMAX%2CTMIN%2CAWND%2CRHAV&units=metric&format=csv&includeAttributes=true&includeStationName=true&includeStationLocation=1",
+      "retrievedUtc": "2026-11-14T09:11:48Z",
+      "bytes": 81173,
+      "sha256": "3da7d716488163e8011737214a250c42e4505eac872f73f6ce54a6d75078a12e"
+    },
+    {
+      "file": "data/raw/nasa_power/region_01_PRECTOTCORR_monthly_1981_2025.json",
+      "source": "NASA POWER",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/regional?parameters=PRECTOTCORR&community=AG&start=1981&end=2025&format=JSON&latitude-min=32.5&latitude-max=34.5&longitude-min=-113.0&longitude-max=-111.0",
+      "retrievedUtc": "2026-11-14T09:11:51Z",
+      "bytes": 124031,
+      "sha256": "49c50e2b0ceb6fec87d7cdbf1df5434911cb4c73334aef4dd66a20afeb295274"
+    },
+    {
+      "file": "data/raw/nasa_power/region_01_T2M_monthly_1981_2025.json",
+      "source": "NASA POWER",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/regional?parameters=T2M&community=AG&start=1981&end=2025&format=JSON&latitude-min=32.5&latitude-max=34.5&longitude-min=-113.0&longitude-max=-111.0",
+      "retrievedUtc": "2026-11-14T09:11:54Z",
+      "bytes": 131583,
+      "sha256": "c30510ea961e2bd429e0250d04f298c395538a0884618f633fd4a8a7e0f44fcd"
+    },
+    {
+      "file": "data/raw/nasa_power/region_01_RH2M_monthly_1981_2025.json",
+      "source": "NASA POWER",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/regional?parameters=RH2M&community=AG&start=1981&end=2025&format=JSON&latitude-min=32.5&latitude-max=34.5&longitude-min=-113.0&longitude-max=-111.0",
+      "retrievedUtc": "2026-11-14T09:11:57Z",
+      "bytes": 132969,
+      "sha256": "bd9486ea8f7219d3adccd8c1d133f8cd3cb68d173650af1892087e447499ab00"
+    },
+    {
+      "file": "data/raw/nasa_power/region_01_WS10M_monthly_1981_2025.json",
+      "source": "NASA POWER",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/regional?parameters=WS10M&community=AG&start=1981&end=2025&format=JSON&latitude-min=32.5&latitude-max=34.5&longitude-min=-113.0&longitude-max=-111.0",
+      "retrievedUtc": "2026-11-14T09:12:00Z",
+      "bytes": 124198,
+      "sha256": "0d4f55a73e85bf301133baf2f9843c76a5975cb85c421d47fba36db84879ebf2"
+    },
+    {
+      "file": "data/raw/nasa_power/region_01_GWETROOT_monthly_1981_2025.json",
+      "source": "NASA POWER",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/regional?parameters=GWETROOT&community=AG&start=1981&end=2025&format=JSON&latitude-min=32.5&latitude-max=34.5&longitude-min=-113.0&longitude-max=-111.0",
+      "retrievedUtc": "2026-11-14T09:12:03Z",
+      "bytes": 124429,
+      "sha256": "93b7ab4dc9337a1554e4597ef55e73e39a2a8b04bc188e2d4ec3586fa4d1bdde"
+    },
+    {
+      "file": "data/raw/nasa_power/region_01_GWETTOP_monthly_1981_2025.json",
+      "source": "NASA POWER",
+      "url": "https://power.larc.nasa.gov/api/temporal/monthly/regional?parameters=GWETTOP&community=AG&start=1981&end=2025&format=JSON&latitude-min=32.5&latitude-max=34.5&longitude-min=-113.0&longitude-max=-111.0",
+      "retrievedUtc": "2026-11-14T09:12:06Z",
+      "bytes": 124264,
+      "sha256": "2bc30d5ef4e49cb1e4811444bcfdaf2c976c9a01246d865b0d7a8fe024521354"
+    }
+  ]
+}

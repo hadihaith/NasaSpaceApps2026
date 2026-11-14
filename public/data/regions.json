@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedUtc": "2026-11-14T09:19:38Z",
+  "regions": [
+    {
+      "regionId": "region_01",
+      "name": "Phoenix and central Arizona",
+      "shortName": "Phoenix",
+      "country": "United States",
+      "description": "A 2 x 2 degree box around Phoenix in the Sonoran Desert. It holds the Phoenix metro area, irrigated farmland and open desert, with mountains toward the north-east corner.",
+      "bbox": {
+        "latMin": 32.5,
+        "latMax": 34.5,
+        "lonMin": -113.0,
+        "lonMax": -111.0
+      },
+      "center": {
+        "lat": 33.5,
+        "lon": -112.0
+      },
+      "stations": [
+        {
+          "id": "USW00023183",
+          "name": "PHOENIX AIRPORT, AZ US",
+          "lat": 33.4278,
+          "lon": -112.00365,
+          "elevation_m": 339.2,
+          "wmoId": "72278",
+          "network": "GHCN-Daily (GSN station)"
+        }
+      ],
+      "seriesIds": [
+        "region_01.merra2.precipitation",
+        "region_01.merra2.air_temperature_2m",
+        "region_01.merra2.relative_humidity_2m",
+        "region_01.merra2.wind_speed_10m",
+        "region_01.merra2.root_zone_soil_wetness",
+        "region_01.merra2.surface_soil_wetness",
+        "region_01.imerg.precipitation",
+        "region_01.station.USW00023183.precipitation",
+        "region_01.station.USW00023183.air_temperature_mean",
+        "region_01.station.USW00023183.air_temperature_daily_max_mean",
+        "region_01.station.USW00023183.air_temperature_daily_min_mean",
+        "region_01.station.USW00023183.wind_speed",
+        "region_01.station.USW00023183.relative_humidity"
+      ],
+      "period": {
+        "start": "1981-01",
+        "end": "2025-12"
+      }
+    }
+  ]
+}

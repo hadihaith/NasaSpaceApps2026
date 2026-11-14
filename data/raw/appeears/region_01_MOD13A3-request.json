@@ -1,0 +1,43 @@
+{
+  "task_type": "area",
+  "task_name": "region_01_phoenix_MOD13A3_061",
+  "params": {
+    "dates": [
+      {
+        "startDate": "02-01-2000",
+        "endDate": "12-31-2025",
+        "recurring": false
+      }
+    ],
+    "layers": [
+      { "product": "MOD13A3.061", "layer": "_1_km_monthly_NDVI" },
+      { "product": "MOD13A3.061", "layer": "_1_km_monthly_EVI" },
+      { "product": "MOD13A3.061", "layer": "_1_km_monthly_pixel_reliability" }
+    ],
+    "output": {
+      "format": { "type": "geotiff" },
+      "projection": "native"
+    },
+    "geo": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "regionId": "region_01", "name": "Phoenix and central Arizona" },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [-113.0, 32.5],
+                [-111.0, 32.5],
+                [-111.0, 34.5],
+                [-113.0, 34.5],
+                [-113.0, 32.5]
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

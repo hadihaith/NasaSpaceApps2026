@@ -59,6 +59,7 @@ namespace Homecoming
             sound.SetPaused(false);
             sound.StopCue();
             stage.SetShot(CurrentShot);
+            sound.SetShot(CurrentShot, stage);
             stage.Evaluate(CurrentShot, 0, reducedMotion, sound.Muted);
         }
         public void Play(string chapter, bool isPreview = false)
@@ -80,6 +81,7 @@ namespace Homecoming
             cueIndex = 0;
             sound.StopCue();
             stage.SetShot(CurrentShot);
+            sound.SetShot(CurrentShot, stage);
             stage.SetPaused(paused);
             stage.Evaluate(CurrentShot, shotTime, reducedMotion, sound.Muted);
         }
@@ -142,6 +144,8 @@ namespace Homecoming
             }
             UpdateInterface();
             stage.Evaluate(CurrentShot, page == Page.Film ? shotTime : pageTime, reducedMotion, sound.Muted);
+            bool speaking = page == Page.Film && !string.IsNullOrEmpty(sequence[shotIndex].LineAt(shotTime, out _));
+            sound.Evaluate(CurrentShot, page == Page.Film ? shotTime : pageTime, speaking);
         }
         void OnDestroy() => DisposeInterface();
 

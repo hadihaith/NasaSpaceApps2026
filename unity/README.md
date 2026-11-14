@@ -73,6 +73,30 @@ bloom, exposure, filmic tone mapping, grade, vignette and grain. The IMGUI inter
 after it, so captions and menus are never graded. Tune a shot's look in
 `StoryLighting.Evaluate`, or the defaults on the `StoryGrade` component.
 
+### Bridge atmosphere and sound
+
+`StoryEnvironment.cs` adds the sealed observation window, Earth below the ship,
+pressure lines, ventilation panels, live console instruments, practical lamps and
+worn metal deck at runtime. The original scene layout is preserved. A local reflection
+probe gives the metal its surrounding colours. The projector has a light volume,
+and a single small mesh handles drifting dust and the cannon's air puffs.
+The bridge uses bundled PBR surface shaders for its runtime lighting; tools restore
+the original material assignments when the generated dressing is torn down.
+
+Close-ups use selective background focus; wide shots, the archival television and
+planet shots retain clarity. Focus, instrument motion, air effects and grain use the
+shot clock, so seeking and pausing remain repeatable. Reduced motion steadies the
+instruments and removes the transient air puffs. The scene explicitly supplies its
+ambient diffuse lighting in player builds as well as in the editor.
+Contrast and grain are applied in display space to retain detail in the dim hull.
+
+`StorySound.cs` provides ventilation and hull resonance, spatial prop effects and four
+original instrumental themes generated locally. Music crossfades between hopeful,
+waiting, determined and laboratory moods, and ducks beneath dialogue. The balloon
+ending deliberately goes quieter. Interface sounds have a separate channel, so menu
+clicks remain responsive while the film is paused. The existing sound toggle mutes
+every layer. No narration or external music files are added.
+
 ## Dialogue
 
 A shot can carry timed lines instead of a single `line`:

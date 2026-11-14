@@ -23,6 +23,7 @@ namespace Homecoming.Editor
             var director = Object.FindAnyObjectByType<StoryDirector>();
             var stage = director.stage;
             stage.ApplyTypography();
+            _ = stage.Environment;
             var story = JsonUtility.FromJson<StoryScript>(director.script.text);
             Require(story.prologue.Length == 11 && story.briefing.Length == 1 && story.ending.Length == 2, "All 14 source shots exist");
             Require(story.prologue.Select(s => s.id).Distinct().Count() == 11, "Unique prologue shots");
@@ -46,6 +47,7 @@ namespace Homecoming.Editor
                 Require(actor.rig != null && actor.clips.Length >= 3, "Original rig and clips " + actor.name);
                 Require(actor.rig.GetComponentsInChildren<SkinnedMeshRenderer>().Length > 0, "Skinned character " + actor.name);
                 actor.Initialize();
+                ValidateFacialReactions(actor);
                 // Seek through unrelated poses, then return: no cumulative bone or face offsets.
                 actor.Pose("party", 1.35f, false);
                 var bones = actor.rig.GetComponentsInChildren<Transform>();
@@ -99,6 +101,7 @@ namespace Homecoming.Editor
             stage.televisionMaterial = original;
             stage.screen.sharedMaterial = original;
             stage.Lighting.Teardown(); // Runtime-only lights are never left in the editor.
+            stage.Environment.Teardown();
             EditorSceneManager.OpenScene(ScenePath); // Discard sampled poses and preview state.
             Debug.Log("HOMECOMING_VALIDATION_OK: source shots, cues, 3 skinned rigs, deterministic acting, custom fonts, materials, story first in build; rendered 14 frames to " + outputPath);
         }
@@ -146,6 +149,7 @@ namespace Homecoming.Editor
             stage.televisionMaterial = original;
             stage.screen.sharedMaterial = original;
             stage.Lighting.Teardown();
+            stage.Environment.Teardown();
             EditorSceneManager.OpenScene(ScenePath);
             Debug.Log("HOMECOMING_FRAMES_OK: " + index + " frames of " + shot + " to " + output);
         }
@@ -155,8 +159,45 @@ namespace Homecoming.Editor
             if (!condition) throw new InvalidOperationException("Homecoming validation failed: " + message);
         }
 
+        // CPU BakeMesh can hide out-of-range morph weights that explode in GPU skinning.
+        // Check the imported frame range directly throughout both complaint performances.
+        static void ValidateFacialReactions(StoryActor actor)
+        {
+            if (actor.role != 0) return;
+            var faces = actor.rig.GetComponentsInChildren<SkinnedMeshRenderer>();
+            foreach (string shot in new[] { "return", "drought-all" })
+                for (int frame = 0; frame <= 150; frame++)
+                {
+                    actor.Pose(shot, frame / 30f, false);
+                    foreach (var face in faces)
+                    {
+                        var mesh = face.sharedMesh;
+                        for (int i = 0; i < mesh.blendShapeCount; i++)
+                        {
+                            float limit = mesh.GetBlendShapeFrameWeight(i, mesh.GetBlendShapeFrameCount(i) - 1);
+                            float weight = face.GetBlendShapeWeight(i);
+                            Require(!float.IsNaN(weight) && weight >= -.0001f && weight <= limit + .0001f,
+                                "Facial weight within authored range: " + shot + "/" + frame + "/" + mesh.GetBlendShapeName(i));
+                        }
+                    }
+                }
+            actor.Pose("drought-all", 3.49f, false);
+            foreach (var face in faces)
+                for (int i = 0; i < face.sharedMesh.blendShapeCount; i++)
+                    Require(Mathf.Abs(face.GetBlendShapeWeight(i)) < .005f, "Facial reaction blends back to idle");
+        }
+
         [MenuItem("Homecoming/Build macOS player")]
         public static void BuildMacPreview()
+        {
+            BuildMacPlayer(BuildOptions.None);
+        }
+        [MenuItem("Homecoming/Build development preview")]
+        public static void BuildDevelopmentPreview()
+        {
+            BuildMacPlayer(BuildOptions.Development);
+        }
+        static void BuildMacPlayer(BuildOptions options)
         {
             var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
             Require(scenes.FirstOrDefault() == ScenePath &&
@@ -165,7 +206,7 @@ namespace Homecoming.Editor
             var output = Path.GetFullPath(Path.Combine(Application.dataPath, "../Builds/The Great Homecoming.app"));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = scenes, locationPathName = output, target = BuildTarget.StandaloneOSX
+                scenes = scenes, locationPathName = output, target = BuildTarget.StandaloneOSX, options = options
             });
             if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
                 throw new InvalidOperationException("Player build failed: " + report.summary.result);
@@ -201,6 +242,32 @@ namespace Homecoming.Editor
                 var director = Object.FindAnyObjectByType<StoryDirector>();
                 var stage = director.stage;
                 var story = JsonUtility.FromJson<StoryScript>(director.script.text);
+                ValidateFacialReactions(stage.crew[0]);
+                // Atmospheric motion uses shot time, so returning to a frame gives the same dust/puffs.
+                stage.Evaluate("party", 1.25f, false, true);
+                var air = stage.bridge.GetComponentsInChildren<MeshFilter>(true).First(mesh => mesh.name == "Floating dust and cannon puffs").sharedMesh;
+                var airPositions = air.vertices;
+                stage.Evaluate("years", 4, false, true);
+                stage.Evaluate("party", 1.25f, false, true);
+                var replayedAir = air.vertices;
+                Require(airPositions.Length == replayedAir.Length, "Air particle topology remains stable");
+                for (int i = 0; i < airPositions.Length; i++)
+                    Require(Vector3.Distance(airPositions[i], replayedAir[i]) < .0001f, "Atmosphere seeks deterministically");
+                var audio = director.GetComponent<StorySound>();
+                var themes = (AudioClip[])typeof(StorySound).GetField("themes", Private).GetValue(audio);
+                Require(themes.Length == 4, "Four original score themes");
+                foreach (var theme in themes)
+                {
+                    var samples = new float[theme.samples * theme.channels];
+                    Require(theme.GetData(samples, 0), "Score samples available");
+                    double energy = 0;
+                    foreach (float sample in samples)
+                    {
+                        Require(!float.IsNaN(sample) && !float.IsInfinity(sample) && Mathf.Abs(sample) < .95f, "Score waveform is finite and unclipped");
+                        energy += sample * sample;
+                    }
+                    Require(energy / samples.Length > .00001, "Score is audible");
+                }
                 void Invoke(string method) => typeof(StoryDirector).GetMethod(method, Private).Invoke(director, null);
                 string Page() => typeof(StoryDirector).GetField("page", Private).GetValue(director).ToString();
                 foreach (var chapter in new[] { "prologue", "briefing", "ending" })
@@ -221,6 +288,11 @@ namespace Homecoming.Editor
                     Invoke("FinishSequence");
                     Require(Page() == (chapter == "prologue" ? "Recruit" : chapter == "briefing" ? "Ready" : "Epilogue"), "Chapter route " + chapter);
                 }
+                var discoveryText = Resources.Load<TextAsset>("Cutscenes");
+                var discovery = JsonUtility.FromJson<CutsceneScript>(discoveryText.text).Find("drought");
+                foreach (var shot in discovery)
+                    foreach (float time in new[] { 0, shot.seconds * .5f, shot.seconds - .01f })
+                        stage.Evaluate(shot.id, time, false, true);
                 Require(StorySession.EndingComplete == ending && StorySession.BriefingComplete == briefing, "Preview does not change progress");
                 StorySession.RecruitName = "QA Cadet";
                 director.Play("briefing"); Invoke("FinishSequence");
@@ -239,7 +311,7 @@ namespace Homecoming.Editor
                         var returned = Object.FindAnyObjectByType<StoryDirector>();
                         Require(returned != null && returned.CurrentShot == "hearing", "Return API starts final hearing after scene reload");
                         Require(!StorySession.ConsumeHearingRequest(), "Return request consumed once");
-                        Debug.Log("HOMECOMING_SMOKE_OK: all 14 shots, motion options, pause, chapter routes, save, preview isolation, actual simulation-return scene reload.");
+                        Debug.Log("HOMECOMING_SMOKE_OK: 14 story shots, discovery cutscene, deterministic atmosphere, unclipped score, motion options, pause, chapter routes, save, preview isolation, simulation-return scene reload.");
                     }
                     catch (Exception error) { reloadResult = 1; Debug.LogException(error); }
                     FinishSmoke(reloadResult, recruit, briefing, ending);

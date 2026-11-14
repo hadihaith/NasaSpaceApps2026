@@ -23,7 +23,7 @@ namespace Homecoming
 
         StoryStage stage;
         StoryGrade grade;
-        Light key, fill, rim, tv, partyA, partyB, projector;
+        Light key, fill, rim, tv, partyA, partyB, projector, cabinBounce;
         Renderer earthSurface;
         MaterialPropertyBlock block;
         bool ready;
@@ -45,6 +45,8 @@ namespace Homecoming
             // Kept shallow and shadowless so it outlines the crew without washing the floor.
             rim = Make("Window rim", LightType.Directional, Vector3.zero, Vector3.zero, new Color(.55f, .71f, 1f), 0, 0, LightShadows.None);
             rim.transform.rotation = Quaternion.LookRotation(new Vector3(.2f, -.2f, 1f));
+            cabinBounce = Make("Cabin diffuse bounce", LightType.Directional, Vector3.zero, Vector3.zero, new Color(.69f, .78f, .86f), 0, 0, LightShadows.None);
+            cabinBounce.transform.rotation = Quaternion.LookRotation(new Vector3(.15f, -.18f, -1));
             // The television lights the room it plays in.
             tv = Make("Television spill", LightType.Spot, new Vector3(1.85f, 2.1f, -.7f), new Vector3(.2f, 1.25f, 3.2f), Archive, 8, 118, LightShadows.None);
             partyA = Make("Party light — rose", LightType.Point, new Vector3(-2.4f, 3.4f, 1.7f), Vector3.zero, new Color(1f, .33f, .6f), 8, 0, LightShadows.None);
@@ -83,7 +85,7 @@ namespace Homecoming
 
         public void Teardown()
         {
-            foreach (var light in new[] { key, fill, rim, tv, partyA, partyB, projector })
+            foreach (var light in new[] { key, fill, rim, tv, partyA, partyB, projector, cabinBounce })
                 if (light != null) { if (Application.isPlaying) Destroy(light.gameObject); else DestroyImmediate(light.gameObject); }
             ready = false;
         }
@@ -155,7 +157,7 @@ namespace Homecoming
                 {
                     look.party = Smooth(.68f, .9f, t);
                     beat = reduced ? .5f : .5f + .5f * Mathf.Sin((t - .72f) * 7.8f);
-                    look.key = 2.4f; look.saturation = 1.15f; look.tint = new Color(1.05f, .99f, .96f);
+                    look.key = 1.9f; look.saturation = 1.05f; look.tint = new Color(1.05f, .99f, .96f);
                     look.exposure += reduced ? 0 : .5f * Pulse(t, .76f, .09f); break;
                 }
                 case "jam":
@@ -218,11 +220,13 @@ namespace Homecoming
             Color keyColor = look.keyColor, tvColor = look.tvColor, tint = look.tint;
             float exposure = look.exposure, saturation = look.saturation, contrast = look.contrast;
             float vignette = look.vignette, bloom = look.bloom, grain = look.grain;
-            partyA.intensity = 3.4f * party * (.25f + .75f * beat);
-            partyB.intensity = 3.4f * party * (1 - .75f * beat);
+            partyA.intensity = 1.3f * party * (.25f + .75f * beat);
+            partyB.intensity = 1.3f * party * (1 - .75f * beat);
 
             bool onBridge = stage.bridge.activeSelf;
             key.enabled = onBridge; fill.enabled = onBridge; rim.enabled = onBridge; tv.enabled = onBridge && tvI > .01f;
+            cabinBounce.enabled = onBridge;
+            cabinBounce.intensity = .36f * ambient;
             key.intensity = keyI; key.color = keyColor;
             fill.intensity = fillI;
             rim.intensity = rimI;
@@ -236,9 +240,25 @@ namespace Homecoming
             RenderSettings.ambientSkyColor = SkyBase * ambient;
             RenderSettings.ambientEquatorColor = EquatorBase * ambient;
             RenderSettings.ambientGroundColor = GroundBase * ambient;
+            // Player builds do not rebuild the editor's ambient SH automatically when
+            // these gradient colours change. Supply the diffuse bounce explicitly.
+            var bounce = new SphericalHarmonicsL2();
+            bounce.AddAmbientLight(EquatorBase * (ambient * .8f));
+            bounce.AddDirectionalLight(Vector3.up, SkyBase * ambient, .32f);
+            bounce.AddDirectionalLight(Vector3.down, GroundBase * ambient, .18f);
+            RenderSettings.ambientProbe = bounce;
 
             grade.exposure = exposure; grade.saturation = saturation; grade.contrast = contrast;
             grade.vignette = vignette; grade.bloomIntensity = bloom; grade.grain = grain; grade.tint = tint;
+            grade.shotTime = t;
+            grade.animateGrain = !reduced;
+            grade.focusStrength = 0;
+            grade.focusRange = 1.65f;
+            if (id == "recruit") { grade.focusDistance = 4.6f; grade.focusStrength = .8f; }
+            else if (id == "correction") { grade.focusDistance = 3.9f; grade.focusStrength = .64f; }
+            else if (id == "launch") { grade.focusDistance = 2.7f; grade.focusRange = 1.1f; grade.focusStrength = .72f; }
+            else if (id == "hearing") { grade.focusDistance = 7.4f; grade.focusStrength = .35f; }
+            else if (id == "deflate") { grade.focusDistance = 3.2f; grade.focusRange = 1.2f; grade.focusStrength = .72f; }
 
             // Earth rolls from night into daylight as the camera closes in.
             if (earthSurface != null && id == "earth")

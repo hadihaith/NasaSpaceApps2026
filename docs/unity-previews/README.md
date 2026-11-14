@@ -1,5 +1,19 @@
 # Unity story verification
 
+The cinematic pass adds the orbital window, practical bridge details, live
+instruments, metal reflections, projector beam, drifting air and selective focus.
+Player captures were reviewed as well as editor camera renders. Display-space
+contrast and grain retain the dim hull's detail. The new score's four waveforms
+were checked for finite, non-clipping samples, and atmospheric replay was checked
+against the same shot time. The existing discovery cutscene and simulation-return
+path are included in the playback smoke check.
+
+Zorvax's Artemis reaction now respects the GLB's facial frame range (0–1).
+The former value of 70 stretched the GPU-skinned face across the screen.
+Both complaint performances are checked at 30 samples per second for five seconds,
+including their return to idle. Twelve standalone-player frames of shot 8/11 were
+visually reviewed; `player/cinema-return.png` shows the corrected reaction.
+
 Validated with the installed **Unity 6000.6.9f1** on macOS.
 
 - Story: the **14 shots** and their cue sounds come from `src/homecoming/story.ts`.
@@ -10,7 +24,7 @@ Validated with the installed **Unity 6000.6.9f1** on macOS.
   format, order and reading time.
 - All three GLB character files are byte-identical to the originals.
 - Scene validation passed: skinned rigs, animation clips, supported materials,
-  valid cue times, and only the Story scene in the build.
+  valid cue times, and Story first in the build with the laboratory available.
 - Play Mode smoke check passed: all shots, pause/resume, full/reduced motion,
   chapter transitions, local progress, preview isolation, and an actual scene
   reload through `StorySession.ReturnFromSimulation()` into the final hearing.

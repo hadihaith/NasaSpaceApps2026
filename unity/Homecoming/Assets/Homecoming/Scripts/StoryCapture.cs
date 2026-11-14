@@ -45,7 +45,8 @@ namespace Homecoming
             yield return new WaitForSecondsRealtime(1);
             Show("Home"); yield return Capture("01-title");
             director.Play("prologue", true);
-            director.SetShot(5);
+            var script = JsonUtility.FromJson<StoryScript>(director.script.text);
+            director.SetShot(Array.FindIndex(script.prologue, shot => shot.id == "party"));
             typeof(StoryDirector).GetField("shotTime", Private).SetValue(director, 1.5f);
             director.stage.Evaluate("party", 1.5f, false, true);
             yield return Capture("02-party");
@@ -62,6 +63,19 @@ namespace Homecoming
             Show("Epilogue"); yield return Capture("07-epilogue");
             Show("Chapters"); yield return Capture("08-options");
             Show("Credits"); yield return Capture("09-credits");
+            foreach (var name in new[] { "years", "earth", "lab", "launch" })
+            {
+                bool briefing = name == "lab";
+                director.Play(briefing ? "briefing" : "prologue", true);
+                var shots = briefing ? script.briefing : script.prologue;
+                int index = Array.FindIndex(shots, shot => shot.id == name);
+                director.SetShot(index);
+                float time = name == "years" ? 4.2f : name == "earth" ? 3.4f : name == "lab" ? 3.2f : .8f;
+                typeof(StoryDirector).GetField("shotTime", Private).SetValue(director, time);
+                typeof(StoryDirector).GetField("paused", Private).SetValue(director, true);
+                director.stage.Evaluate(name, time, false, true);
+                yield return Capture("cinema-" + name);
+            }
             // Contact frames inspect anticipation, contact and follow-through without playing by eye alone.
             if (Array.IndexOf(Environment.GetCommandLineArgs(), "--homecoming-motion-frames") >= 0)
             {

@@ -15,7 +15,7 @@ namespace Homecoming
         Quaternion[] restRotations, idleRotations;
         readonly Dictionary<string, AnimationClip> actions = new Dictionary<string, AnimationClip>(StringComparer.OrdinalIgnoreCase);
         SkinnedMeshRenderer[] faces;
-        float[][] restMorphs;
+        float[][] restMorphs, idleMorphs;
         bool initialized;
         public Transform ReportGrip => rightHand;
 
@@ -47,9 +47,11 @@ namespace Homecoming
             foreach (var clip in clips) actions[clip.name] = clip;
             faces = rig.GetComponentsInChildren<SkinnedMeshRenderer>();
             restMorphs = new float[faces.Length][];
+            idleMorphs = new float[faces.Length][];
             for (int i = 0; i < faces.Length; i++)
             {
                 restMorphs[i] = new float[faces[i].sharedMesh.blendShapeCount];
+                idleMorphs[i] = new float[restMorphs[i].Length];
                 for (int j = 0; j < restMorphs[i].Length; j++) restMorphs[i][j] = faces[i].GetBlendShapeWeight(j);
             }
             initialized = true;
@@ -86,6 +88,8 @@ namespace Homecoming
             {
                 idlePositions[i] = bones[i].localPosition; idleRotations[i] = bones[i].localRotation; idleScales[i] = bones[i].localScale;
             }
+            for (int i = 0; i < faces.Length; i++)
+                for (int j = 0; j < idleMorphs[i].Length; j++) idleMorphs[i][j] = faces[i].GetBlendShapeWeight(j);
             float age = Mathf.Max(0, t - start) * rate;
             if (hold > 0)
             {
@@ -100,18 +104,27 @@ namespace Homecoming
                 bones[i].localRotation = Quaternion.Slerp(idleRotations[i], bones[i].localRotation, weight);
                 bones[i].localScale = Vector3.Lerp(idleScales[i], bones[i].localScale, weight);
             }
+            for (int i = 0; i < faces.Length; i++)
+                for (int j = 0; j < idleMorphs[i].Length; j++)
+                    faces[i].SetBlendShapeWeight(j, Mathf.Lerp(idleMorphs[i][j], faces[i].GetBlendShapeWeight(j), weight));
         }
         static void Turn(Transform bone, Vector3 worldAxis, float degrees)
         {
             if (bone != null) bone.rotation = Quaternion.AngleAxis(degrees, worldAxis) * bone.rotation;
         }
-        void Face(string expression, float amount)
+        void Face(string expression, float strength)
         {
             foreach (var renderer in faces)
             {
                 if (renderer.sharedMesh == null) continue;
                 int index = renderer.sharedMesh.GetBlendShapeIndex(expression);
-                if (index >= 0) renderer.SetBlendShapeWeight(index, Mathf.Max(renderer.GetBlendShapeWeight(index), amount));
+                if (index < 0) continue;
+                // glTFast imports full-strength frames at 1, while other Unity meshes use 100.
+                // Use the mesh's authored range: a hard-coded percentage explodes the GPU-skinned face.
+                var mesh = renderer.sharedMesh;
+                float fullWeight = mesh.GetBlendShapeFrameWeight(index, mesh.GetBlendShapeFrameCount(index) - 1);
+                float amount = Mathf.Clamp01(strength) * fullWeight;
+                renderer.SetBlendShapeWeight(index, Mathf.Max(renderer.GetBlendShapeWeight(index), amount));
             }
         }
         void Reach(Transform upper, Transform lower, Transform hand, Vector3 target, float weight)
@@ -238,7 +251,7 @@ namespace Homecoming
                 yaw += notice * (role == 0 ? 45 : role == 1 ? 125 : -90) * (1 - protest);
                 headYaw = (role == 0 ? 28 * notice * (1 - protest) : 0) - 24 * protest;
                 headPitch = -6 * notice + 4 * protest; torsoPitch = -4 * protest;
-                if (role == 0) Face("Disbelief", 70 * Smooth(1.4f, 2, t));
+                if (role == 0) Face("Disbelief", .7f * Smooth(1.4f, 2, t));
             }
             if (shot == "lab" || shot == "ready")
             {

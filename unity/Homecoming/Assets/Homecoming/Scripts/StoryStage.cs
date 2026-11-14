@@ -22,6 +22,7 @@ namespace Homecoming
         float videoPrepareAge;
         Transform switchButton;
         StoryLighting lighting;
+        StoryEnvironment environment;
         // Discovery cutscene props, created at runtime so the authored scene stays untouched.
         const int BasketCount = 18;
         Transform basketPile;
@@ -32,6 +33,19 @@ namespace Homecoming
         float titleSize = -1;
 
         public bool VideoFallback => videoFailed;
+        public StoryEnvironment Environment
+        {
+            get
+            {
+                if (environment == null)
+                {
+                    environment = GetComponent<StoryEnvironment>();
+                    if (environment == null) environment = gameObject.AddComponent<StoryEnvironment>();
+                    environment.Initialize(this);
+                }
+                return environment;
+            }
+        }
         // Created on first use, so editor validation renders get the same lighting as play.
         public StoryLighting Lighting
         {
@@ -49,6 +63,7 @@ namespace Homecoming
         public void Initialize()
         {
             _ = Lighting;
+            _ = Environment;
             foreach (var actor in crew) actor.Initialize();
             switchButton = switchProp.transform.Find("Red pushbutton");
             BuildBaskets();
@@ -224,6 +239,7 @@ namespace Homecoming
             if (cutscene) EvaluateCutscene(id, t, reducedMotion);
             else if (basketPile != null) basketPile.gameObject.SetActive(false);
             EvaluateCamera(id, t, reducedMotion);
+            Environment.Evaluate(id, t, reducedMotion);
         }
         // The 2026 time-lapse: 57 years pass between 0.25 s and 2.7 s of the shot.
         public static float Lapse(float t, bool reduced) => reduced ? 1 : Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.25f, 2.7f, t));
@@ -375,6 +391,7 @@ namespace Homecoming
 
         void OnDestroy()
         {
+            if (environment != null) environment.Teardown();
             if (wicker != null) Destroy(wicker);
             if (ribbon != null) Destroy(ribbon);
             if (television != null)

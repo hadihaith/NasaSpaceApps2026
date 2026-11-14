@@ -1,7 +1,8 @@
 export const EARTH_REGIONS = [
+  { id: 'phoenix', name: 'Central Arizona', latitude: 33.5, longitude: -112, radius: 7 },
   { id: 'sahel', name: 'Central Sahel', latitude: 14, longitude: 6, radius: 10 },
   { id: 'amazon', name: 'Amazon Basin', latitude: -7, longitude: -61, radius: 12 },
-  { id: 'mediterranean', name: 'Mediterranean', latitude: 38, longitude: 18, radius: 8 },
+  { id: 'mediterranean', name: 'Eastern Mediterranean', latitude: 39.7, longitude: 22.6, radius: 8 },
   { id: 'south-asia', name: 'South Asia', latitude: 24, longitude: 79, radius: 10 },
   { id: 'australia', name: 'Eastern Australia', latitude: -27, longitude: 145, radius: 10 },
 ];

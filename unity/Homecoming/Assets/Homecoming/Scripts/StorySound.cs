@@ -48,7 +48,7 @@ namespace Homecoming
             if (!sounds.TryGetValue(name, out var clip))
             {
                 int rate = 48000;
-                float length = name == "hover" ? .045f : name == "click" ? .07f : name == "celebrate" ? 1.1f : name == "deflate" ? 1.3f : name == "radio" ? .55f : .28f;
+                float length = name == "hover" ? .045f : name == "click" ? .07f : name == "celebrate" ? 1.1f : name == "deflate" ? 1.3f : name == "radio" ? .55f : name == "alarm" ? .9f : .28f;
                 var samples = new float[(int)(length * rate)];
                 var random = new System.Random(1969 + name.Length);
                 for (int i = 0; i < samples.Length; i++)
@@ -63,6 +63,13 @@ namespace Homecoming
                     else if (name == "stamp" || name == "party-hit" || name == "sputter")
                         wave = noise * .6f + Mathf.Sin(2 * Mathf.PI * (90 - p * 45) * t) * .4f;
                     else if (name == "radio") wave = noise * .3f * (.5f + .5f * Mathf.Sin(t * 220));
+                    else if (name == "alarm")
+                    {
+                        // Two-tone ship klaxon for discovery alerts.
+                        float tone = Mathf.Repeat(p * 4, 1) < .5f ? 740 : 554;
+                        wave = Mathf.Sign(Mathf.Sin(2 * Mathf.PI * tone * t)) * .22f + Mathf.Sin(2 * Mathf.PI * tone * 2 * t) * .08f;
+                        envelope = Mathf.Min(t * 60, 1) * (1 - Mathf.Pow(p, 4));
+                    }
                     else if (name == "deflate") wave = Mathf.Sin(2 * Mathf.PI * (650 - p * 420) * t) * .18f + noise * .08f;
                     else if (name == "celebrate")
                     {

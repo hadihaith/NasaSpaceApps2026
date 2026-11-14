@@ -13,6 +13,18 @@ namespace Homecoming
         enum Page { Home, Film, Recruit, Ready, Epilogue, Chapters, Credits, Reset }
         Page page;
         StoryScript story;
+        CutsceneScript cutsceneData;
+        // Loaded on first use so editor tools that call Play() before Awake() still work.
+        CutsceneScript cutscenes
+        {
+            get
+            {
+                if (cutsceneData != null) return cutsceneData;
+                var text = Resources.Load<TextAsset>("Cutscenes");
+                cutsceneData = text != null ? JsonUtility.FromJson<CutsceneScript>(text.text) : new CutsceneScript();
+                return cutsceneData;
+            }
+        }
         StoryShot[] sequence;
         string sequenceName, designation = "";
         int shotIndex, cueIndex;
@@ -33,7 +45,9 @@ namespace Homecoming
             descriptions = PlayerPrefs.GetInt("homecoming.unity.descriptions", 0) == 1;
             reducedMotion = PlayerPrefs.GetInt("homecoming.unity.reduced", 0) == 1;
             Application.targetFrameRate = 60;
-            if (StorySession.ConsumeHearingRequest()) Play("ending", false);
+            var cutscene = StorySession.ConsumeCutsceneRequest();
+            if (cutscene != null && cutscenes.Find(cutscene) != null) Play(cutscene, false);
+            else if (StorySession.ConsumeHearingRequest()) Play("ending", false);
             else Show(Page.Home);
         }
         void Show(Page next)
@@ -50,7 +64,8 @@ namespace Homecoming
         public void Play(string chapter, bool isPreview = false)
         {
             sequenceName = chapter;
-            sequence = chapter == "ending" ? story.ending : chapter == "briefing" ? story.briefing : story.prologue;
+            sequence = chapter == "ending" ? story.ending : chapter == "briefing" ? story.briefing :
+                cutscenes.Find(chapter) ?? story.prologue;
             preview = isPreview;
             ResetInterfaceFocus();
             page = Page.Film;
@@ -70,7 +85,14 @@ namespace Homecoming
         }
         void FinishSequence()
         {
-            if (sequenceName == "prologue") Show(Page.Recruit);
+            if (cutscenes.Find(sequenceName) != null)
+            {
+                // A discovery cutscene: go back to the simulation when it requested the scene,
+                // otherwise (preview from Chapters) back to the chapter list.
+                if (!preview && Application.CanStreamedLevelBeLoaded(simulationScene)) SceneManager.LoadSceneAsync(simulationScene);
+                else Show(Page.Chapters);
+            }
+            else if (sequenceName == "prologue") Show(Page.Recruit);
             else if (sequenceName == "briefing")
             {
                 if (!preview) StorySession.BriefingComplete = true;

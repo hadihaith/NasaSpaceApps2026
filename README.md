@@ -7,7 +7,14 @@ Pick an Earth science variable and a place. The app pulls four decades of NASA
 data, plots the time series, and says in plain language whether there is a
 trend, how fast it is, and whether it is statistically significant.
 
-## Run it
+## Use it online
+
+Open **https://nasatrenddetective.vercel.app** in any modern browser, on a computer or a phone.
+Nothing to install, and no account or API key is needed.
+
+The site redeploys automatically from `main` through GitHub Actions (see [docs/deployment.md](docs/deployment.md)).
+
+## Run it locally
 
 ```bash
 npm install

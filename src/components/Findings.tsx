@@ -6,7 +6,7 @@ import type { Variable } from "@/lib/catalog";
 import { pValue, sig, signed, withUnit } from "@/lib/format";
 import { MONTH_NAMES, type Mode, type MonthlyRecord, type SeriesPoint } from "@/lib/series";
 import {
-  compareSlopes,
+  comparePairedSeries,
   MIN_POINTS,
   type SlopeDifference,
   type TrendResult,
@@ -62,7 +62,7 @@ export function Findings({ variable, places, mode, month, animate, aside, lens }
   }
   const ready = analysed as Analysed[];
   const comparing = ready.length > 1;
-  const gap = comparing ? compareSlopes(ready[0].trend.ols, ready[1].trend.ols) : null;
+  const gap = comparing ? comparePairedSeries(ready[0].points, ready[1].points, 0.05, { assumptionsReviewed: ready.every((p) => p.record.assumptionsReviewed === true), seasonalAdjustment: mode === "anomaly" }) : null;
 
   // Two places can sit far apart in absolute terms (polar and tropical
   // temperature, say), so compare each against its own average.
@@ -137,10 +137,11 @@ interface Reading {
   levelLabel: string;
   /** "is rising", "may be falling" or "shows no clear trend" */
   phrase: string;
-  kind: "trend" | "maybe" | "none";
+  kind: "trend" | "maybe" | "none" | "unavailable";
 }
 
 function read(trend: TrendResult): Reading {
+  if (!trend.inference.established) return { level: 1, levelLabel: "Significance not established", phrase: "has an estimated trend requiring review", kind: "unavailable" };
   const verb = trend.direction === "rising" ? "rising" : "falling";
   if (trend.direction === "flat" || trend.strength === "not-significant") {
     return { level: 1, levelLabel: "Little evidence of a trend", phrase: "shows no clear trend", kind: "none" };
@@ -183,19 +184,22 @@ function Verdict({ variable, place }: { variable: Variable; place: Analysed }) {
 
   let headline: string;
   let detail: string;
-  if (reading.kind === "none") {
+  if (reading.kind === "unavailable") {
+    headline = `Significance not established for ${subject}.`;
+    detail = `The estimated robust rate is ${rate} per decade (${trend.direction}). ${trend.inference.reasons.join(" ")}`;
+  } else if (reading.kind === "none") {
     headline = `${subject} shows no clear trend.`;
     detail =
       trend.direction === "flat"
         ? "The best estimate of the change is zero."
-        : `The best estimate leans ${lean}, by ${rate} per decade, but the swings from one point to the next are large enough that this could easily be chance. A longer record might change that.`;
+        : `The best estimate leans ${lean}, by ${rate} per decade, but the primary OLS test does not reject a zero slope under its assumptions. This does not prove that no change occurred.`;
   } else if (reading.kind === "maybe") {
     headline = `${subject} ${reading.phrase}, by about ${rate} per decade.`;
     detail =
       "The two tests do not agree firmly enough to call it. Treat this as a lead worth following, not a finding: try a larger region or a different way of reading time.";
   } else {
     headline = `${subject} ${reading.phrase} by ${rate} per decade.`;
-    detail = `Both tests agree that a change this steady is very unlikely to be chance. Since ${firstYear} it adds up to ${total}.`;
+    detail = `The primary OLS slope test rejects a zero slope under its reviewed assumptions. The robust fitted change since ${firstYear} is ${total}; this is not an endpoint difference or a causal claim.`;
   }
 
   return (
@@ -228,7 +232,9 @@ function ComparisonVerdict({
     ra.kind !== "none" && rb.kind !== "none" && a.trend.direction !== b.trend.direction;
 
   let headline: string;
-  if (ra.kind === "none" && rb.kind === "none") {
+  if (ra.kind === "unavailable" || rb.kind === "unavailable") {
+    headline = "Regional rates are descriptive; significance is not established.";
+  } else if (ra.kind === "none" && rb.kind === "none") {
     headline = `${variable.name} shows no clear trend in either place.`;
   } else if (ra.phrase === rb.phrase) {
     const faster = Math.abs(a.trend.sen.slope) >= Math.abs(b.trend.sen.slope) ? a : b;
@@ -240,9 +246,9 @@ function ComparisonVerdict({
     headline = `${variable.name} ${ra.phrase} around ${a.label} ${sameWay ? "and" : "but"} ${rb.phrase} around ${b.label}.`;
   }
 
-  const gapSentence = gap.significant
-    ? `The gap between the two rates is itself significant (p ${pEquals(gap.p)}), so the places really are changing differently.`
-    : `The gap between the two rates could be chance (p ${pEquals(gap.p)}), so the data cannot yet tell the two places apart.`;
+  const gapSentence = !gap.established
+    ? `Difference-test significance is not established. ${gap.reason}`
+    : `The OLS test on paired A minus B values ${gap.significant ? "rejects" : "does not reject"} a zero slope (p ${pEquals(gap.p)}), conditional on its assumptions.`;
 
   return (
     <div aria-live="polite">
@@ -313,32 +319,26 @@ function EvidenceTable({
     },
     {
       measure: "Plausible range for that rate",
-      results: each((p) => `${signed(p.trend.sen.ci[0] * 10)} to ${perDecade(p.trend.sen.ci[1])}`),
-      meaning: comparing
-        ? "The 95% confidence interval. Where it includes zero, no change at all is still a plausible reading."
-        : first.sen.ci[0] <= 0 && first.sen.ci[1] >= 0
-          ? "The 95% confidence interval. It includes zero, so no change at all is still a plausible reading."
-          : "The 95% confidence interval. It stays on one side of zero, so the direction is not in doubt.",
+      results: each((p) => p.trend.inference.established ? `${signed(p.trend.sen.ci[0] * 10)} to ${perDecade(p.trend.sen.ci[1])}` : "Not reported — assumptions unresolved"),
+      meaning: "Conditional 95% interval for the robust slope; only reported after assumption review. This is not a prediction interval.",
     },
     {
       measure: "Mann-Kendall test",
-      results: each((p) => `p ${pEquals(p.trend.mannKendall.p)}, tau ${signed(p.trend.mannKendall.tau)}`),
+      results: each((p) => p.trend.inference.established ? `p ${pEquals(p.trend.mannKendall.p)}, tau ${signed(p.trend.mannKendall.tau)}` : "Not reported — assumptions unresolved"),
       meaning:
-        "Asks only whether later values tend to be higher or lower than earlier ones. p is the chance of a pattern this consistent appearing with no real trend. Below 0.05 counts as significant.",
+        "Asks only whether later values tend to be higher or lower than earlier ones. This is a supplementary asymptotic rank test assuming independent observations; it does not determine the headline verdict.",
     },
     {
       measure: "Straight-line fit",
-      results: each((p) => `${perDecade(p.trend.ols.slope)}, p ${pEquals(p.trend.ols.p)}`),
+      results: each((p) => `${perDecade(p.trend.ols.slope)}${p.trend.inference.established ? `, p ${pEquals(p.trend.ols.p)}` : ", significance not established"}`),
       meaning: comparing
         ? "A least-squares line with a t-test on its slope."
         : `A least-squares line with a t-test on its slope. The line accounts for ${Math.round(first.ols.r2 * 100)}% of the ups and downs (R²).`,
     },
     {
-      measure: "The same fit, allowing for memory",
-      results: each((p) => `p ${pEquals(p.trend.ols.pAdjusted)}`),
-      meaning: comparing
-        ? "Each point resembles the one before it, so the points carry less independent information than their number suggests. This stricter test allows for that."
-        : `Each point resembles the one before it (correlation ${sig(first.ols.r1, 2)}), so ${first.n} points carry the information of about ${Math.round(first.ols.nEff)} independent ones. This is the stricter test.`,
+      measure: "Exploratory AR(1) sensitivity",
+      results: each((p) => p.trend.inference.established ? `p ${pEquals(p.trend.ols.pAdjusted)}` : "Not reported — assumptions unresolved"),
+      meaning: "An approximate effective-sample-size sensitivity calculation, not a validated correction or the primary test.",
     },
   ];
 
@@ -347,7 +347,7 @@ function EvidenceTable({
       measure: "Gap between the two rates",
       results: `${perDecade(gap.difference)} (A minus B), p ${pEquals(gap.p)}`,
       meaning:
-        "Tests whether the two places are changing at different rates. It treats them as independent, which makes it cautious for places close enough to share their weather.",
+        "Fits the paired A minus B series on common timestamps. Spatial covariance is retained; temporal independence still requires review.",
     });
   }
 
@@ -441,7 +441,7 @@ function Cautions({
   trends: TrendResult[];
   comparing: boolean;
 }) {
-  const notes: string[] = [];
+  const notes: string[] = [...new Set(trends.flatMap((t) => t.inference.reasons))];
   if (variable.caveat) notes.push(variable.caveat);
   const span = Math.min(...trends.map((t) => t.spanYears));
   if (span < 30) {
@@ -459,7 +459,7 @@ function Cautions({
       "Opposite trends do not need opposite causes. One shift in winds or ocean temperatures can bring more rain to one region and less to another.",
     );
   }
-  notes.push("A significant trend says the change is unlikely to be chance. It does not say what caused it.");
+  notes.push("Significance is conditional on a statistical model; it is not the probability a trend is true, proof of causation, or a measure of practical importance. Repeated exploratory tests are not adjusted for multiple comparisons.");
 
   return (
     <div className="card mt-8 max-w-[72ch] p-5">
@@ -524,7 +524,8 @@ function NumbersTable({ places, unitText }: { places: Analysed[]; unitText: stri
   );
 }
 
-function pEquals(p: number): string {
+function pEquals(p: number | null): string {
+  if (p === null || !Number.isFinite(p)) return "not established";
   const text = pValue(p);
   return text.startsWith("<") ? text : `= ${text}`;
 }

@@ -139,21 +139,21 @@ describe("compareSlopes", () => {
     Array.from({ length: 45 }, (_, i) => ({ t: 1981 + i, v: slope * i + 0.3 * noise(i + seed) }));
 
   it("separates a rising series from a falling one", () => {
-    const r = compareSlopes(ols(series(0.03, 0)), ols(series(-0.03, 100)));
+    const r = compareSlopes(ols(series(0.03, 0)), ols(series(-0.03, 100)), 0.05, true);
     expect(r.difference).toBeGreaterThan(0.04);
     expect(r.significant).toBe(true);
   });
 
   it("does not separate two series with the same underlying rate", () => {
-    const r = compareSlopes(ols(series(0.03, 0)), ols(series(0.03, 100)));
+    const r = compareSlopes(ols(series(0.03, 0)), ols(series(0.03, 100)), 0.05, true);
     expect(r.significant).toBe(false);
   });
 
   it("is antisymmetric", () => {
     const a = ols(series(0.03, 0));
     const b = ols(series(0.01, 100));
-    expect(compareSlopes(a, b).difference).toBeCloseTo(-compareSlopes(b, a).difference, 12);
-    expect(compareSlopes(a, b).p).toBeCloseTo(compareSlopes(b, a).p, 12);
+    expect(compareSlopes(a, b, 0.05, true).difference).toBeCloseTo(-compareSlopes(b, a, 0.05, true).difference, 12);
+    expect(compareSlopes(a, b, 0.05, true).p).toBeCloseTo(compareSlopes(b, a, 0.05, true).p!, 12);
   });
 });
 
@@ -168,7 +168,7 @@ describe("analyzeTrend", () => {
       t: 1981 + i,
       v: 15 + 0.03 * i + 0.3 * noise(i),
     }));
-    const r = analyzeTrend(pts)!;
+    const r = analyzeTrend(pts, 0.05, { assumptionsReviewed: true })!;
     expect(r.direction).toBe("rising");
     expect(r.strength).toBe("significant");
     expect(r.sen.slope).toBeGreaterThan(0.02);
@@ -178,7 +178,7 @@ describe("analyzeTrend", () => {
 
   it("does not call pure noise a trend", () => {
     const pts: Point[] = Array.from({ length: 45 }, (_, i) => ({ t: 1981 + i, v: noise(i) }));
-    const r = analyzeTrend(pts)!;
+    const r = analyzeTrend(pts, 0.05, { assumptionsReviewed: true })!;
     expect(r.strength).toBe("not-significant");
     expect(r.sen.ci[0]).toBeLessThan(0);
     expect(r.sen.ci[1]).toBeGreaterThan(0);

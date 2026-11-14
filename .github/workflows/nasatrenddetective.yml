@@ -1,0 +1,140 @@
+# Nasatrenddetective: check, build and deploy the app to Vercel.
+#
+# - Every push and pull request: typecheck, lint, unit tests, Earth-data validation, production build.
+# - Push to main: deploy to Vercel production.
+# - Push to any other branch: deploy a Vercel preview.
+# - Pull requests only run the checks (no secrets are exposed to PR code).
+#
+# One-time setup (see docs/deployment.md): add the repository secrets
+# VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID. Until they exist, the
+# deploy job is skipped with a notice and the checks still run.
+
+name: Nasatrenddetective
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: nasatrenddetective-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**/*.ts', 'src/**/*.tsx', 'src/**/*.css') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate Earth data (public/data)
+        if: hashFiles('public/data/earth-observations.json') != ''
+        run: python -I scripts/process_data.py validate
+
+      - name: Production build
+        run: npm run build
+
+  deploy:
+    name: Deploy to Vercel
+    needs: check
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      TARGET: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+    steps:
+      - name: Check Vercel secrets
+        id: secrets
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::notice title=Deploy skipped::Add VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID as repository secrets to enable deploys (docs/deployment.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Vercel CLI
+        if: steps.secrets.outputs.ready == 'true'
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel project settings
+        if: steps.secrets.outputs.ready == 'true'
+        run: vercel pull --yes --environment="$TARGET" --token="$VERCEL_TOKEN"
+
+      - name: Build
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          if [ "$TARGET" = production ]; then
+            vercel build --prod --token="$VERCEL_TOKEN"
+          else
+            vercel build --token="$VERCEL_TOKEN"
+          fi
+
+      - name: Deploy
+        id: deploy
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          if [ "$TARGET" = production ]; then
+            vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" > deploy-output.txt
+          else
+            vercel deploy --prebuilt --token="$VERCEL_TOKEN" > deploy-output.txt
+          fi
+          # stdout is the deployment URL, or a JSON document in non-interactive mode; take the first https URL either way.
+          url=$(grep -oE 'https://[A-Za-z0-9.-]+\.vercel\.app' deploy-output.txt | head -n 1)
+          if [ -z "$url" ]; then
+            echo "::error::Could not find a deployment URL in the Vercel output"
+            cat deploy-output.txt
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Deployed ($TARGET)" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"

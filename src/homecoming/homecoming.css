@@ -146,6 +146,8 @@
 .hc-film-progress i.is-past { background: #ffd18e; }
 .hc-film-controls button { padding: .42rem .72rem; min-height: 39px; border: 1px solid #dcd2ff54; background: #151123df; color: #f6ebfa; border-radius: 6px; font-size: .83rem; }
 .hc-film-controls button:hover { background: #392654; }
+/* Hide the floating assistant during cinematics so it cannot cover Next or Skip. */
+body:has(.hc-film) .chat-widget { display: none; }
 .hc-film-crew { position: absolute; z-index: 2; bottom: 21%; left: 10%; width: min(48%,565px); display: flex; align-items: flex-end; gap: clamp(5px,1.8vw,25px); }
 .hc-film-crew .hc-portrait { width: 31%; min-width: 0; height: clamp(110px,25vh,215px); opacity: .67; transition: transform .25s, opacity .25s; }
 .hc-film-crew .hc-speaking { transform: translateY(-14%) scale(1.06); opacity: 1; }

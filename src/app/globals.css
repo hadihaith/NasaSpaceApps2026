@@ -1,0 +1,354 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. A board-game take on a field notebook: mint graph paper,
+ * chunky ink-outlined pieces with hard shadows that press down when clicked,
+ * and gold for everything the player earns or selects. Blue and orange stay
+ * reserved for the data: place A and place B.
+ */
+:root {
+  --paper: #e3f0ec;
+  --grid: rgba(16, 36, 46, 0.06);
+  --surface: #fffdf7;
+  --surface-2: #f1f6f3;
+  --ink: #10242e;
+  --ink-2: #47606b;
+  --muted: #6a7f86;
+  --line: #d5dedd;
+  --line-strong: #a9b9b9;
+  --wash: rgba(16, 36, 46, 0.06);
+  --edge: #10242e;
+  --drop: #10242e;
+  --gold: #ffc53d;
+  --good: #1a7f45;
+  --close: #9a5a00;
+  --miss: #b3322c;
+  /* Place A and place B, validated for colour-blind separation on --surface */
+  --series-a: #2a78d6;
+  --series-b: #eb6834;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0d1e26;
+    --grid: rgba(232, 239, 238, 0.045);
+    --surface: #163039;
+    --surface-2: #1c3a45;
+    --ink: #eef5f3;
+    --ink-2: #b0c4c8;
+    --muted: #8199a0;
+    --line: #2a4652;
+    --line-strong: #44646f;
+    --wash: rgba(232, 239, 238, 0.08);
+    --edge: #7fa6b0;
+    --drop: #04090c;
+    --gold: #ffc53d;
+    --good: #4cc27f;
+    --close: #f0a23b;
+    --miss: #ff7a70;
+    --series-a: #3987e5;
+    --series-b: #d95926;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-wash: var(--wash);
+  --color-edge: var(--edge);
+  --color-gold: var(--gold);
+  --color-good: var(--good);
+  --color-close: var(--close);
+  --color-miss: var(--miss);
+  --color-series-a: var(--series-a);
+  --color-series-b: var(--series-b);
+  --font-sans: var(--font-body), system-ui, sans-serif;
+  --font-display: var(--font-display), var(--font-body), system-ui, sans-serif;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+/* Condensed, heavy display face for headings, choices and the verdict. */
+.display {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 82;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.04;
+}
+
+:focus-visible {
+  outline: 3px solid var(--series-a);
+  outline-offset: 3px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+  /* A game piece: outlined, sitting on a hard shadow. */
+  .card {
+    background: var(--surface);
+    border: 2.5px solid var(--edge);
+    border-radius: 18px;
+    box-shadow: 5px 5px 0 var(--drop);
+  }
+
+  /* Buttons and tiles press down into their shadow. */
+  .btn,
+  .tile {
+    border: 2.5px solid var(--edge);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 3px 3px 0 var(--drop);
+    transition:
+      transform 80ms ease-out,
+      box-shadow 80ms ease-out,
+      background-color 120ms;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    padding: 0.55rem 1.15rem;
+    font-weight: 700;
+  }
+  .tile {
+    border-radius: 14px;
+  }
+  .btn:hover:not(:disabled),
+  .tile:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--drop);
+  }
+  .btn:active:not(:disabled),
+  .tile:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--drop);
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .btn-primary {
+    background: var(--gold);
+    color: #10242e;
+  }
+
+  /* Selected pieces turn gold. Ink tokens are reset so text stays dark on gold in both modes. */
+  .tile[aria-pressed="true"],
+  .tile[aria-checked="true"],
+  .tile[aria-selected="true"],
+  .seg > [aria-checked="true"] {
+    --ink: #10242e;
+    --ink-2: #3b4f57;
+    --muted: #3b4f57;
+    --surface: #fff6d6;
+    --edge: #10242e;
+    --wash: rgba(16, 36, 46, 0.08);
+    /* Gold stars would vanish on a gold piece, so here they are ink. */
+    --star: #10242e;
+    background: var(--gold);
+    color: #10242e;
+  }
+
+  .tile-dashed {
+    border-style: dashed;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .seg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    overflow: hidden;
+    border: 2.5px solid var(--edge);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: 3px 3px 0 var(--drop);
+  }
+  .seg > button {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+  .seg > button + button {
+    border-left: 2px solid var(--edge);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 2px solid var(--edge);
+    border-radius: 999px;
+    background: var(--surface);
+    padding: 0.1rem 0.65rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* The result of a call, stamped onto the scorecard. */
+  .stamp {
+    display: inline-block;
+    border: 3.5px double currentColor;
+    border-radius: 10px;
+    padding: 0.2rem 0.7rem;
+    font-family: var(--font-display);
+    font-variation-settings: "wdth" 82;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transform: rotate(-6deg);
+    white-space: nowrap;
+  }
+}
+
+dialog::backdrop {
+  background: rgba(6, 13, 17, 0.55);
+}
+
+/* ---------- The reveal: lines draw in, then the stamp lands ---------- */
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.draw-in,
+.draw-in-late {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.2s ease-out forwards;
+}
+.draw-in-late {
+  animation-duration: 0.7s;
+  animation-delay: 0.9s;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+.fade-in-late {
+  animation: fade 0.5s ease-out 1s both;
+}
+
+@keyframes stamp-in {
+  0% {
+    opacity: 0;
+    transform: scale(2.4) rotate(-16deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.94) rotate(-6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+  }
+}
+.stamp-in {
+  animation: stamp-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) 1.4s both;
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+.pop-in {
+  animation: pop 0.35s ease-out 1.75s both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+.toast {
+  animation: toast-in 0.25s ease-out both;
+}
+
+/* MapLibre chrome, restyled to match */
+.maplibregl-map {
+  font-family: inherit;
+}
+.maplibregl-ctrl-attrib {
+  font-size: 11px;
+}
+
+.region-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: rgba(16, 36, 46, 0.55);
+  box-shadow: 0 0 0 2px rgba(16, 36, 46, 0.7);
+}
+/* When two places are compared, markers carry their letter and series colour. */
+.region-marker[data-letter] {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+.region-marker[data-letter]::after {
+  content: attr(data-letter);
+}
+.region-marker[data-letter="A"] {
+  background: #2a78d6;
+}
+.region-marker[data-letter="B"] {
+  background: #d95926;
+}
+.region-marker[data-active="true"] {
+  box-shadow:
+    0 0 0 2px rgba(16, 36, 46, 0.7),
+    0 0 0 5px rgba(255, 255, 255, 0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+  }
+}

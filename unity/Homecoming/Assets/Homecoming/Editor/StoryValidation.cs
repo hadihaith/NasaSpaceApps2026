@@ -103,6 +103,53 @@ namespace Homecoming.Editor
             Debug.Log("HOMECOMING_VALIDATION_OK: source shots, cues, 3 skinned rigs, deterministic acting, custom fonts, materials, story first in build; rendered 14 frames to " + outputPath);
         }
 
+        // Renders one shot as a dense frame sequence to inspect motion problems frame by frame.
+        // Batch: -executeMethod Homecoming.Editor.StoryValidation.RenderShotFrames with
+        // HOMECOMING_SHOT (e.g. "return"), HOMECOMING_FROM / HOMECOMING_TO (seconds),
+        // HOMECOMING_STEP (seconds) and HOMECOMING_PREVIEW_PATH (output folder).
+        [MenuItem("Homecoming/Render frames of one shot")]
+        public static void RenderShotFrames()
+        {
+            string Env(string name, string fallback) => string.IsNullOrEmpty(Environment.GetEnvironmentVariable(name)) ? fallback : Environment.GetEnvironmentVariable(name);
+            string shot = Env("HOMECOMING_SHOT", "return");
+            float from = float.Parse(Env("HOMECOMING_FROM", "0"), System.Globalization.CultureInfo.InvariantCulture);
+            float to = float.Parse(Env("HOMECOMING_TO", "4.8"), System.Globalization.CultureInfo.InvariantCulture);
+            float step = float.Parse(Env("HOMECOMING_STEP", ".1"), System.Globalization.CultureInfo.InvariantCulture);
+            string output = Env("HOMECOMING_PREVIEW_PATH", Path.Combine(PreviewPath, "frames-" + shot));
+            Directory.CreateDirectory(output);
+            EditorSceneManager.OpenScene(ScenePath);
+            var stage = Object.FindAnyObjectByType<StoryDirector>().stage;
+            stage.ApplyTypography();
+            var original = stage.televisionMaterial;
+            stage.televisionMaterial = new Material(original);
+            stage.screen.sharedMaterial = stage.televisionMaterial;
+            typeof(StoryStage).GetField("poster", Private).SetValue(stage, Resources.Load<Texture2D>("Film/apollo11"));
+            var rt = new RenderTexture(960, 540, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            rt.Create();
+            stage.filmCamera.targetTexture = rt;
+            int index = 0;
+            for (float t = from; t <= to + .0001f; t += step, index++)
+            {
+                stage.Evaluate(shot, t, false, true);
+                stage.filmCamera.Render();
+                var previous = RenderTexture.active;
+                RenderTexture.active = rt;
+                var image = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+                image.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0); image.Apply();
+                File.WriteAllBytes(Path.Combine(output, shot + "-" + index.ToString("000") + "-" + t.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + "s.png"), image.EncodeToPNG());
+                Object.DestroyImmediate(image);
+                RenderTexture.active = previous;
+            }
+            stage.filmCamera.targetTexture = null;
+            rt.Release(); Object.DestroyImmediate(rt);
+            Object.DestroyImmediate(stage.televisionMaterial);
+            stage.televisionMaterial = original;
+            stage.screen.sharedMaterial = original;
+            stage.Lighting.Teardown();
+            EditorSceneManager.OpenScene(ScenePath);
+            Debug.Log("HOMECOMING_FRAMES_OK: " + index + " frames of " + shot + " to " + output);
+        }
+
         static void Require(bool condition, string message)
         {
             if (!condition) throw new InvalidOperationException("Homecoming validation failed: " + message);

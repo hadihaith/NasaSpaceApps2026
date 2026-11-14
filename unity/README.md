@@ -128,6 +128,10 @@ which `prepare-unity-story.py` regenerates).
 - **Homecoming → Validate and render story frames** checks all shots, cue times,
   character rigs, materials and that Story is the first enabled build scene,
   then renders each shot.
+- **Homecoming → Render frames of one shot** renders a single shot as a frame sequence
+  (default: the return shot every 0.1 s) into `docs/unity-previews/frames-<shot>/`, to
+  inspect motion glitches frame by frame. In batch mode, set `HOMECOMING_SHOT`,
+  `HOMECOMING_FROM`, `HOMECOMING_TO`, `HOMECOMING_STEP` and `HOMECOMING_PREVIEW_PATH`.
 - **Homecoming → Run playback smoke check** enters Play Mode and exercises shot
   seeking, reduced motion, pause, chapter transitions, saving and the return API.
   It restores the previous story save afterwards.

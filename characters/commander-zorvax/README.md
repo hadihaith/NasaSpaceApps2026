@@ -1,7 +1,7 @@
 # Commander Zorvax
 
 - `commander-zorvax.blend` is the editable Blender 4.5 source. It includes the mesh, materials, 26-bone FK rig, three actions, and the four packed turnaround guides in the hidden **Turnaround references** collection.
-- `../../public/assets/characters/commander-zorvax.glb` is the self-contained game export. It has its origin at the feet, uses glTF's Y-up coordinates, and faces +Z. It is about 2.84 scene units tall at scale 1.
+- `../../public/assets/characters/commander-zorvax.glb` is the self-contained game export. It has its origin at the feet, uses glTF's Y-up coordinates, and faces +Z. It is about 2.90 scene units tall at scale 1.
 - `turnaround/` contains the aligned front, back, and side reference PNGs.
 
 ## Preview and animate

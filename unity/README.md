@@ -108,6 +108,10 @@ the fuller descriptions when it re-syncs from `src/homecoming/story.ts`.
   `StoryProjectBuilder.cs`. This replaces scene edits, so use it deliberately.
 - **Homecoming → Validate and render story frames** checks all shots, cue times,
   character rigs, materials and scene isolation, then renders each shot.
+- **Homecoming → Render frames of one shot** renders a single shot as a frame sequence
+  (default: the Artemis shot every 0.1 s) into `docs/unity-previews/frames-<shot>/`, to
+  inspect motion glitches frame by frame. In batch mode, set `HOMECOMING_SHOT`,
+  `HOMECOMING_FROM`, `HOMECOMING_TO`, `HOMECOMING_STEP` and `HOMECOMING_PREVIEW_PATH`.
 - **Homecoming → Run playback smoke check** enters Play Mode and exercises shot
   seeking, reduced motion, pause, chapter transitions, saving and the return API.
   It restores the previous story save afterwards.

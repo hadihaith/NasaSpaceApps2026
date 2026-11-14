@@ -225,9 +225,12 @@ namespace Homecoming
             if (shot == "return")
             {
                 float notice = Smooth(.24f + role * .12f, .85f + role * .12f, t);
-                float protest = role == 0 ? Smooth(1.45f, 2.05f, t) : .3f * Smooth(2, 3, t);
-                yaw += notice * (role == 0 ? 100 : role == 1 ? 125 : -90) * (1 - protest);
-                headYaw = -24 * protest; headPitch = -6 * notice + 4 * protest; torsoPitch = -4 * protest;
+                // Zorvax turns only three-quarters toward the broadcast; his head does the rest.
+                // Side-on, his flat cape is seen edge-on and reads as a blade cutting through him.
+                float protest = role == 0 ? Smooth(1.4f, 2.45f, t) : .3f * Smooth(2, 3, t);
+                yaw += notice * (role == 0 ? 45 : role == 1 ? 125 : -90) * (1 - protest);
+                headYaw = (role == 0 ? 28 * notice * (1 - protest) : 0) - 24 * protest;
+                headPitch = -6 * notice + 4 * protest; torsoPitch = -4 * protest;
                 if (role == 0) Face("Disbelief", 70 * Smooth(1.4f, 2, t));
             }
             if (shot == "lab" || shot == "ready")

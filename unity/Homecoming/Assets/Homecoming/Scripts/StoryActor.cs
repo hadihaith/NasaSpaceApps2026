@@ -128,9 +128,24 @@ namespace Homecoming
             if (from.sqrMagnitude < .00001f || to.sqrMagnitude < .00001f) return;
             joint.rotation = Quaternion.Slerp(Quaternion.identity, Quaternion.FromToRotation(from, to), weight) * joint.rotation;
         }
+        void PosePhotographer(string shot, float t)
+        {
+            bool party = shot == "party";
+            bool visible = party || shot == "home" || shot == "reveal" || shot == "years" || shot == "return";
+            gameObject.SetActive(visible);
+            if (!visible) return;
+            Sample(party ? "Snap" : "Idle", t, .82f, 2.55f);
+            transform.localPosition = new Vector3(-2.85f, 0, .55f);
+            transform.localRotation = Quaternion.Euler(0, shot == "return" ? 50 : 17, 0);
+        }
         public void Pose(string shot, float t, bool still)
         {
             if (!initialized) Initialize();
+            if (role == 3)
+            {
+                PosePhotographer(shot, t);
+                return;
+            }
             bool visible = shot == "home" || (shot == "recruit" && role == 0) || (shot == "ready" && role > 0) || shot == "epilogue" ||
                 shot == "reveal" || shot == "party" || shot == "years" || shot == "return" || shot == "hearing" ||
                 (shot == "correction" && role < 2) || (shot == "launch" && role == 0) || (shot == "lab" && role > 0);

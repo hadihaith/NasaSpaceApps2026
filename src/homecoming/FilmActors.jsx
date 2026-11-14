@@ -7,10 +7,11 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { CREW } from "./Crew";
 
-const IDS = ["commander", "scientist", "cadet"];
+const MAIN_CREW = ["commander", "scientist", "cadet"];
+const IDS = [...MAIN_CREW, "bogos"];
 const paths = IDS.map((id) => `/assets/characters/${CREW[id].asset}.glb`);
-const height = { commander: 2.9, scientist: 3.03, cadet: 2.35 };
-const stageX = { commander: -1.38, scientist: .35, cadet: 2.05 };
+const height = { commander: 2.9, scientist: 3.03, cadet: 2.35, bogos: 1.82 };
+const stageX = { commander: -1.38, scientist: .35, cadet: 2.05, bogos: -2.88 };
 const up = new Vector3(0, 1, 0);
 const right = new Vector3(1, 0, 0);
 const front = new Vector3(0, 0, 1);
@@ -18,7 +19,7 @@ const front = new Vector3(0, 0, 1);
 const gestures = {
   reveal: ["Welcome", "Idle", "Idle"],
   correction: ["Nod", "Eureka", "Idle"],
-  party: ["Welcome", "Explain", "Wave"],
+  party: ["Welcome", "Explain", "Wave", "Snap"],
   years: ["Idle", "Idle", "Idle"],
   return: ["Nod", "Explain", "Idle"],
   launch: ["Nod", "Idle", "Idle"],
@@ -27,7 +28,7 @@ const gestures = {
 };
 const visible = {
   reveal: IDS, correction: ["commander", "scientist"], party: IDS, years: IDS, return: IDS, earth: [],
-  launch: ["commander"], lab: ["scientist", "cadet"], hearing: IDS,
+  launch: ["commander"], lab: ["scientist", "cadet"], hearing: MAIN_CREW,
 };
 const smooth = (from, to, t) => MathUtils.smoothstep(t, from, to);
 const hit = (at, span, t) => Math.exp(-Math.pow((t - at) / span, 2));
@@ -113,7 +114,7 @@ function Actor({ id, source, index, shot, time }) {
     }
     const action = actor.actions[name] ?? actor.actions.Idle;
     const clipLength = action.getClip().duration;
-    const delay = idShot === "reveal" ? 1.46 : idShot === "correction" && index === 1 ? .44 : idShot === "hearing" && index === 1 ? 2.13 : .16;
+    const delay = id === "bogos" ? .82 : idShot === "reveal" ? 1.46 : idShot === "correction" && index === 1 ? .44 : idShot === "hearing" && index === 1 ? 2.13 : .16;
     action.time = name === "Idle" ? (t + index * .39) % clipLength : Math.min(clipLength - .001, Math.max(0, t - delay));
     actor.mixer.update(0);
 
@@ -124,9 +125,9 @@ function Actor({ id, source, index, shot, time }) {
     const returnTurn = idShot === "return" ? smooth(.43 + index * .11, 1.20 + index * .12, t) : 0;
     let x = stageX[id] - lean * .31 + bounce * .12;
     let y = dancing * Math.max(0, bounce) * .19;
-    let z = [1.07, .38, -.08][index] + lean * .47;
-    let yaw = [.28, -.39, -.55][index] + bounce * .17;
-    let pitch = -tired * [0.14, .06, .18][index] + returnTurn * .18;
+    let z = [1.07, .38, -.08, .4][index] + lean * .47;
+    let yaw = [.28, -.39, -.55, .20][index] + bounce * .17;
+    let pitch = -tired * [.14, .06, .18, .1][index] + returnTurn * .18;
     let look = returnTurn * .62 - tired * .12;
     if (idShot === "lab") {
       x = index === 1 ? -1.72 : 1.9;
@@ -158,7 +159,7 @@ function Actor({ id, source, index, shot, time }) {
     }
     if (idShot === "launch" && index === 0) reachForSwitch(actor, t);
   });
-  return <group ref={root} visible={false} scale={2.17 / height[id] * (index === 2 ? .79 : 1)}>
+  return <group ref={root} visible={false} scale={2.17 / height[id] * (id === "bogos" ? .72 : id === "cadet" ? .79 : 1)}>
     <primitive object={rig.scene} dispose={null} />
   </group>;
 }

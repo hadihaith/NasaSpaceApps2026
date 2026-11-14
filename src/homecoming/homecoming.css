@@ -168,6 +168,7 @@ body:has(.hc-film) .chat-widget { display: none; }
 .hc-recruit-art .hc-portrait { width: 82%; aspect-ratio: .9; max-width: 245px; box-shadow: 0 12px 80px #14051ddd; }
 .hc-recruit-copy { padding: clamp(1.4rem,4vw,3.65rem); }
 .hc-recruit-copy h1 { font-size: clamp(2.35rem,4.7vw,4.3rem); margin: .72rem 0 .87rem; }
+.hc-recruit-copy .hc-line { margin-top: 1rem; }
 .hc-recruit-copy form { display: grid; gap: .5rem; margin: 1.5rem 0 .85rem; }
 .hc-recruit-copy form button { margin-top: .25rem; }
 .hc-recruit-copy label, .hc-archive-controls label { color: var(--hc-white); font-size: .88rem; font-weight: 700; }

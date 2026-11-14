@@ -130,27 +130,13 @@ namespace Homecoming.Editor
                 stage.confetti[i] = Box("Foil " + i, confetti, Vector3.zero, V(.035f, .11f, .009f), paperMats[i % paperMats.Length]);
 
             var crew = Group("Crew — original rigs and animation", stage.bridge.transform);
-            var names = new[] { "commander-zorvax", "dr-nyxen", "alien-student" };
-            float[] heights = { 2.9f, 3.03f, 2.35f };
-            stage.crew = new StoryActor[3];
+            var names = new[] { "commander-zorvax", "dr-nyxen", "alien-student", "bogos-binted" };
+            float[] heights = { 2.9f, 3.03f, 2.35f, 1.82f };
+            stage.crew = new StoryActor[names.Length];
             for (int i = 0; i < names.Length; i++)
             {
-                string path = Root + "/Resources/Crew/" + names[i] + ".glb";
-                var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (asset == null) throw new InvalidOperationException("Character did not import: " + path);
-                var actorRoot = Group(names[i], crew);
-                actorRoot.localScale = Vector3.one * (2.2f / heights[i] * (i == 2 ? .8f : 1));
-                var rig = (GameObject)PrefabUtility.InstantiatePrefab(asset, actorRoot);
-                var actor = actorRoot.gameObject.AddComponent<StoryActor>();
-                actor.role = i;
-                actor.rig = rig;
-                actor.clips = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>().ToArray();
-                if (!actor.clips.Any(c => c.name == "Idle")) throw new InvalidOperationException("Missing Idle animation in " + path);
-                stage.crew[i] = actor;
-                foreach (var renderer in rig.GetComponentsInChildren<SkinnedMeshRenderer>()) renderer.updateWhenOffscreen = true;
-                actor.Initialize();
-                actor.Pose("home", 1, true);
-                Debug.Log(names[i] + " imported with " + actor.clips.Length + " original animation clips.");
+                float scale = 2.2f / heights[i] * (i == 3 ? .72f : i == 2 ? .8f : 1);
+                stage.crew[i] = CreateActor(names[i], i, scale, crew);
             }
             var directorGo = new GameObject("STORY — playback and scene handoff");
             var director = directorGo.AddComponent<StoryDirector>();
@@ -185,9 +171,30 @@ namespace Homecoming.Editor
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneOSX, true);
             AssetDatabase.SaveAssets();
             EditorSceneManager.SaveScene(scene, "Assets/Scenes/Story.unity");
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene("Assets/Scenes/Story.unity", true) };
+            const string storyPath = "Assets/Scenes/Story.unity";
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(storyPath, true) }
+                .Concat(EditorBuildSettings.scenes.Where(entry => entry.path != storyPath)).ToArray();
             Selection.activeGameObject = directorGo;
-            Debug.Log("HOMECOMING_BUILD_OK: Story.unity, 14 shots, 3 animated character rigs; no simulation scene.");
+            Debug.Log("HOMECOMING_BUILD_OK: Story.unity, 14 shots, 4 animated characters.");
+        }
+
+        internal static StoryActor CreateActor(string name, int role, float scale, Transform parent)
+        {
+            string path = Root + "/Resources/Crew/" + name + ".glb";
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (asset == null) throw new InvalidOperationException("Character did not import: " + path);
+            var actorRoot = Group(name, parent);
+            actorRoot.localScale = Vector3.one * scale;
+            var rig = (GameObject)PrefabUtility.InstantiatePrefab(asset, actorRoot);
+            var actor = actorRoot.gameObject.AddComponent<StoryActor>();
+            actor.role = role;
+            actor.rig = rig;
+            actor.clips = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>().ToArray();
+            if (!actor.clips.Any(c => c.name == "Idle")) throw new InvalidOperationException("Missing Idle animation in " + path);
+            foreach (var renderer in rig.GetComponentsInChildren<SkinnedMeshRenderer>()) renderer.updateWhenOffscreen = true;
+            actor.Initialize();
+            actor.Pose("home", 1, true);
+            return actor;
         }
 
         static Material Mat(string name, string hex, float metallic, float smooth, bool emission = false)

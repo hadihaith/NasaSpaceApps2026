@@ -24,11 +24,9 @@ The site redeploys automatically from `main` through GitHub Actions (see [docs/d
 
 ## Run it locally
 
-For the **Unity 6000.6.9f1 story**, open `unity/Homecoming` in Unity Hub,
-then open `Assets/Scenes/Story.unity` and press Play. See the
-[Unity story guide](unity/README.md) for playback, editing and the future simulation
-scene handoff. The Unity project contains the original story and characters;
-the simulation will be built separately.
+For **Unity 6000.6.9f1**, open `unity/Homecoming` in Unity Hub.
+Play `Assets/Scenes/Simulation.unity` to start in the field lab, or start
+`Assets/Scenes/Story.unity` for the original story. See the [Unity guide](unity/README.md).
 
 ```bash
 npm install

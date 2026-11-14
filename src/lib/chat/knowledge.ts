@@ -13,7 +13,7 @@ whether those changes are statistically significant (for example with a t-test, 
 
 PAGES (use these paths when pointing people somewhere)
 - "/" Operation: The Great Homecoming. A funny story game. In 1969 an alien crew (Commander Zorvax, the scientist
-  Dr. Nyxen and Cadet B) celebrated Apollo 11, thinking humans were finally leaving Earth to visit them. 57 years
+  Dr. Nyxen, Cadet B and ship photographer Bogos Binted) celebrated Apollo 11, thinking humans were finally leaving Earth to visit them. 57 years
   later they are still waiting, so they decide to "make humans love our planet more". The player is recruited, names
   themselves, and uses the Planetary Persuasion Device: a lab simulator where you change temperature (-5 to +8 °C),
   precipitation (-100% to +150%), humidity (-40 to +40 percentage points) and wind speed (-5 to +15 m/s) for one of six

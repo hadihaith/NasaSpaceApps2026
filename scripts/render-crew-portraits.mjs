@@ -11,7 +11,12 @@ const crew = {
   "commander-zorvax": { angle: -.27, frame: 1.78, key: 0xffe4bf, rim: 0xe8a0ff },
   "dr-nyxen": { angle: .24, frame: 1.68, key: 0xbceafa, rim: 0x9cbafa },
   "alien-student": { angle: -.22, frame: 1.42, key: 0xffe0a7, rim: 0x9ef3ff },
+  "bogos-binted": { angle: .12, frame: 1.38, key: 0xffecc4, rim: 0xa3ebc4 },
 };
+
+const selected = process.argv.slice(2);
+if (selected.some((name) => !Object.hasOwn(crew, name))) throw new Error("Unknown crew model");
+const models = selected.length ? Object.fromEntries(selected.map((name) => [name, crew[name]])) : crew;
 
 async function renderPortraits(THREE, GLTFLoader, characters) {
   const width = 520;
@@ -75,7 +80,7 @@ const page = `<!doctype html><html lang="en"><title>Crew portraits</title>
 <script type="module">
   import * as THREE from "three";
   import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-  await (${renderPortraits.toString()})(THREE, GLTFLoader, ${JSON.stringify(crew)})
+  await (${renderPortraits.toString()})(THREE, GLTFLoader, ${JSON.stringify(models)})
     .catch((error) => fetch("/error", { method: "POST", body: String(error) }));
 </script>`;
 
@@ -88,7 +93,7 @@ const server = createServer(async (request, response) => {
     }
     if (request.method === "POST") {
       const model = path.split("/").at(-1);
-      if (path !== "/error" && (!path.startsWith("/portraits/") || !Object.hasOwn(crew, model))) {
+      if (path !== "/error" && (!path.startsWith("/portraits/") || !Object.hasOwn(models, model))) {
         response.writeHead(404).end();
         return;
       }
@@ -99,7 +104,7 @@ const server = createServer(async (request, response) => {
       if (path === "/error") fail(new Error(data.toString()));
       else {
         portraits.set(model, data);
-        if (portraits.size === Object.keys(crew).length) finish();
+        if (portraits.size === Object.keys(models).length) finish();
       }
       return;
     }

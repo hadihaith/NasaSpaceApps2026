@@ -52,7 +52,7 @@
     },
     {
       "id": "party",
-      "description": "The cadet fires the party cannon. Foil strips and balloons fly as the crew dances beneath a welcome banner.",
+      "description": "The cadet fires the party cannon. Bogos Binted snaps a photo as the crew dances beneath a shower of confetti.",
       "seconds": 4.0,
       "cues": [
         {
@@ -63,7 +63,8 @@
           "at": 1.0,
           "name": "celebrate"
         }
-      ]
+      ],
+      "line": "Bogos Binted: Hold still. This one’s for the scrapbook."
     },
     {
       "id": "jam",

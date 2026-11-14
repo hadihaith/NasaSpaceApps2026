@@ -1,5 +1,6 @@
-import { analyzeDataset, parseDataset, type EarthDataset } from "../member4/dataset";
-import type { Mode } from "../series";
+import { analyzeDataset, parseDataset, type EarthDataset, type ScientificReview } from "../member4/dataset";
+import type { BBox } from "../region";
+import type { Mode, MonthlyRecord } from "../series";
 
 /** Export extensions retain the source distinctions Member 4's broad kind does not. */
 export interface EvidenceDataset extends EarthDataset {
@@ -11,8 +12,19 @@ export interface EvidenceDataset extends EarthDataset {
   definition: string;
   annualInterpretation: string;
   rawSha256: string;
-  source: { citation: string[]; nativeUnit?: string; doi?: string; parameter: string };
-  spatial: { type: string; nativeResolution?: string; footprintNote?: string };
+  source: { citation: string[]; nativeUnit?: string; doi?: string; parameter: string; rawFile?: string; version: string };
+  spatial: {
+    type: string;
+    nativeResolution?: string;
+    footprintNote?: string;
+    bbox?: BBox;
+    dataBbox?: BBox;
+    gridCells?: number;
+    gridCellCenters?: [number, number][];
+    requestedCoordinates?: { lat: number; lon: number };
+    returnedCoordinates?: [number, number, number];
+    method?: string;
+  };
   temporal: { start: string; end: string; timeStandard?: string };
   quality: {
     missingMonths: number;
@@ -21,7 +33,6 @@ export interface EvidenceDataset extends EarthDataset {
     excludedAnnualYears: number[];
     monthsWithMissingDays: number;
   };
-  reviewStatus: "pending-member-4";
 }
 
 export const PROVIDER_LABEL = {
@@ -42,9 +53,10 @@ export function parseArchive(input: unknown): EvidenceDataset[] {
   });
 }
 
-/** No approval is inferred from a valid contract, provider kind, or license. */
-export function analyzeEvidence(dataset: EvidenceDataset, mode: Mode, startYear: number, endYear: number, month = 0) {
-  return analyzeDataset(dataset, mode, month, { startYear, endYear });
+/** Pass a dataset-specific review only after matching the requested time treatment. */
+export function analyzeEvidence(dataset: EvidenceDataset, mode: Mode, startYear: number, endYear: number,
+  month = 0, review?: ScientificReview, anomalyNormals?: MonthlyRecord["anomalyNormals"]) {
+  return analyzeDataset(dataset, mode, month, { startYear, endYear }, review, anomalyNormals);
 }
 
 export function evidenceKey(entry: { datasetId?: string; productVersion?: string; mode?: string; month?: number; period: string }) {

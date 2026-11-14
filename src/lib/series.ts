@@ -42,6 +42,8 @@ export interface MonthlyRecord {
   assumptionsReviewed?: boolean;
   startYear: number;
   monthly: (number | null)[];
+  /** Fixed calendar-month means, in the same units as the record. */
+  anomalyNormals?: readonly (number | null)[];
 }
 
 export function toSeries(record: MonthlyRecord, mode: Mode, month = 6): SeriesPoint[] {
@@ -75,8 +77,12 @@ export function toSeries(record: MonthlyRecord, mode: Mode, month = 6): SeriesPo
     return out;
   }
 
-  // Anomalies: subtract each calendar month's average over the whole record.
-  const normals = Array.from({ length: 12 }, (_, m) => {
+  if (record.anomalyNormals && (record.anomalyNormals.length !== 12 ||
+      record.anomalyNormals.some((v) => v !== null && !Number.isFinite(v)))) {
+    throw new RangeError("Supply twelve finite monthly normals or null.");
+  }
+  // Without a fixed baseline, use each calendar month's mean in the selected period.
+  const normals = record.anomalyNormals ?? Array.from({ length: 12 }, (_, m) => {
     let sum = 0;
     let n = 0;
     for (let i = m; i < monthly.length; i += 12) {

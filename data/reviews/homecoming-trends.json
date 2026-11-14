@@ -1,0 +1,26 @@
+{
+  "historical-v2:85b160e5b3719e215311b1158afe8295df5a2248272ebd6435dd7ec1cacaa617:b823d46d0590d7dc14105d5f9e469ddc5891de04c191a0c026e6c20ed3e98de5:1991:2025:annual:-": {
+    "id": "rain-two-ways-paired-review-v1",
+    "reviewer": "Homecoming data and statistics implementation review",
+    "accepted": true,
+    "rationale": "35 consecutive complete years. Reviewed dependence, variance, residual distribution, leverage, curvature and step sensitivity on the paired differences. The test applies to these archived product values and their grid footprints."
+  },
+  "historical-v2:85b160e5b3719e215311b1158afe8295df5a2248272ebd6435dd7ec1cacaa617:1991:2025:annual:-": {
+    "id": "sahel-rain-review-v1",
+    "reviewer": "Homecoming data and statistics implementation review",
+    "accepted": false,
+    "rationale": "Unequal residual variance, curvature and endpoint sensitivity limit the ordinary linear slope test at this grid point."
+  },
+  "historical-v2:b823d46d0590d7dc14105d5f9e469ddc5891de04c191a0c026e6c20ed3e98de5:1991:2025:annual:-": {
+    "id": "central-chile-rain-review-v1",
+    "reviewer": "Homecoming data and statistics implementation review",
+    "accepted": false,
+    "rationale": "Unequal residual variance and sensitivity to a possible 2015 level change limit the ordinary linear slope test at this grid point."
+  },
+  "historical-v2:aecfe78848a3dbdd540f06b15b155fc5a761842e4af74f1f52f3064bee49b2c8:1981:2025:annual:-": {
+    "id": "phoenix-temperature-review-v1",
+    "reviewer": "Homecoming data and statistics implementation review",
+    "accepted": true,
+    "rationale": "45 consecutive complete years. Reviewed dependence, variance, residual distribution, leverage, curvature and production-stream step sensitivity. The result describes MERRA-2 2 m temperature in the archived Arizona footprint."
+  }
+}

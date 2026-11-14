@@ -228,14 +228,14 @@ export interface InferenceOptions {
 
 /** Analyze the paired A-B series on shared timestamps, retaining spatial covariance. */
 export function comparePairedSeries(a: Point[], b: Point[], alpha = 0.05,
-  options: InferenceOptions = {}): SlopeDifference {
-  validatePoints(a, 2, alpha);
-  validatePoints(b, 2, alpha);
+  options: InferenceOptions = {}): SlopeDifference & { points: Point[]; trend: TrendResult | null } {
+  validatePoints(a, 0, alpha);
+  validatePoints(b, 0, alpha);
   const bByTime = new Map(b.map((p) => [p.t, p.v]));
   const paired = a.filter((p) => bByTime.has(p.t)).map((p) => ({ t: p.t, v: p.v - bByTime.get(p.t)! }));
   const result = analyzeTrend(paired, alpha, options);
   const established = result?.inference.established ?? false;
-  return { difference: result?.ols.slope ?? NaN, p: established ? result!.ols.p : null,
+  return { points: paired, trend: result, difference: result?.ols.slope ?? NaN, p: established ? result!.ols.p : null,
     significant: established && result!.ols.p < alpha, established, n: paired.length,
     reason: result ? result.inference.reasons.join(" ") || "OLS test of paired A minus B values on common dates." : "Too few shared dates." };
 }

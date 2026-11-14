@@ -7,6 +7,7 @@ export const CREW = {
   commander: { name: "Commander Zorvax", asset: "commander-zorvax", color: "#f7b0fc" },
   scientist: { name: "Dr. Nyxen", asset: "dr-nyxen", color: "#8ce8f5" },
   cadet: { name: "Cadet B", asset: "alien-student", color: "#ffcf75" },
+  bogos: { name: "Bogos Binted", asset: "bogos-binted", color: "#a3ebc4" },
 } as const;
 
 export type CrewId = keyof typeof CREW;

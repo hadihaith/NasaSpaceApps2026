@@ -218,7 +218,7 @@ export function Homecoming() {
         <div className="hc-landing-inner"><div className="hc-landing-copy">
           <p className="hc-kicker hc-transmission"><i /> SIGNAL INTERCEPTED · JULY 1969</p>
           <h1><span>THE GREAT</span><em>HOMECOMING</em></h1>
-          <p>One human reached the Moon. Three aliens set the table.</p>
+          <p>One human reached the Moon. Four aliens set the table.</p>
           <div className="hc-home-actions"><button type="button" className="hc-primary" onClick={() => save ? navigate("lab") : begin(true)}><span aria-hidden>▶</span> {save ? "Return to the lab" : "Play transmission"}</button>
           <button type="button" className="hc-secondary" onClick={() => save ? begin(sound) : navigate("recruit")}>{save ? "Replay prologue" : "Skip to recruitment"} <span aria-hidden>→</span></button></div>
         </div><div className="hc-landing-bottom"><span>NASA SPACE APPS KUWAIT</span><span><i /> MISSION STATUS <b>57 YEARS BEHIND</b></span></div></div>
@@ -230,6 +230,7 @@ export function Homecoming() {
         <div className="hc-recruit-art"><CrewPortrait id="commander" /></div>
         <div className="hc-recruit-copy"><span className="hc-kicker"><i /> INCOMING TRANSMISSION</span><h1>Welcome aboard, recruit.</h1>
           <p>“The party’s been on hold since 1969. Find out what Earth has that we don’t.”</p>
+          <CrewLine id="bogos">Hold still. I need a photo for your crew badge.</CrewLine>
           <form onSubmit={recruit}><label htmlFor="designation">Recruit designation</label><input id="designation" required maxLength={28} value={designation} onChange={(event) => setDesignation(event.target.value)} placeholder="Enter your alien name" autoComplete="off" />
             <button type="submit" className="hc-primary" disabled={!designation.trim()}>Join the operation <span aria-hidden>→</span></button></form>
           <small>Progress saves in this browser. No account needed.</small></div>

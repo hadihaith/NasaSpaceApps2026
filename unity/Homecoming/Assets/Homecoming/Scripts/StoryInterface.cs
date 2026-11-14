@@ -278,7 +278,7 @@ namespace Homecoming
             Rule(60, 430, 57, orange, 3);
             Text(137, 420, 460, 30, "AN INTERGALACTIC MISUNDERSTANDING", micro, orange);
             uiOpacity = Enter(.12f);
-            Text(60, 478, 485, 85, "One human reached the Moon.\nThree aliens set the table.", body);
+            Text(60, 478, 485, 85, "One human reached the Moon.\nFour aliens set the table.", body);
             if (Action("start", new Rect(60, 600, 470, 72), "PLAY TRANSMISSION", true, "01")) Play("prologue");
             if (StorySession.BriefingComplete)
             {

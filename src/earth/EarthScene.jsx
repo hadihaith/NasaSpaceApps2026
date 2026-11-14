@@ -3,6 +3,7 @@ import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { MathUtils, Quaternion, SRGBColorSpace, TextureLoader, Vector3 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Atmosphere, EnvironmentEffects, regionDirection } from './EnvironmentEffects';
+import { OrbitClimate } from './OrbitClimate';
 import { KuExchangeEarth } from '../homecoming/FilmPlanets';
 import { RegionSelector } from './RegionSelector';
 import { EARTH_REGIONS, EARTH_TEXTURE_URL, normalizeEnvironment, toCoordinates } from './regions';
@@ -43,11 +44,14 @@ const cameraAid = new Vector3();
 const rotation = new Quaternion();
 const identity = new Quaternion();
 
-function GlobeControls({ region, autoRotate, reducedMotion }) {
+function GlobeControls({ region, autoRotate, reducedMotion, flight }) {
   const { camera, gl, size } = useThree();
   const controlsRef = useRef(null);
   const focusPending = useRef(true);
   const refocusAfter = useRef(0);
+  const distanceBeforeFlight = useRef(null);
+  const flightAngle = useRef(0);
+  const flightDirection = useRef(new Vector3());
   const lookDirection = useMemo(() => {
     const point = regionDirection(region ?? EARTH_REGIONS[0]);
     return point.applyAxisAngle(up, MathUtils.degToRad(-10)).normalize();
@@ -96,6 +100,32 @@ function GlobeControls({ region, autoRotate, reducedMotion }) {
     const controls = controlsRef.current;
     if (!controls) return;
     const step = Math.min(delta, 0.05);
+    if (flight) {
+      const wide = size.width / Math.max(1, size.height);
+      const fit = Math.max(1, .89 / wide);
+      const here = camera.position.length();
+      if (flight.running && distanceBeforeFlight.current === null) distanceBeforeFlight.current = here;
+      controls.enabled = !flight.running;
+      controls.enableDamping = !reducedMotion;
+      controls.autoRotate = false;
+      if (flight.running) {
+        if (!reducedMotion) flightAngle.current = Math.min(.31, flightAngle.current + step * .067);
+        flightDirection.current.copy(lookDirection).applyAxisAngle(up, flightAngle.current - .08);
+        cameraAid.copy(camera.position).normalize().lerp(flightDirection.current, reducedMotion ? 1 : 1 - Math.exp(-3.8 * step)).normalize();
+        const distance = MathUtils.damp(here, (reducedMotion ? 3.92 : 2.72) * fit, reducedMotion ? 1000 : 3.2, step);
+        camera.position.copy(cameraAid).multiplyScalar(distance);
+        controls.update();
+      } else if (distanceBeforeFlight.current !== null) {
+        const distance = MathUtils.damp(here, Math.max(3.25 * fit, distanceBeforeFlight.current), reducedMotion ? 1000 : 2.8, step);
+        camera.position.setLength(distance);
+        controls.update();
+        if (Math.abs(distance - Math.max(3.25 * fit, distanceBeforeFlight.current)) < .02) {
+          distanceBeforeFlight.current = null;
+          flightAngle.current = 0;
+        }
+      }
+      if (flight.running) return;
+    }
     controls.enableDamping = !reducedMotion;
     controls.autoRotate = autoRotate && !reducedMotion && !focusPending.current
       && performance.now() > refocusAfter.current;
@@ -119,7 +149,7 @@ function GlobeControls({ region, autoRotate, reducedMotion }) {
 
 const markerAxis = new Vector3(0, 0, 1);
 
-function GlobeMarkers({ region, onRegionSelect }) {
+function GlobeMarkers({ region, onRegionSelect, immersive }) {
   const positions = useMemo(() => EARTH_REGIONS.map((item) => {
     const normal = regionDirection(item);
     return { ...item, position: normal.clone().multiplyScalar(1.008), orientation: new Quaternion().setFromUnitVectors(markerAxis, normal) };
@@ -132,21 +162,21 @@ function GlobeMarkers({ region, onRegionSelect }) {
         if (event.delta < 5) onRegionSelect(id);
       }}>
         <circleGeometry args={[0.059, 20]} />
-        <meshBasicMaterial color="#00261f" transparent opacity={region?.id === id ? 0.58 : 0.82} />
+        <meshBasicMaterial color="#0a1823" transparent opacity={immersive ? .3 : region?.id === id ? 0.58 : 0.82} />
       </mesh>
       <mesh position-z={0.001}>
-        <ringGeometry args={[0.040, 0.052, 24]} />
-        <meshBasicMaterial color={region?.id === id ? '#e3ffd4' : '#58f6ff'} />
+        <ringGeometry args={immersive ? [0.047, 0.051, 32] : [0.040, 0.052, 24]} />
+        <meshBasicMaterial color={region?.id === id ? '#ffe1af' : '#a0d5ef'} transparent opacity={immersive && region?.id !== id ? .58 : 1} />
       </mesh>
       <mesh position-z={0.002}>
-        <circleGeometry args={[0.018, 12]} />
-        <meshBasicMaterial color={region?.id === id ? '#e3ffd4' : '#58f6ff'} />
+        <circleGeometry args={[immersive ? .012 : .018, 12]} />
+        <meshBasicMaterial color={region?.id === id ? '#ffe1af' : '#a0d5ef'} />
       </mesh>
     </group>
   ));
 }
 
-function Globe({ region, values, autoRotate, reducedMotion, onRegionSelect, onReady, onContextLost, useKuGlobe }) {
+function Globe({ region, values, autoRotate, reducedMotion, onRegionSelect, onReady, onContextLost, useKuGlobe, flight }) {
   const basemap = useLoader(EarthTextureLoader, EARTH_TEXTURE_URL);
   const gl = useThree((state) => state.gl);
   const time = useRef(0);
@@ -164,11 +194,12 @@ function Globe({ region, values, autoRotate, reducedMotion, onRegionSelect, onRe
 
   return (
     <>
-      <GlobeControls region={region} autoRotate={autoRotate} reducedMotion={reducedMotion} />
+      <GlobeControls region={region} autoRotate={autoRotate} reducedMotion={reducedMotion} flight={flight} />
       {useKuGlobe && <KuExchangeEarth time={time} position={[0, 0, 0]} radius={1} interactive />}
-      <EnvironmentEffects basemap={basemap} region={region} values={values} reducedMotion={reducedMotion} overlay={useKuGlobe} />
+      {flight && region ? <OrbitClimate key={region.id} region={region} flight={flight} values={values} reducedMotion={reducedMotion} />
+        : <EnvironmentEffects basemap={basemap} region={region} values={values} reducedMotion={reducedMotion} overlay={useKuGlobe} />}
       {!useKuGlobe && <Atmosphere />}
-      <GlobeMarkers region={region} onRegionSelect={onRegionSelect} />
+      {!flight?.running && <GlobeMarkers region={region} onRegionSelect={onRegionSelect} immersive={Boolean(flight)} />}
     </>
   );
 }
@@ -194,7 +225,7 @@ function MapFallback({ region, values, loading = false }) {
   );
 }
 
-export function EarthScene({ regionId, environment, onRegionSelect, presentation = 'default' }) {
+export function EarthScene({ regionId, environment, onRegionSelect, presentation = 'default', flight = null }) {
   const viewport = useRef(null);
   const [ready, setReady] = useState(false);
   const [contextLost, setContextLost] = useState(false);
@@ -215,36 +246,37 @@ export function EarthScene({ regionId, environment, onRegionSelect, presentation
   return (
     <section className={`earth-scene earth-scene-${presentation}`} aria-label="Earth visualization">
       <div className="earth-viewport" ref={viewport}>
-        <div className="earth-grid" aria-hidden="true" />
+        {!flight && <><div className="earth-grid" aria-hidden="true" />
         <div className="earth-orbit" aria-hidden="true" />
         <div className="earth-viewport-header">
           <span><i aria-hidden="true" /> Simulation view</span>
           <span>{region ? toCoordinates(region) : 'Select a region'}</span>
-        </div>
+        </div></>}
         <div className="earth-canvas">
           {contextLost ? fallback : (
             <GlobeErrorBoundary fallback={fallback}>
               <Canvas fallback={fallback} frameloop={visible ? 'always' : 'never'}
                 camera={{ position: [3.1, 0.8, 1.15], fov: 38, near: 0.1, far: 30 }}
-                dpr={[1, 1.5]} flat gl={{ powerPreference: 'default', failIfMajorPerformanceCaveat: true }}>
+                dpr={[1, 1.5]} flat gl={{ powerPreference: 'default', failIfMajorPerformanceCaveat: !flight }}>
                 <Suspense fallback={null}>
-                  <Globe region={region} values={values} autoRotate={idleRotation} reducedMotion={reducedMotion}
-                    onRegionSelect={onRegionSelect} onReady={setReady} onContextLost={setContextLost} useKuGlobe={presentation === "homecoming"} />
+                  <Globe region={region} values={values} autoRotate={!flight && idleRotation} reducedMotion={reducedMotion}
+                    onRegionSelect={onRegionSelect} onReady={setReady} onContextLost={setContextLost}
+                    useKuGlobe={presentation === "homecoming" || Boolean(flight)} flight={flight} />
                 </Suspense>
               </Canvas>
             </GlobeErrorBoundary>
           )}
           {!ready && !contextLost && <div className="earth-loading"><MapFallback region={region} values={values} loading /></div>}
         </div>
-        <div className="earth-viewport-footer">
+        {!flight && <div className="earth-viewport-footer">
           <span>Drag to orbit <b>·</b> Scroll to zoom</span>
           {!reducedMotion && <button type="button" aria-pressed={idleRotation} onClick={() => setIdleRotation((value) => !value)}>
             Idle rotation <b>{idleRotation ? 'on' : 'off'}</b>
           </button>}
-        </div>
+        </div>}
       </div>
-      <RegionSelector regionId={regionId} onRegionSelect={onRegionSelect} />
-      <p className="earth-credit">Basemap <a href="https://svs.gsfc.nasa.gov/2915/">NASA / GSFC Blue Marble</a></p>
+      {!flight && <><RegionSelector regionId={regionId} onRegionSelect={onRegionSelect} />
+      <p className="earth-credit">Basemap <a href="https://svs.gsfc.nasa.gov/2915/">NASA / GSFC Blue Marble</a></p></>}
     </section>
   );
 }

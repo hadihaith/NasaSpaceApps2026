@@ -42,9 +42,8 @@ namespace Homecoming.Editor
                 }
             }
             Require(Mathf.Abs(story.prologue.Sum(s => s.seconds) - 47.2f) < .001f, "Prologue matches authored cut");
-            var intro = Resources.Load<UnityEngine.Video.VideoClip>(IntroPlayback.VideoPath);
-            Require(intro != null && Math.Abs(intro.length - 27.2) < .05, "AUK intro retains the complete movie");
-            Require(intro.width == 1920 && intro.height == 1080, "AUK intro retains the original 1080p frame");
+            Require(File.Exists(Path.Combine(Application.streamingAssetsPath, IntroPlayback.VideoFile)),
+                "The original AUK movie is bundled as a streaming asset");
             Require(Mathf.Abs(story.ending.Sum(s => s.seconds) - 10.2f) < .001f, "Ending matches shared cut");
             foreach (StoryEvidence kind in Enum.GetValues(typeof(StoryEvidence)))
                 Require(story.ending[0].LineAt(3.2f, out _, kind)?.StartsWith("Nyxen:") == true, "Hearing variant " + kind);

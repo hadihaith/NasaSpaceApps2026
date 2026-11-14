@@ -13,6 +13,13 @@ clips are imported using Unity's official glTFast package. The bridge and props
 are real, editable scene objects. No generated backgrounds or new character art
 are used.
 
+The macOS player presents the original Rec.709 MP4 through AVFoundation in its
+game window. The movie lives in `Assets/StreamingAssets/auk-intro.mp4` and is
+copied into the build as-is. Unity's Game view previews it on the intro camera
+through VideoPlayer.
+After editing the native player, run `scripts/build-macos-intro-plugin.sh` from
+the repository root to rebuild the bundled Apple Silicon and Intel plug-in.
+
 ## Play
 
 - **Play transmission** begins the prologue, recruitment and lab introduction.

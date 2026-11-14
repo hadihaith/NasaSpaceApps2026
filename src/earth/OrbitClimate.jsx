@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { AdditiveBlending, BufferAttribute, BufferGeometry, MathUtils, TextureLoader, Vector3, Vector4 } from 'three';
 import { regionDirection } from './EnvironmentEffects';
@@ -165,7 +165,6 @@ const streamVertex = /* glsl */ `
   uniform vec4 weather;
   uniform float time;
   varying float opacity;
-  varying float warm;
 
   void main() {
     float u = seed.x;
@@ -208,15 +207,16 @@ const fraction = (value) => value - Math.floor(value);
 const rainSeeds = Array.from({ length: 530 }, (_, i) => [
   fraction((i + 1) * 0.61803399), fraction((i + 1) * 0.75487767), fraction((i + 1) * 0.41421356),
 ]);
-const rainGeometry = segmentGeometry(rainSeeds.length, (i, end) => [...rainSeeds[i], end]);
-const streamGeometry = segmentGeometry(17 * 36, (i, end) => {
-  const lane = Math.floor(i / 36);
-  return [(i % 36 + end) / 36, lane / 16, fraction((lane + 1) * 0.61803399), 0];
-});
 const limit = MathUtils.clamp;
 
 export function OrbitClimate({ region, flight, values, reducedMotion }) {
+  const surfaceMaterial = useRef(null);
   const ocean = useLoader(TextureLoader, '/homecoming/planets/ku-water.webp');
+  const rainGeometry = useMemo(() => segmentGeometry(rainSeeds.length, (i, end) => [...rainSeeds[i], end]), []);
+  const streamGeometry = useMemo(() => segmentGeometry(17 * 36, (i, end) => {
+    const lane = Math.floor(i / 36);
+    return [(i % 36 + end) / 36, lane / 16, fraction((lane + 1) * 0.61803399), 0];
+  }), []);
   const uniforms = useMemo(() => {
     const center = regionDirection(region);
     const east = new Vector3().crossVectors(new Vector3(0, 1, 0), center).normalize();
@@ -243,18 +243,20 @@ export function OrbitClimate({ region, flight, values, reducedMotion }) {
   const terrainTarget = useMemo(() => new Vector3(...values), [values]);
 
   useFrame((_, delta) => {
+    const current = surfaceMaterial.current?.uniforms;
+    if (!current) return;
     const elapsed = Math.min(delta, .06);
     const blend = reducedMotion ? 1 : 1 - Math.exp(-8.5 * elapsed);
-    uniforms.weather.value.lerp(weatherTarget, blend);
-    uniforms.terrain.value.lerp(terrainTarget, blend);
-    if (!reducedMotion) uniforms.time.value += elapsed;
-    uniforms.pulse.value = reducedMotion ? 0 : flight.pulse ? Math.max(0, 1 - (performance.now() - flight.pulse) / 940) : 0;
+    current.weather.value.lerp(weatherTarget, blend);
+    current.terrain.value.lerp(terrainTarget, blend);
+    if (!reducedMotion) current.time.value += elapsed;
+    current.pulse.value = reducedMotion ? 0 : flight.pulse ? Math.max(0, 1 - (performance.now() - flight.pulse) / 940) : 0;
   });
 
   return <>
     <mesh renderOrder={1}>
       <sphereGeometry args={[1.004, 80, 48]} />
-      <shaderMaterial vertexShader={vertex} fragmentShader={surface} uniforms={uniforms} transparent depthWrite={false} />
+      <shaderMaterial ref={surfaceMaterial} vertexShader={vertex} fragmentShader={surface} uniforms={uniforms} transparent depthWrite={false} />
     </mesh>
     <mesh renderOrder={5}>
       <sphereGeometry args={[1.061, 72, 48]} />
@@ -264,10 +266,10 @@ export function OrbitClimate({ region, flight, values, reducedMotion }) {
       <sphereGeometry args={[1.081, 72, 48]} />
       <shaderMaterial vertexShader={vertex} fragmentShader={storm} uniforms={upperCloud} transparent depthWrite={false} />
     </mesh>
-    <lineSegments geometry={rainGeometry} renderOrder={7} frustumCulled={false} dispose={null}>
+    <lineSegments geometry={rainGeometry} renderOrder={7} frustumCulled={false}>
       <shaderMaterial vertexShader={rainVertex} fragmentShader={rainFragment} uniforms={uniforms} blending={AdditiveBlending} transparent depthWrite={false} />
     </lineSegments>
-    <lineSegments geometry={streamGeometry} renderOrder={8} frustumCulled={false} dispose={null}>
+    <lineSegments geometry={streamGeometry} renderOrder={8} frustumCulled={false}>
       <shaderMaterial vertexShader={streamVertex} fragmentShader={streamFragment} uniforms={uniforms} blending={AdditiveBlending} transparent depthWrite={false} />
     </lineSegments>
   </>;

@@ -150,7 +150,8 @@ export function Homecoming() {
     const first = Object.keys(save.discoveries).length === 0 && trial.discovered.length > 0;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const playbackStep = trial.duration === 1 ? 680 : trial.duration === 3 ? 840 : 425;
-    setPlayback({ trial, frames, month: reduced ? trial.duration : 0 });
+    const startedAt = performance.now();
+    setPlayback({ trial, frames, month: reduced ? trial.duration : 0, startedAt });
     setBusy(true);
     cue("scan");
     const finish = () => {
@@ -169,7 +170,7 @@ export function Homecoming() {
       if (Object.keys(next.discoveries).length >= REQUIRED_DISCOVERIES && save.investigations.length && Object.keys(save.discoveries).length < REQUIRED_DISCOVERIES) notify("Zorvax says your evidence is ready to submit.");
     };
     const advance = (month: number) => {
-      setPlayback({ trial, frames, month });
+      setPlayback({ trial, frames, month, startedAt });
       runTimer.current = window.setTimeout(month === trial.duration ? finish : () => advance(month + 1), month === trial.duration ? 540 : playbackStep);
     };
     runTimer.current = window.setTimeout(reduced ? finish : () => advance(1), reduced ? 120 : 320);
@@ -233,7 +234,7 @@ export function Homecoming() {
             <button type="submit" className="hc-primary" disabled={!designation.trim()}>Join the operation <span aria-hidden>→</span></button></form>
           <small>Progress saves in this browser. No account needed.</small></div>
       </div></main>}
-      {stage === "lab" && save && <main>{normals ? <Lab save={save} normals={normals} busy={busy} playback={playback} run={run} update={update} openArchive={archive} />
+      {stage === "lab" && save && <main>{normals ? <Lab save={save} normals={normals} busy={busy} playback={playback} run={run} update={update} />
         : <div className="hc-section hc-panel hc-loading" role="status">{dataError ? <>The climate records couldn’t load. <button className="hc-primary" onClick={() => setLoadAttempt((n) => n + 1)}>Retry</button></> : "Calibrating historical climate baselines…"}</div>}</main>}
       {stage === "archive" && save && <main><Archive key={`${archiveTarget.region}/${archiveTarget.variable}`} initialRegion={archiveTarget.region} initialVariable={archiveTarget.variable} investigations={save.investigations} record={recordInvestigation} /></main>}
       {stage === "book" && save && <main className="hc-section">

@@ -1,6 +1,6 @@
 import { ApiError, FinishReason, GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { regionClimate } from "@/lib/earth/climate";
-import { GEMINI_MODEL, geminiKey } from "@/lib/whatif/ai";
+import { GEMINI_MODEL, GEMINI_TIMEOUT_MS, geminiKey } from "@/lib/whatif/ai";
 import { sanitizeControls, sanitizeYears, simulate } from "@/lib/whatif/model";
 import { DISCOVERY_INFO, buildReport, describeControls } from "@/lib/whatif/report";
 
@@ -72,11 +72,14 @@ export async function POST(request: Request) {
   };
 
   const ai = new GoogleGenAI({ apiKey });
+  const timeout = AbortSignal.timeout(GEMINI_TIMEOUT_MS);
   try {
     const response = await ai.models.generateContent({
       model: MODEL,
       contents: `FACTS:\n${JSON.stringify(facts, null, 2)}\n\nWrite the briefing.`,
       config: {
+        abortSignal: timeout,
+        httpOptions: { timeout: GEMINI_TIMEOUT_MS },
         systemInstruction: SYSTEM,
         // A short, fact-bound write-up does not need deep reasoning.
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -97,6 +100,9 @@ export async function POST(request: Request) {
     if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
     return Response.json(out);
   } catch (error) {
+    if (timeout.aborted) {
+      return problem(504, "The AI took too long to answer. Try again in a moment.");
+    }
     if (error instanceof ApiError) {
       if (error.status === 429) return problem(429, "The AI service is busy or over its quota. Try again later.");
       if (error.status === 400 || error.status === 401 || error.status === 403 || error.status === 404) {

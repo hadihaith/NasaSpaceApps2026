@@ -52,8 +52,11 @@ if that name is free; otherwise Vercel adds a suffix.
 ## Optional: the AI briefing on the What-if page
 
 The What-if page always shows its own report and graphs. It can also show a short AI-written briefing,
-produced by Google Gemini (`gemini-3.8-flash` by default) through `/api/what-if/report` with the official
-`@google/genai` SDK. This switches on only when the server has a Gemini API key:
+produced by Google Gemini (`gemini-3.5-flash` by default) through `/api/what-if/report` with the official
+`@google/genai` SDK. In testing on 2026-11-14, `gemini-3.8-flash` accepted requests but never replied with the team's key,
+so the default is the model that did reply. The page shows the model version Google reports actually serving each
+briefing. Requests give up after 30 seconds with a "try again" message. This switches on only when the server has a
+Gemini API key:
 
 1. Create a key in Google AI Studio: https://aistudio.google.com/apikey
 2. In Vercel: Project → Settings → Environment Variables → add `GEMINI_API_KEY` for Production and Preview.

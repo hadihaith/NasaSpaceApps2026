@@ -1,0 +1,192 @@
+.earth-scene {
+  --earth-wet: #43d9fa;
+  --earth-healthy: #b8f780;
+  --earth-dry: #ff9e5a;
+  --earth-ink: #e7f5f3;
+  --earth-muted: #93aab7;
+  --earth-stroke: #244855;
+  font: 500 14px/1.4 "Space Mono", ui-monospace, monospace;
+  color: var(--earth-ink);
+  min-width: 0;
+}
+
+.earth-scene *, .earth-scene *::before, .earth-scene *::after { box-sizing: border-box; }
+.earth-scene button { font: inherit; cursor: pointer; }
+.earth-scene button:focus-visible { outline: 2px solid var(--earth-healthy); outline-offset: 3px; }
+
+.earth-viewport {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: var(--earth-viewport-height, clamp(360px, 57vw, 650px));
+  border: 1px solid var(--earth-stroke);
+  border-radius: 16px;
+  background: radial-gradient(ellipse at 50% 44%, #122c3e 0%, #0a192a 51%, #080f1d 86%);
+}
+
+.earth-grid, .earth-orbit, .earth-canvas, .earth-loading { position: absolute; inset: 0; }
+.earth-grid {
+  pointer-events: none;
+  opacity: 0.52;
+  background-image:
+    radial-gradient(circle at 11% 25%, #93c5ce 0 0.8px, transparent 1.6px),
+    radial-gradient(circle at 82% 32%, #75bfdf 0 1px, transparent 1.8px),
+    radial-gradient(circle at 19% 76%, #73aec8 0 1px, transparent 1.8px),
+    radial-gradient(circle at 89% 69%, #8edced 0 0.8px, transparent 1.5px),
+    linear-gradient(#23596d40 1px, transparent 1px),
+    linear-gradient(90deg, #23596d40 1px, transparent 1px);
+  background-size: auto, auto, auto, auto, 34px 34px, 34px 34px;
+  mask-image: radial-gradient(ellipse, #000, transparent 95%);
+}
+
+.earth-orbit {
+  inset: 23% 9%;
+  margin: auto;
+  height: 35%;
+  border: 1px solid #49cbd33d;
+  border-radius: 50%;
+  transform: rotate(-13deg);
+  box-shadow: 0 0 19px #4bcadd0b, inset 0 0 19px #4bcadd0b;
+  pointer-events: none;
+}
+
+.earth-orbit::before, .earth-orbit::after {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #84eef3;
+  box-shadow: 0 0 11px #80deea;
+  content: "";
+}
+
+.earth-orbit::before { top: 24%; left: 6.8%; }
+.earth-orbit::after { bottom: 19%; right: 10%; }
+
+.earth-canvas { cursor: grab; }
+.earth-canvas:active { cursor: grabbing; }
+.earth-viewport:has(.earth-map-active:not(canvas *)) .earth-canvas { cursor: default; }
+.earth-viewport:has(.earth-map-active:not(canvas *)) :is(.earth-loading, .earth-viewport-footer) { display: none; }
+
+.earth-viewport-header, .earth-viewport-footer {
+  position: absolute;
+  z-index: 2;
+  left: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+  font-size: 11px;
+  color: var(--earth-muted);
+}
+
+.earth-viewport-header { top: 16px; }
+.earth-viewport-footer { bottom: 14px; flex-wrap: wrap; }
+.earth-viewport-header span, .earth-viewport-footer span, .earth-viewport-footer button {
+  padding: 7px 9px;
+  border: 1px solid #37627578;
+  border-radius: 5px;
+  background: #081422e8;
+}
+
+.earth-viewport-header span:first-child { color: #ccebf0; }
+.earth-viewport-header i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline: 1px 6px;
+  border-radius: 50%;
+  background: var(--earth-healthy);
+  box-shadow: 0 0 9px #b8f7807d;
+  vertical-align: 1px;
+}
+
+.earth-viewport-footer button { pointer-events: auto; color: var(--earth-muted); }
+.earth-viewport-footer button:hover, .earth-viewport-footer b { color: var(--earth-wet); }
+
+.earth-regions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr));
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.earth-regions button {
+  position: relative;
+  display: grid;
+  text-align: left;
+  gap: 4px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 9px 18px 9px 10px;
+  color: var(--earth-ink);
+  background: #0a1724;
+  border: 1px solid var(--earth-stroke);
+  border-radius: 8px;
+}
+
+.earth-regions button:hover { background: #102434; }
+.earth-regions button[aria-pressed="true"] { border-color: #80b976; background: #14261f; }
+.earth-region-name { font-size: 11px; }
+.earth-region-coordinates { color: var(--earth-muted); font-size: 10px; }
+.earth-region-light {
+  position: absolute;
+  right: 9px;
+  top: 14px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #41606c;
+}
+
+.earth-regions button[aria-pressed="true"] .earth-region-light {
+  background: var(--earth-healthy);
+  box-shadow: 0 0 8px #b8f78075;
+}
+
+.earth-credit { margin: 8px 0 0; color: var(--earth-muted); font-size: 10px; }
+.earth-credit a { color: #a6dcea; text-underline-offset: 3px; }
+.earth-credit a:focus-visible { outline: 2px solid var(--earth-healthy); outline-offset: 3px; }
+
+.earth-loading { pointer-events: none; background: #091625; }
+.earth-map-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 54px 18px;
+  cursor: default;
+}
+
+.earth-map-image {
+  position: relative;
+  width: min(100%, 680px);
+  aspect-ratio: 2;
+  border: 1px solid var(--earth-stroke);
+  border-radius: 8px;
+  background-color: #153649;
+  background-size: 100% 100%;
+  overflow: hidden;
+}
+
+.earth-map-highlight {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--earth-highlight);
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--earth-highlight) 40%, transparent);
+  box-shadow: 0 0 10px var(--earth-highlight);
+  transition: background-color 0.4s, border-color 0.4s, box-shadow 0.4s;
+}
+
+.earth-map-fallback p { margin: 0; font-size: 11px; color: var(--earth-muted); }
+@media (max-width: 520px) {
+  .earth-viewport-header, .earth-viewport-footer { left: 10px; right: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .earth-map-highlight { transition: none; }
+}

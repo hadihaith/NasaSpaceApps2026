@@ -35,6 +35,7 @@ namespace Homecoming
         [DllImport("HomecomingIntro")] static extern void HomecomingIntroStop();
 #else
         long lastFrame = -1;
+        Material screen;
 #endif
 
         void Start()
@@ -46,17 +47,17 @@ namespace Homecoming
 #if UNITY_STANDALONE_OSX && !UNITY_EDITOR
             videoPath = source;
 #else
+            screen = new Material(Resources.Load<Shader>("Shaders/IntroScreen"));
             PrepareUnityVideo(source);
 #endif
         }
 
+#if UNITY_EDITOR || !UNITY_STANDALONE_OSX
         void PrepareUnityVideo(string source)
         {
             video = gameObject.AddComponent<VideoPlayer>();
             video.playOnAwake = false;
-            video.renderMode = VideoRenderMode.CameraNearPlane;
-            video.targetCamera = GetComponent<Camera>();
-            video.aspectRatio = VideoAspectRatio.FitInside;
+            video.renderMode = VideoRenderMode.APIOnly;
             video.audioOutputMode = VideoAudioOutputMode.Direct;
             video.waitForFirstFrame = true;
             video.prepareCompleted += OnPrepared;
@@ -72,6 +73,21 @@ namespace Homecoming
             ApplyMute();
             if (!paused && !finished && !fallback) player.Play();
         }
+
+        void OnRenderImage(RenderTexture source, RenderTexture destination)
+        {
+            Texture frame = video != null && video.frame >= 0 ? video.texture : null;
+            if (frame == null || fallback)
+            {
+                Graphics.Blit(source, destination);
+                return;
+            }
+
+            float aspect = (float)source.width * frame.height / (source.height * frame.width);
+            screen.SetVector("_Fit", new Vector4(Mathf.Max(1, aspect), Mathf.Max(1, 1 / aspect), 0, 0));
+            Graphics.Blit(frame, destination, screen);
+        }
+#endif
 
         void ApplyMute()
         {
@@ -212,6 +228,8 @@ namespace Homecoming
         {
 #if UNITY_STANDALONE_OSX && !UNITY_EDITOR
             if (native) HomecomingIntroStop();
+#else
+            if (screen != null) Destroy(screen);
 #endif
             Application.runInBackground = wasRunningInBackground;
         }

@@ -15,8 +15,9 @@ are used.
 
 The macOS player presents the original Rec.709 MP4 through AVFoundation in its
 game window. The movie lives in `Assets/StreamingAssets/auk-intro.mp4` and is
-copied into the build as-is. Unity's Game view previews it on the intro camera
-through VideoPlayer.
+copied into the build as-is. Unity's Game view draws the decoded frames in a
+full-screen pass on the intro camera. Press **Escape** or **Right Arrow** to
+skip the movie.
 After editing the native player, run `scripts/build-macos-intro-plugin.sh` from
 the repository root to rebuild the bundled Apple Silicon and Intel plug-in.
 

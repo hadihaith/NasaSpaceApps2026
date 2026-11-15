@@ -13,7 +13,8 @@ namespace Homecoming
     {
         public const string ScenePath = "Assets/Scenes/Intro.unity";
         public const string VideoFile = "auk-intro.mp4";
-        const double PlaybackLimitSeconds = 17;
+        const double PlaybackLimitSeconds = 20;
+        const double FadeOutSeconds = 3;
         const float FallbackDuration = 3.2f;
         const float StallTimeout = 4.5f;
         const string MuteKey = "homecoming.unity.mute";
@@ -22,6 +23,7 @@ namespace Homecoming
         AsyncOperation storyLoad;
         Texture2D logo, astronaut, spaceApps;
         float fallbackTime, stalledFor;
+        double playbackTime;
         bool fallback, paused, finished, muted;
         bool wasRunningInBackground;
 #if UNITY_STANDALONE_OSX && !UNITY_EDITOR
@@ -33,6 +35,7 @@ namespace Homecoming
         [DllImport("HomecomingIntro")] static extern double HomecomingIntroTime();
         [DllImport("HomecomingIntro")] static extern void HomecomingIntroPause(int paused);
         [DllImport("HomecomingIntro")] static extern void HomecomingIntroMute(int muted);
+        [DllImport("HomecomingIntro")] static extern void HomecomingIntroSetVolume(float volume);
         [DllImport("HomecomingIntro")] static extern void HomecomingIntroStop();
 #else
         long lastFrame = -1;
@@ -96,6 +99,20 @@ namespace Homecoming
             if (native) HomecomingIntroMute(muted ? 1 : 0);
 #endif
             if (video != null && video.isPrepared && video.audioTrackCount > 0) video.SetDirectAudioMute(0, muted);
+            ApplyAudioFade(playbackTime);
+        }
+
+        // Keep the final three seconds readable while letting the handoff land silently.
+        void ApplyAudioFade(double time)
+        {
+            playbackTime = time;
+            float fade = (float)Mathf.Clamp01((float)((PlaybackLimitSeconds - time) / FadeOutSeconds));
+            float volume = muted ? 0 : fade;
+#if UNITY_STANDALONE_OSX && !UNITY_EDITOR
+            if (native) HomecomingIntroSetVolume(volume);
+#endif
+            if (video != null && video.isPrepared && video.audioTrackCount > 0)
+                video.SetDirectAudioVolume(0, volume);
         }
 
         void OnEnded(VideoPlayer player) => Complete();
@@ -184,6 +201,7 @@ namespace Homecoming
                 Complete();
                 return;
             }
+            ApplyAudioFade(video.time);
             long frame = video.frame;
             if (frame >= 0 && frame != lastFrame)
             {
@@ -221,6 +239,7 @@ namespace Homecoming
             if (state < 0) { ShowStill(); return; }
             double time = HomecomingIntroTime();
             if (time >= PlaybackLimitSeconds) { Complete(); return; }
+            ApplyAudioFade(time);
             if (state == 1 && time > previousTime)
             {
                 previousTime = time;

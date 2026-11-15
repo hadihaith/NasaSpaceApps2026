@@ -67,3 +67,7 @@ __attribute__((visibility("default"))) void HomecomingIntroPause(int paused) {
 __attribute__((visibility("default"))) void HomecomingIntroMute(int muted) {
     player.muted = muted != 0;
 }
+
+__attribute__((visibility("default"))) void HomecomingIntroSetVolume(float volume) {
+    player.volume = MAX(0.0f, MIN(1.0f, volume));
+}

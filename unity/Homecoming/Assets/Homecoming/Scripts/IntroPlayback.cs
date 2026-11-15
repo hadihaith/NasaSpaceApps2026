@@ -42,11 +42,6 @@ namespace Homecoming
             wasRunningInBackground = Application.runInBackground;
             Application.runInBackground = true;
             muted = PlayerPrefs.GetInt(MuteKey, 0) == 1;
-            if (PlayerPrefs.GetInt("homecoming.unity.reduced", 0) == 1)
-            {
-                ShowStill();
-                return;
-            }
             string source = Path.Combine(Application.streamingAssetsPath, VideoFile);
 #if UNITY_STANDALONE_OSX && !UNITY_EDITOR
             videoPath = source;
@@ -59,7 +54,7 @@ namespace Homecoming
         {
             video = gameObject.AddComponent<VideoPlayer>();
             video.playOnAwake = false;
-            video.renderMode = VideoRenderMode.CameraFarPlane;
+            video.renderMode = VideoRenderMode.CameraNearPlane;
             video.targetCamera = GetComponent<Camera>();
             video.aspectRatio = VideoAspectRatio.FitInside;
             video.audioOutputMode = VideoAudioOutputMode.Direct;

@@ -211,10 +211,20 @@ namespace Homecoming
                     look.exposure = 1.6f; look.saturation = .97f; look.vignette = .4f; look.bloom = .8f;
                     look.tint = new Color(.96f, 1.02f, 1.03f); break;
                 }
+                case "evidence":
+                    float scan = Smooth(StoryStage.MonitorStarts, StoryStage.MonitorStarts + .4f, t);
+                    look.key = 1.9f; look.fill = 1.0f; look.rim = .8f; look.practical = 1.15f;
+                    look.tvColor = Broadcast; look.tv = .3f + .8f * scan;
+                    look.exposure = 1.5f; look.saturation = .94f; look.vignette = .32f; look.bloom = .52f;
+                    break;
+                case "reaction":
                 case "hearing":
                     look.key = 2.0f; look.keyColor = Neutral; look.fill = 1.05f; look.rim = .65f; look.tv = .4f; look.practical = 1.2f;
                     look.ambient = 1.05f; look.saturation = .94f; look.vignette = .36f;
-                    look.exposure = 1.6f + (reduced ? 0 : .25f * Pulse(t, .64f, .08f)); break;
+                    look.exposure = 1.6f + (reduced ? 0 : .25f * Pulse(t, .64f, .08f));
+                    if (id == "hearing" && !reduced)
+                        look.party = .55f * Pulse(t, StoryStage.VictoryLaunch + .45f, .40f);
+                    break;
             }
 
             float keyI = look.key, fillI = look.fill, rimI = look.rim, tvI = look.tv, practicalI = look.practical;

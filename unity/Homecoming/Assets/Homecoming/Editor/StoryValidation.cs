@@ -25,7 +25,7 @@ namespace Homecoming.Editor
             stage.ApplyTypography();
             _ = stage.Environment;
             var story = JsonUtility.FromJson<StoryScript>(director.script.text);
-            Require(story.prologue.Length == 11 && story.briefing.Length == 1 && story.ending.Length == 2, "All 14 story shots exist");
+            Require(story.prologue.Length == 11 && story.briefing.Length == 1 && story.ending.Length == 4, "All 16 story shots exist");
             Require(story.prologue.Select(s => s.id).Distinct().Count() == story.prologue.Length, "Unique prologue shots");
             Require(story.prologue[0].id == "signal", "The story starts on the Moon after the intro scene");
             foreach (var shot in story.prologue.Concat(story.briefing).Concat(story.ending))
@@ -41,12 +41,20 @@ namespace Homecoming.Editor
                     }
                 }
             }
-            Require(Mathf.Abs(story.prologue.Sum(s => s.seconds) - 47.2f) < .001f, "Prologue matches authored cut");
+            Require(Mathf.Abs(story.prologue.Sum(s => s.seconds) - 51.843f) < .001f, "Prologue matches authored cut");
             Require(File.Exists(Path.Combine(Application.streamingAssetsPath, IntroPlayback.VideoFile)),
                 "The original AUK movie is bundled as a streaming asset");
-            Require(Mathf.Abs(story.ending.Sum(s => s.seconds) - 10.2f) < .001f, "Ending matches shared cut");
+            Require(story.ending.Select(shot => shot.id).SequenceEqual(new[] { "hearing", "evidence", "reaction", "deflate" }),
+                "Ending includes the monitor results before the final joke");
+            Require(story.ending[0].LineAt(2f, out _)?.Contains("uninhabitable") == true, "Zorvax presents his conclusion");
+            Require(story.ending[0].cues.Any(cue => cue.name == "party-hit" &&
+                Mathf.Abs(cue.at - StoryStage.VictoryLaunch) < .001f) &&
+                story.ending[0].LineAt(StoryStage.VictoryLaunch, out _)?.Contains("uninhabitable") == true,
+                "The cannon and victory fireworks start during Zorvax's victory claim");
             foreach (StoryEvidence kind in Enum.GetValues(typeof(StoryEvidence)))
-                Require(story.ending[0].LineAt(3.2f, out _, kind)?.StartsWith("Nyxen:") == true, "Hearing variant " + kind);
+                Require(story.ending[1].LineAt(StoryStage.MonitorStarts, out _, kind)?.StartsWith("Nyxen:") == true, "Monitor activates on Nyxen's line " + kind);
+            Require(story.ending[1].LineAt(StoryStage.MonitorChangesPage, out _) == null &&
+                story.ending[2].LineAt(8f, out _)?.Contains("we need more research") == true, "The saved runs appear during a silent beat before the final joke");
             foreach (var actor in stage.crew)
             {
                 Require(actor.rig != null && actor.clips.Length >= 3, "Original rig and clips " + actor.name);
@@ -86,8 +94,8 @@ namespace Homecoming.Editor
             var rt = new RenderTexture(1600, 900, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             rt.Create();
             stage.filmCamera.targetTexture = rt;
-            string[] names = { "home", "signal", "apollo", "reveal", "correction", "party", "jam", "years", "return", "earth", "launch", "lab", "hearing", "deflate" };
-            float[] times = { 1, 3.35f, 2, 3.2f, 1.4f, 1.55f, 1.4f, 3.1f, 3.55f, 3, .78f, 4, 3.2f, 2.6f };
+            string[] names = { "home", "signal", "apollo", "reveal", "correction", "party", "jam", "years", "return", "earth", "launch", "lab", "hearing", "evidence", "reaction", "deflate" };
+            float[] times = { 1, 3.35f, 2, 3.2f, 1.4f, 1.55f, 1.4f, 3.1f, 3.55f, 3, .78f, 4, 4.52f, 7.3f, 7.4f, 2.6f };
             for (int i = 0; i < names.Length; i++)
             {
                 stage.Evaluate(names[i], times[i], false, true);

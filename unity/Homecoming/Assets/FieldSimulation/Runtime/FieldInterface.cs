@@ -11,15 +11,19 @@ namespace Homecoming.Field
         static readonly Color Ink = Rgb("#09171c"), Panel = Rgb("#10252b"), Line = Rgb("#36555b"),
             White = Rgb("#f2f4e5"), Dim = Rgb("#b3c8c8"), Mint = Rgb("#a6e9c7"),
             Yellow = Rgb("#ffcf79"), Aqua = Rgb("#75d8e2");
+        static readonly Color ButtonFace = Rgb("#142d35"), ButtonHover = Rgb("#244751"),
+            ButtonPressed = Rgb("#0e2229"), ChoiceFace = Rgb("#285354"), ChoiceHover = Rgb("#356366"),
+            AccentHover = Rgb("#c1f5d8"), AccentPressed = Rgb("#82cba7"), DisabledFace = Rgb("#18282d");
         static readonly string[] Sites = { "Sonoran Desert", "Semi-arid savanna", "Tropical rainforest", "Coastal scrub", "Monsoon floodplain", "Eastern woodlands" };
         static readonly string[] Durations = { "1 month", "3 months", "12 months" };
         static readonly int[] Months = { 1, 3, 12 };
         static readonly string[] EvidenceKeys = { "rain", "soil", "temperature", "humidity", "wind" };
         static readonly string[] EvidenceNames = { "Rain", "Soil moisture", "Temperature", "Humidity", "Wind" };
+        static readonly string[] WeatherIcons = { "Temperature", "Rain", "Droplet", "Wind" };
         GUIStyle text;
         Texture2D fade, sideFade;
         Texture2D dialFace;
-        bool showSites;
+        bool showSites, weatherLabOpen, labOptionsOpen;
         int hotSlider = -1;
         int hotDial = -1;
         float dialDrag;
@@ -40,6 +44,7 @@ namespace Homecoming.Field
         void OnGUI()
         {
             if (data == null || save == null) return;
+            if (view != View.Broadcast) ReleaseBroadcastControls();
             EnsureStyles();
             LoadInvestigation();
             if (!LegacyCapture && view != View.Report) orbitOpen = false;
@@ -71,15 +76,24 @@ namespace Homecoming.Field
                 case View.Archive: DrawArchive(); break;
                 case View.Report: if (LegacyCapture) DrawReport(); else DrawInvestigation(); break;
                 case View.SiteTransfer: DrawSiteTransfer(); break;
+                case View.Submission: DrawSubmission(); break;
+                case View.Broadcast: DrawBroadcast(); break;
             }
             if (demoActive) DrawDemoControls();
+            if (Event.current.type == EventType.Repaint && !string.IsNullOrEmpty(GUI.tooltip))
+            {
+                Vector2 mouse = Event.current.mousePosition;
+                var tip = Box(Mathf.Clamp(mouse.x-116,16,1352),Mathf.Clamp(mouse.y-47,12,850),232,36);
+                Card(tip,Ink);
+                Text(tip,GUI.tooltip,17,White,strongFont,TextAnchor.MiddleCenter);
+            }
             GUI.matrix = matrix;
         }
 
         void EnsureStyles()
         {
             if (text != null) return;
-            text = new GUIStyle(GUI.skin.label) { richText = false, clipping = TextClipping.Clip, padding = new RectOffset() };
+            text = new GUIStyle { clipping = TextClipping.Clip };
             fade = new Texture2D(1, 96, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
             for (int y = 0; y < 96; y++) fade.SetPixel(0, y, new Color(1, 1, 1, (y / 95f) * (y / 95f)));
             fade.Apply();
@@ -96,7 +110,7 @@ namespace Homecoming.Field
         void Fill(Rect rect, Color c)
         {
             var old = GUI.color;
-            GUI.color = c;
+            GUI.color = GuiTint(c);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = old;
         }
@@ -105,20 +119,23 @@ namespace Homecoming.Field
         {
             if (Event.current.type != EventType.Repaint) return;
             var old = GUI.color;
-            GUI.color = c;
+            GUI.color = GuiTint(c);
             var uv = angle == 180 ? new Rect(0,1,1,-1) : new Rect(0,0,1,1);
             GUI.DrawTextureWithTexCoords(rect, angle == 90 ? sideFade : fade, uv);
             GUI.color = old;
         }
 
+        static Color GuiTint(Color color) => QualitySettings.activeColorSpace == ColorSpace.Linear ? color.linear : color;
+
         void Text(Rect rect, string content, int size, Color c, Font font = null, TextAnchor anchor = TextAnchor.MiddleLeft, bool wrap = false)
         {
+            if (Event.current.type != EventType.Repaint) return;
             text.font = font ?? bodyFont;
             text.fontSize = size;
             text.normal.textColor = c;
             text.alignment = anchor;
             text.wordWrap = wrap;
-            GUI.Label(rect, content, text);
+            text.Draw(rect, new GUIContent(content), false, false, false, false);
         }
 
         void Tag(float x, float y, string content, Color c) => Text(Box(x,y,720,23),content,15,c,dataFont);
@@ -129,31 +146,61 @@ namespace Homecoming.Field
             Fill(Box(r.x,r.yMax-1,r.width,1), Alpha(Line,.80f));
         }
 
-        bool Button(Rect rect, string label, bool accent = false, bool active = false, bool enabled = true, int size = 20)
+        bool Button(Rect rect, string label, bool accent = false, bool active = false, bool enabled = true,
+            int size = 20, string icon = null, string tooltip = null)
+        {
+            var background = ButtonBackground(rect,accent,active,enabled);
+            Color foreground = enabled ? accent ? Ink : White : Dim;
+            var state = ButtonInput(rect, tooltip ?? (string.IsNullOrEmpty(label) ? icon : null), enabled);
+            Fill(rect, background);
+            DrawButtonEdge(rect, !enabled ? Line : state.focused ? Yellow : accent ? AccentPressed : active ? Mint : Line);
+            if (icon == null) Text(rect,label,size,foreground,strongFont,TextAnchor.MiddleCenter);
+            else
+            {
+                float x = string.IsNullOrEmpty(label) ? rect.center.x : rect.x + 23;
+                DrawIcon(icon,new Vector2(x,rect.center.y),foreground);
+                if (!string.IsNullOrEmpty(label))
+                    Text(Box(rect.x+43,rect.y,rect.width-54,rect.height),label,size,foreground,strongFont);
+            }
+            return state.pressed;
+        }
+
+        Color ButtonBackground(Rect rect, bool accent, bool active, bool enabled)
+        {
+            if (!enabled) return DisabledFace;
+            bool hover = rect.Contains(Event.current.mousePosition);
+            if (hover && Input.GetMouseButton(0)) return accent ? AccentPressed : ButtonPressed;
+            if (accent) return hover ? AccentHover : Mint;
+            if (active) return hover ? ChoiceHover : ChoiceFace;
+            return hover ? ButtonHover : ButtonFace;
+        }
+
+        void DrawButtonEdge(Rect rect, Color edge)
+        {
+            Fill(Box(rect.x,rect.y,rect.width,1),edge);
+            Fill(Box(rect.x,rect.yMax-2,rect.width,2),edge);
+            Fill(Box(rect.x,rect.y,1,rect.height),edge);
+            Fill(Box(rect.xMax-1,rect.y,1,rect.height),edge);
+        }
+
+        (bool pressed, bool focused) ButtonInput(Rect rect, string tooltip = null, bool enabled = true)
         {
             int index = controlIndex++;
             if (enabled) availableControls.Add(index);
-            bool hover = rect.Contains(Event.current.mousePosition);
-            bool focused = focusIndex == index && keyboardFocus;
-            var background = accent ? Mint : active ? Rgb("#285354") : Alpha(Ink,.87f);
-            if (enabled && hover) background = Color.Lerp(background, White, .14f);
-            Fill(rect, enabled ? background : Alpha(Panel,.85f));
-            Fill(Box(rect.x,rect.yMax-2,rect.width,2), accent ? Rgb("#569f85") : active ? Mint : Line);
-            if (focused && enabled)
-            {
-                Fill(Box(rect.x,rect.y,rect.width,2), Yellow);
-                Fill(Box(rect.x,rect.y,2,rect.height), Yellow);
-            }
-            Text(rect, label, size, enabled ? accent ? Ink : White : Dim, strongFont, TextAnchor.MiddleCenter);
-            bool pressed = GUI.Button(rect, GUIContent.none, GUIStyle.none);
+            bool focused = enabled && focusIndex == index && keyboardFocus;
+            bool wasEnabled = GUI.enabled;
+            GUI.enabled = wasEnabled && enabled;
+            bool pressed = GUI.Button(rect, tooltip == null ? GUIContent.none : new GUIContent("",tooltip), GUIStyle.none);
+            GUI.enabled = wasEnabled;
             if (pressed) { focusIndex = index; keyboardFocus = false; }
-            if (focused && Event.current.type == EventType.KeyDown &&
-                (Event.current.keyCode == KeyCode.Return || (LegacyCapture && Event.current.keyCode == KeyCode.Space)))
+            if (wasEnabled && focused && Event.current.type == EventType.KeyDown &&
+                (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter ||
+                    (LegacyCapture && Event.current.keyCode == KeyCode.Space)))
             {
                 Event.current.Use();
                 pressed = true;
             }
-            return enabled && pressed;
+            return (pressed,focused);
         }
 
         bool keyboardFocus;
@@ -166,6 +213,20 @@ namespace Homecoming.Field
             Text(Box(50,27,300,31),"HOMECOMING",28,White,headingFont);
             Tag(51,57,screen,Mint);
             if (view == View.Field || view == View.Descent || demoActive) return;
+            if (StorySession.FiledReport != null && Button(Box(688,32,226,39),
+                openedFromFiledReport ? "← Homecoming report" : "Homecoming report")) StorySession.ReturnToFiledReport();
+            if (!LegacyCapture)
+            {
+                if (view == View.Lab && !weatherLabOpen)
+                {
+                    if (Button(Box(1509,28,55,49),"",active:labOptionsOpen,icon:"Settings")) labOptionsOpen = !labOptionsOpen;
+                }
+                else if (Button(Box(1354,32,210,42),"Field station",icon:"Back"))
+                {
+                    OpenStation();
+                }
+                return;
+            }
             if (Button(Box(934,32,144,39),"Flight deck",false,view == View.Lab)) Go(View.Lab);
             if (Button(Box(1086,32,144,39),"Field journal",false,view == View.Journal)) Go(View.Journal);
             if (Button(Box(1238,32,144,39),"Earth archive",false,view == View.Archive)) OpenArchive(null);
@@ -176,31 +237,191 @@ namespace Homecoming.Field
             }
         }
 
+        void OpenStation()
+        {
+            weatherLabOpen = labOptionsOpen = false;
+            Go(View.Lab);
+        }
+
+        void OpenWeatherLab()
+        {
+            weatherLabOpen = true;
+            labOptionsOpen = false;
+            Go(View.Lab);
+        }
+
+        void DrawStation()
+        {
+            Top("FIELD STATION");
+            Rect welcome = Box(54,172,667,451);
+            Card(welcome,Ink);
+            Fill(Box(welcome.x,welcome.y,76,3),Mint);
+            var kind = investigation?.kind ?? InvestigationKind.Rainfall;
+            Tag(87,203,investigation == null ? "YOUR FIRST ASSIGNMENT" : "CURRENT CASE",Mint);
+            Text(Box(83,236,610,80),investigation == null ? "Investigate Earth" : CaseTitle(kind),62,White,headingFont);
+            Text(Box(87,331,580,68),investigation == null
+                ? "Guess how rainfall changed in two places, then check the records."
+                : CaseQuestion,27,Dim,bodyFont,TextAnchor.UpperLeft,true);
+            DrawCaseProgress(Box(93,406,574,70),kind);
+            if (Button(Box(87,498,429,59),investigation == null ? "Start the rainfall case" : "Continue case",
+                accent:true,size:27,icon:"Next"))
+            {
+                if (investigation == null) NewInvestigation(InvestigationKind.Rainfall);
+                OpenCase();
+            }
+            if (Button(Box(87,570,216,37),"Browse all cases",icon:"Search")) OpenCasePicker();
+
+            if (ControlTile(Box(54,648,157,114),"Weather","Weather lab")) OpenWeatherLab();
+            if (ControlTile(Box(224,648,157,114),"Archive","Earth archive")) OpenArchive(null);
+            if (ControlTile(Box(394,648,157,114),"Journal","Field journal")) Go(View.Journal);
+            if (ControlTile(Box(564,648,157,114),"Signal","Return to Sender")) OpenBroadcast();
+            if (ReadyForFinale && Button(Box(768,172,352,55),"Incoming · Commander Zorvax",accent:true,icon:"Next"))
+                OpenSubmission();
+
+            if (labOptionsOpen)
+            {
+                Card(Box(1184,86,380,162),Ink);
+                if (Button(Box(1204,105,340,49),muted ? "Sound off" : "Sound on",active:!muted)) ToggleMute();
+                if (Button(Box(1204,171,340,49),reduced ? "Reduced motion on" : "Reduced motion off",active:reduced)) ToggleMotion();
+            }
+        }
+
+        bool ControlTile(Rect rect, string icon, string label, bool active = false, string tooltip = null)
+        {
+            var background = ButtonBackground(rect,false,active,true);
+            var state = ButtonInput(rect,tooltip);
+            Fill(rect,background);
+            DrawButtonEdge(rect,state.focused ? Yellow : active ? Mint : Line);
+            DrawIcon(icon,new Vector2(rect.center.x,rect.y+42),active ? White : Mint,2.4f);
+            Text(Box(rect.x+3,rect.yMax-40,rect.width-6,33),label,20,White,strongFont,TextAnchor.MiddleCenter);
+            return state.pressed;
+        }
+
+        void DrawIcon(string icon, Vector2 center, Color color, float scale = 1)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            void Stroke(float x, float y, float endX, float endY) =>
+                DrawChartSegment(center + scale*new Vector2(x,y),center + scale*new Vector2(endX,endY),
+                    color,Mathf.Clamp(scale*1.6f,2,6));
+            void Square(float x,float y,float width,float height)
+            {
+                Stroke(x,y,x+width,y); Stroke(x,y+height,x+width,y+height);
+                Stroke(x,y,x,y+height); Stroke(x+width,y,x+width,y+height);
+            }
+            switch (icon)
+            {
+                case "Back":
+                case "Next":
+                    int d = icon == "Back" ? -1 : 1;
+                    Stroke(-9,0,9,0); Stroke(2*d,-6,9*d,0); Stroke(9*d,0,2*d,6);
+                    break;
+                case "Choose":
+                    Stroke(-6,-3,0,3); Stroke(0,3,6,-3);
+                    break;
+                case "Search":
+                    Square(-9,-9,12,12); Stroke(4,4,10,10);
+                    break;
+                case "Location":
+                    Stroke(-8,-7,8,-7); Stroke(-8,-7,-7,1); Stroke(8,-7,7,1);
+                    Stroke(-7,1,0,9); Stroke(0,9,7,1);
+                    Fill(Box(center.x-2*scale,center.y-4*scale,4*scale,4*scale),color);
+                    break;
+                case "Settings":
+                    for (int i = 0; i < 3; i++)
+                    {
+                        float y = -7+i*7;
+                        Stroke(-9,y,9,y);
+                        Fill(Box(center.x+(i == 1 ? 2 : -7),center.y+y-3,5,6),color);
+                    }
+                    break;
+                case "Weather":
+                    Stroke(-10,7,-3,-6); Stroke(-3,-6,2,1); Stroke(2,1,6,-4); Stroke(6,-4,10,7);
+                    Stroke(-10,7,10,7);
+                    break;
+                case "Archive":
+                    Square(-9,-7,18,15); Stroke(-9,-2,9,-2); Stroke(-4,2,4,2);
+                    break;
+                case "Journal":
+                    Square(-8,-9,16,18); Stroke(-3,-4,4,-4); Stroke(-3,1,4,1); Stroke(-3,5,4,5);
+                    break;
+                case "Rain":
+                    Stroke(-9,-6,-2,-6); Stroke(1,-8,8,-8);
+                    Stroke(-8,3,-5,-1); Stroke(-2,8,1,4); Stroke(4,2,7,-2); Stroke(7,8,10,4);
+                    break;
+                case "Droplet":
+                    Stroke(0,-10,-7,0); Stroke(-7,0,-6,6); Stroke(-6,6,0,9);
+                    Stroke(0,9,6,6); Stroke(6,6,7,0); Stroke(7,0,0,-10);
+                    break;
+                case "Wind":
+                    Stroke(-10,-5,9,-5); Stroke(-6,0,10,0); Stroke(-10,5,4,5);
+                    break;
+                case "Temperature":
+                    Square(-3,-10,6,15); Square(-6,3,12,7); Stroke(0,5,0,-5);
+                    break;
+                case "Soil":
+                    Stroke(-10,-6,10,-6); Stroke(-10,1,10,1); Stroke(-10,8,10,8);
+                    Stroke(-6,-6,-6,1); Stroke(4,1,4,8);
+                    break;
+                case "Chart":
+                    Stroke(-9,-9,-9,8); Stroke(-9,8,10,8);
+                    Stroke(-5,3,-1,-2); Stroke(-1,-2,3,0); Stroke(3,0,9,-8);
+                    break;
+                case "Check":
+                    Stroke(-8,0,-2,6); Stroke(-2,6,9,-6);
+                    break;
+                case "Copy":
+                    Square(-5,-4,14,13); Stroke(-9,-8,5,-8); Stroke(-9,-8,-9,5);
+                    break;
+                case "Signal":
+                    Stroke(-7,8,0,-7); Stroke(0,-7,7,8); Stroke(-5,4,5,4);
+                    Stroke(-5,-9,-9,-5); Stroke(5,-9,9,-5);
+                    break;
+                case "Play":
+                    Stroke(-6,-8,8,0); Stroke(8,0,-6,8); Stroke(-6,8,-6,-8);
+                    break;
+                case "Pause":
+                    Stroke(-4,-8,-4,8); Stroke(4,-8,4,8);
+                    break;
+                case "Last month":
+                    Stroke(-8,-7,4,0); Stroke(4,0,-8,7); Stroke(-8,7,-8,-7); Stroke(8,-8,8,8);
+                    break;
+                case "Rise":
+                    Stroke(-8,6,8,-6); Stroke(1,-6,8,-6); Stroke(8,-6,8,1);
+                    break;
+                case "Fall":
+                    Stroke(-8,-6,8,6); Stroke(1,6,8,6); Stroke(8,6,8,-1);
+                    break;
+                case "Little change":
+                    Stroke(-8,0,8,0);
+                    break;
+            }
+        }
+
         void DrawLab()
         {
-            Top("FIELD SIMULATION");
+            if (!LegacyCapture && !weatherLabOpen)
+            {
+                DrawStation();
+                return;
+            }
+            Top(LegacyCapture ? "FIELD SIMULATION" : "WEATHER LAB");
             Fade(Box(0,70,1020,428),Alpha(Ink,.69f),90);
             Tag(54,147,LegacyCapture ? "LANDING SITE  /  " + (siteIndex + 1).ToString("00") : "LANDING SITE",Mint);
             Text(Box(49,171,1040,109),Region.name,93,White,headingFont);
             Tag(55,291,Coordinates(Region) + "   /   " + Sites[siteIndex].ToUpperInvariant(),White);
-            if (Button(Box(54,336,192,41),showSites ? "Close site list" : "Change site")) showSites = !showSites;
+            if (Button(Box(54,336,192,41),showSites ? "Close map" : "Change site",icon:"Location"))
+            {
+                showSites = !showSites;
+                branchesOpen = branchComparisonOpen = false;
+            }
             if (!LegacyCapture)
             {
-                if (Button(Box(260,336,223,41), "Investigation desk",true)) OpenCase();
                 DrawBranches();
-                if (investigation == null && !showSites && !branchesOpen)
-                    Text(Box(56,390,906,46),"Choose a case to investigate Earth's historical records or test a change in weather.",24,White);
+                if (!demoActive && IsGuidedScenario && Button(Box(523,336,193,41),"Back to case",icon:"Back")) OpenCase();
             }
             if (showSites)
             {
-                Card(Box(54,385,290,248),Alpha(Ink,.95f));
-                for (int i = 0; i < data.regions.Length; i++)
-                    if (Button(Box(60,392 + i*39,278,35),data.regions[i].name,false,siteIndex == i,true,17))
-                    {
-                        if (LegacyCapture) Select(i);
-                        else BeginSiteTransfer(i);
-                        showSites = branchComparisonOpen = false;
-                    }
+                DrawSitePicker(392,!LegacyCapture);
             }
 
             if (LegacyCapture)
@@ -222,8 +443,11 @@ namespace Homecoming.Field
 
             Fade(Box(0,772,1600,128),Alpha(Ink,.96f),180);
             Tag(54,836,"1991–2020 NASA POWER NORMALS   /   CONDITIONAL SCENARIOS",White);
-            if (Button(Box(1134,828,210,34),reduced ? "Motion reduced" : "Motion full",false,false,true,16)) ToggleMotion();
-            if (Button(Box(1355,828,209,34),muted ? "Sound off" : "Sound on",false,false,true,16)) ToggleMute();
+            if (LegacyCapture)
+            {
+                if (Button(Box(1134,828,210,34),reduced ? "Motion reduced" : "Motion full",false,false,true,16)) ToggleMotion();
+                if (Button(Box(1355,828,209,34),muted ? "Sound off" : "Sound on",false,false,true,16)) ToggleMute();
+            }
         }
 
         void DrawSiteTransfer()
@@ -276,19 +500,19 @@ namespace Homecoming.Field
             Card(console,Rgb("#203338"));
             Fill(Box(console.x+3,console.y+3,console.width-6,console.height-6),Rgb("#15272a"));
             PanelScrews(console);
-            Tag(1114,136,"CONDITIONAL SCENARIO",Mint);
-            Text(Box(1113,159,432,47),"Weather controls",39,White,headingFont);
-            Text(Box(1115,205,430,27),"Drag dials or use Tab and arrow keys.",19,Dim);
+            Tag(1114,136,"WEATHER LAB",Mint);
+            Text(Box(1113,159,432,47),"Change the weather",39,White,headingFont);
+            Text(Box(1115,205,430,27),"Drag a dial or use Tab and the arrow keys.",19,Dim);
             if (dialFace == null) dialFace = MakeDialFace();
 
             for (int i = 0; i < data.controls.Length; i++)
                 DrawWeatherDial(i,1116+(i%2)*219,239+(i/2)*183);
 
             string blocker = GuidedLaunchBlocker();
-            Text(Box(1117,605,417,62),blocker ?? $"Preview starts {Campaign.Current.NextDate:MMM yyyy}. Advance from playback to save.",
+            Text(Box(1117,605,417,62),blocker ?? $"Preview a year starting {Campaign.Current.NextDate:MMM yyyy}. Save the result after it plays.",
                 18,Dim,bodyFont,TextAnchor.MiddleLeft,true);
             if (Button(Box(1116,678,419,51),"Preview 12 months",true,false,blocker == null,25)) LaunchScenario();
-            if (Button(Box(1116,743,419,36),"Restore inherited weather",false,false,Campaign != null,18)) Select(siteIndex);
+            if (Button(Box(1116,743,419,36),"Reset weather to saved values",false,false,Campaign != null,18)) Select(siteIndex);
             if (!showSites && !branchesOpen && !branchComparisonOpen) DrawWeatherMonitor();
         }
 
@@ -299,9 +523,14 @@ namespace Homecoming.Field
             PanelScrews(bezel);
             Rect screen = Box(75,482,809,246);
             BeginWeatherScreen(screen);
-            Tag(95,492,"LOCAL WEATHER MONITOR  /  "+displayed.Date.ToString("MMM yyyy",Invariant).ToUpperInvariant(),Mint);
-            var draft = ClimateModel.ApplyForcing(displayed.normal,settings);
-            Text(Box(96,526,753,34),"Inherited weather  /  Draft weather",26,White,headingFont);
+            // The lab loads the source revision's next month into displayed.
+            int month = displayed.monthIndex;
+            var inheritedSettings = displayed.forcing;
+            var normal = ClimateModel.Normal(Region,month);
+            var inherited = ClimateModel.ApplyForcing(normal,inheritedSettings);
+            var draft = ClimateModel.ApplyForcing(normal,settings);
+            Tag(95,492,"LOCAL WEATHER MONITOR  /  "+FieldCalendar.Date(month).ToString("MMM yyyy",Invariant).ToUpperInvariant(),Mint);
+            Text(Box(96,526,753,34),"Inherited weather → Draft weather",26,White,headingFont);
 
             for (int i = 0; i < data.controls.Length; i++)
             {
@@ -312,9 +541,17 @@ namespace Homecoming.Field
                 {
                     0 => weather.temperature, 1 => weather.rain, 2 => weather.humidity, _ => weather.wind
                 };
-                Text(Box(x,y,363,24),control.label,16,Dim,strongFont);
-                Text(Box(x,y+21,363,34),FormattableString.Invariant(
-                    $"{WeatherValue(displayed.weather):0.#} → {WeatherValue(draft):0.#} {unit}"),22,Mint,dataFont);
+                float beforeValue = WeatherValue(inherited), afterValue = WeatherValue(draft);
+                double delta = Math.Round(afterValue-beforeValue,2);
+                string dialChange = inheritedSettings[i] == settings[i] ? "" :
+                    $"   ·   Dial {Signed(inheritedSettings[i])} → {Signed(settings[i])}{control.unit}";
+                Text(Box(x,y,363,24),$"{control.label} ({unit}){dialChange}",16,Dim,strongFont);
+                Text(Box(x,y+21,183,34),FormattableString.Invariant(
+                    $"{beforeValue:0.##} → {afterValue:0.##}"),17,White,dataFont);
+                string change = "Δ " + delta.ToString("+0.##;-0.##;0",Invariant);
+                if (i == 2) change += " percentage points";
+                Text(Box(x+184,y+21,179,34),change,17,delta == 0 ? Dim : Mint,
+                    i == 2 ? strongFont : dataFont,TextAnchor.MiddleRight);
             }
             DrawWeatherBeam(Box(861,505,20,192));
         }
@@ -392,7 +629,8 @@ namespace Homecoming.Field
                 Fill(Box(x,y,cell.width,2),Yellow);
                 Fill(Box(x,y,2,cell.height),Yellow);
             }
-            Text(Box(x+6,y+4,190,26),definition.label,19,White,strongFont,TextAnchor.MiddleCenter);
+            DrawIcon(WeatherIcons[control],new Vector2(x+27,y+17),tint);
+            Text(Box(x+48,y+4,146,26),definition.label,19,White,strongFont);
             Text(Box(x+6,y+27,190,23),Signed(settings[control])+" "+definition.unit.TrimStart(),19,tint,dataFont,TextAnchor.MiddleCenter);
             GUI.DrawTexture(target,dialFace);
             float fraction = Mathf.InverseLerp(definition.min,definition.max,settings[control]);
@@ -619,6 +857,45 @@ namespace Homecoming.Field
             Text(Box(53,111,1469,92),title,75,White,headingFont);
         }
 
+        void OpenSubmission()
+        {
+            reportStatus = null;
+            Go(View.Submission);
+            if (muted) return;
+            var clip = Resources.Load<AudioClip>("HomecomingAudio/VoiceFallback/submission.01");
+            if (clip == null) return;
+            if (submissionVoice == null)
+            {
+                submissionVoice = gameObject.AddComponent<AudioSource>();
+                submissionVoice.playOnAwake = false;
+            }
+            submissionVoice.PlayOneShot(clip);
+        }
+
+        AudioSource submissionVoice;
+
+        void DrawSubmission()
+        {
+            Fill(Box(-2200,-2200,6000,5000), Alpha(Ink,.96f));
+            Fill(Box(54,82,1490,2), Line);
+            Tag(55,44,"INTERGALACTIC AFFECTION DEPARTMENT",Mint);
+            if (commander != null) GUI.DrawTexture(Box(65,151,615,625),commander,ScaleMode.ScaleToFit);
+            Tag(726,205,"INCOMING TRANSMISSION  /  COMMANDER ZORVAX",Yellow);
+            string recruit = string.IsNullOrWhiteSpace(StorySession.RecruitName) ? "AGENT!" : $"AGENT {StorySession.RecruitName.ToUpperInvariant()}!";
+            Text(Box(719,248,800,110),recruit,recruit.Length > 24 ? 56 : 72,White,headingFont);
+            Text(Box(726,374,744,146),"“Agent! I believe we have enough evidence to begin the Great Homecoming!”",
+                36,White,bodyFont,TextAnchor.UpperLeft,true);
+            if (reportStatus != null)
+                Text(Box(726,520,744,82),reportStatus,23,Yellow,bodyFont,TextAnchor.MiddleLeft,true);
+            if (Button(Box(726,616,372,58),"Submit findings   →",true,false,ReadyForFinale && !hearingRequested,26))
+            {
+                investigation = FinaleCase;
+                if (submissionVoice != null) submissionVoice.Stop();
+                SubmitInvestigation();
+            }
+            if (Button(Box(726,698,372,50),"Continue experimenting")) Go(View.Lab);
+        }
+
         void DrawJournal()
         {
             Sheet("DISCOVERY ENCYCLOPEDIA","Field journal");
@@ -652,17 +929,21 @@ namespace Homecoming.Field
         void DrawArchive()
         {
             Sheet("HISTORICAL EARTH DATA","Earth archive");
-            Tag(56,206,LegacyCapture ? "ANNUAL VALUES  /  DESCRIPTIVE EVIDENCE" : "HISTORICAL EARTH RECORDS",Mint);
-            for (int i=0;i<data.regions.Length;i++)
-                if (Button(Box(56+i*250,247,240,40),data.regions[i].name,false,siteIndex == i,true,18))
-                {
-                    Select(i); evidenceIndex = 0;
-                }
-            for (int i=0;i<EvidenceKeys.Length;i++)
-                if (Button(Box(56+i*197,298,188,37),EvidenceNames[i],false,evidenceKey == EvidenceKeys[i],true,17))
-                {
-                    evidenceKey = EvidenceKeys[i]; evidenceIndex = 0;
-                }
+            if (LegacyCapture)
+            {
+                Tag(56,206,"ANNUAL VALUES  /  DESCRIPTIVE EVIDENCE",Mint);
+                for (int i=0;i<data.regions.Length;i++)
+                    if (Button(Box(56+i*250,247,240,40),data.regions[i].name,false,siteIndex == i,true,18))
+                    {
+                        Select(i); evidenceIndex = 0;
+                    }
+                for (int i=0;i<EvidenceKeys.Length;i++)
+                    if (Button(Box(56+i*197,298,188,37),EvidenceNames[i],false,evidenceKey == EvidenceKeys[i],true,17))
+                    {
+                        evidenceKey = EvidenceKeys[i]; evidenceIndex = 0;
+                    }
+            }
+            else if (DrawArchiveFilters()) return;
             var records = data.evidence.Where(e => e.region == Region.id && (evidenceKey == null || e.key == evidenceKey)).ToArray();
             if (!LegacyCapture)
             {
@@ -732,7 +1013,7 @@ namespace Homecoming.Field
             Text(Box(r.xMax-110,r.yMax+6,110,25),last.ToString(),15,Dim,dataFont,TextAnchor.MiddleRight);
         }
 
-        void DrawChartSegment(Vector2 start, Vector2 end, Color color)
+        void DrawChartSegment(Vector2 start, Vector2 end, Color color, float thickness = 2)
         {
             if (Event.current.type != EventType.Repaint) return;
             // Translate in GUI layout coordinates, then rotate about the translated origin.
@@ -740,7 +1021,7 @@ namespace Homecoming.Field
             var delta = end - start;
             var transform = Matrix4x4.TRS(start, Quaternion.Euler(0,0,Mathf.Atan2(delta.y,delta.x)*Mathf.Rad2Deg), Vector3.one);
             GUI.matrix = previous * transform;
-            Fill(Box(0,-1,delta.magnitude,2),color);
+            Fill(Box(0,-thickness/2,delta.magnitude,thickness),color);
             GUI.matrix = previous;
         }
 

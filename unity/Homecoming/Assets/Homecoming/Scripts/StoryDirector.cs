@@ -11,9 +11,10 @@ namespace Homecoming
         public StoryStage stage;
         public TextAsset script;
         public string simulationScene = StorySession.SimulationScene;
-        enum Page { Home, Film, Recruit, Ready, Epilogue, Chapters, Credits, Reset }
+        enum Page { Home, Film, Recruit, Ready, Epilogue, Report, Chapters, Credits, Reset }
         Page page;
         StoryScript story;
+        HomecomingReport pendingReport;
         CutsceneScript cutsceneData;
         // Loaded on first use so editor tools that call Play() before Awake() still work.
         CutsceneScript cutscenes
@@ -36,6 +37,13 @@ namespace Homecoming
         public string CurrentShot => page == Page.Film ? sequence[shotIndex].id : page.ToString().ToLowerInvariant();
         public float ShotTime => shotTime;
 
+        internal void ShowFiledReport()
+        {
+            if (StorySession.FiledReport == null) return;
+            preview = false;
+            Show(Page.Report);
+        }
+
         void Awake()
         {
             story = JsonUtility.FromJson<StoryScript>(script.text);
@@ -48,7 +56,12 @@ namespace Homecoming
             Application.targetFrameRate = 60;
             var cutscene = StorySession.ConsumeCutsceneRequest();
             if (cutscene != null && cutscenes.Find(cutscene) != null) Play(cutscene, false);
-            else if (StorySession.ConsumeHearingRequest()) Play("ending", false);
+            else if (StorySession.ConsumeHearingRequest())
+            {
+                pendingReport = StorySession.ConsumeReport();
+                Play("ending", false);
+            }
+            else if (StorySession.ConsumeFiledReportRequest() && StorySession.FiledReport != null) ShowFiledReport();
             else if (string.IsNullOrWhiteSpace(designation)) Play("prologue");
             else Show(Page.Home);
         }
@@ -93,7 +106,7 @@ namespace Homecoming
             stage.SetShot(CurrentShot);
             sound.SetShot(CurrentShot, stage);
             stage.SetPaused(paused);
-            stage.Evaluate(CurrentShot, shotTime, reducedMotion, sound.Muted);
+            stage.Evaluate(CurrentShot, shotTime, reducedMotion, sound.Muted, findings: preview ? null : pendingReport);
         }
         void FinishSequence()
         {
@@ -112,7 +125,12 @@ namespace Homecoming
             }
             else
             {
-                if (!preview) StorySession.EndingComplete = true;
+                if (!preview)
+                {
+                    StorySession.FileReport(pendingReport);
+                    pendingReport = null;
+                    StorySession.EndingComplete = true;
+                }
                 Show(Page.Epilogue);
             }
         }
@@ -157,7 +175,7 @@ namespace Homecoming
             }
             UpdateInterface();
             float time = page == Page.Film ? shotTime : pageTime;
-            stage.Evaluate(CurrentShot, time, reducedMotion, sound.Muted, sound.ArchiveVolume);
+            stage.Evaluate(CurrentShot, time, reducedMotion, sound.Muted, sound.ArchiveVolume, preview ? null : pendingReport);
             sound.Evaluate(CurrentShot, time);
         }
         void OnDestroy() => DisposeInterface();

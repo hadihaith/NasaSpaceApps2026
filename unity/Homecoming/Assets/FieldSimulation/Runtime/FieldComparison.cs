@@ -7,12 +7,12 @@ namespace Homecoming.Field
     public sealed partial class FieldSimulation
     {
         bool comparisonHasOrbit;
-        bool comparisonTable, differenceOpen, comparisonMethods;
+        bool comparisonTable, differenceOpen, comparisonMethods, showPredictionEdits;
         int comparisonRow, comparisonYear;
 
         void ResetComparisonView()
         {
-            comparisonTable = differenceOpen = comparisonMethods = false;
+            comparisonTable = differenceOpen = comparisonMethods = showPredictionEdits = false;
             comparisonRow = comparisonYear = 0;
         }
 
@@ -42,12 +42,13 @@ namespace Homecoming.Field
             Fade(Box(0,0,1600,190),Alpha(Ink,.95f),0);
             Tag(56,31,"HISTORICAL COMPARISON",Mint);
             Text(Box(53,61,1400,59),$"{PlaceName(pairedOrigin)}  /  {PlaceName(pairedTarget)}",47,White,headingFont);
+            DrawCaseProgress(Box(979,33,534,73),investigation.kind);
             Text(Box(56,125,1468,46),$"{pairedOrigin.product} · {Period(pairedOrigin)} · {pairedOrigin.years.Length} matched years\n{pairedOrigin.aggregation} · {pairedOrigin.unit}",20,Dim);
-            if (Button(Box(56,179,194,42),"Investigation desk")) CloseComparison();
+            if (Button(Box(56,179,194,42),"Back to case",icon:"Back")) CloseComparison();
             if (comparisonHasOrbit && orbitProgress < 1)
             {
-                if (Button(Box(1156,179,174,42),orbitPaused ? "Resume flight" : "Pause flight")) orbitPaused = !orbitPaused;
-                if (Button(Box(1343,179,201,42),"Skip flight",true)) orbitProgress = 1;
+                if (Button(Box(1279,179,50,42),"",icon:orbitPaused ? "Play" : "Pause")) orbitPaused = !orbitPaused;
+                if (Button(Box(1343,179,201,42),"Skip flight",true,icon:"Next")) orbitProgress = 1;
                 Text(Box(53,762,1450,49),"The two sites share the same measure and observation period.",26,White);
                 return;
             }
@@ -94,11 +95,11 @@ namespace Homecoming.Field
                 var left = pairedOrigin.years[comparisonYear];
                 var right = pairedTarget.years[comparisonYear];
                 string difference = pairedTrend == null ? "" : $" · Difference {Signed(pairedTrend.points[comparisonYear].value,"0.###")}";
-                if (Button(Box(56,688,157,32),"Previous year",false,false,comparisonYear > 0,16)) comparisonYear--;
+                if (Button(Box(56,685,46,38),"",enabled:comparisonYear > 0,icon:"Back",tooltip:"Previous year")) comparisonYear--;
                 Text(Box(230,685,1120,38),
                     FormattableString.Invariant($"{left.year} · {a.place} {left.value:0.###} · {b.place} {right.value:0.###}{difference} {a.unit}"),
                     19,White,dataFont,TextAnchor.MiddleCenter);
-                if (Button(Box(1387,688,157,32),"Next year",false,false,comparisonYear+1 < pairedOrigin.years.Length,16)) comparisonYear++;
+                if (Button(Box(1498,685,46,38),"",enabled:comparisonYear+1 < pairedOrigin.years.Length,icon:"Next",tooltip:"Next year")) comparisonYear++;
             }
             if (pairedDifference != null)
             {
@@ -106,11 +107,15 @@ namespace Homecoming.Field
                 Text(Box(56,752,1488,29),TestSummary(pairedDifference),18,Dim);
                 if (investigation.kind == InvestigationKind.Rainfall)
                 {
-                    Text(Box(56,788,230,30),"Revise calls (optional)",18,White,strongFont);
-                    Text(Box(285,788,123,30),"Sahel",18,Mint,strongFont);
-                    Text(Box(916,788,116,30),"Chile",18,Aqua,strongFont);
-                    DrawCall(414,783,ref investigation.revisedOriginCall,false,investigation.originCall);
-                    DrawCall(1038,783,ref investigation.revisedOtherCall,false,investigation.otherCall);
+                    if (Button(Box(56,783,213,39),showPredictionEdits ? "Hide predictions" : "Change predictions",size:18))
+                        showPredictionEdits = !showPredictionEdits;
+                    if (showPredictionEdits)
+                    {
+                        Text(Box(285,788,123,30),"Sahel",18,Mint,strongFont);
+                        Text(Box(916,788,116,30),"Chile",18,Aqua,strongFont);
+                        DrawCall(414,783,ref investigation.revisedOriginCall,false,investigation.originCall);
+                        DrawCall(1038,783,ref investigation.revisedOtherCall,false,investigation.otherCall);
+                    }
                 }
             }
             if (Button(Box(56,829,196,43),comparisonTable ? "Show charts" : "Inspect values",false,false,true,19))
@@ -130,7 +135,7 @@ namespace Homecoming.Field
                 comparisonMethods = !comparisonMethods;
                 comparisonTable = differenceOpen = false;
             }
-            if (Button(Box(1112,829,432,43),"File historical comparison",true,false,!demoActive,23))
+            if (Button(Box(1112,829,432,43),"Save comparison to report",true,false,!demoActive,23,icon:"Archive"))
             {
                 FileComparison();
                 CloseComparison();

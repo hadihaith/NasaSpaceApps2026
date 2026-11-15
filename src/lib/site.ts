@@ -4,7 +4,7 @@
  * so reordering or renaming a section here updates all three.
  */
 export interface Section {
-  href: "/" | "/detective" | "/inferences" | "/what-if";
+  href: "/" | "/challenge" | "/detective" | "/inferences" | "/what-if";
   /** Short navbar label */
   label: string;
   /** Longer title for cards and the guide */
@@ -32,6 +32,19 @@ export const SECTIONS: Section[] = [
       "With three discoveries and one archive investigation, submit your report to see the ending.",
     ],
     kind: "story",
+  },
+  {
+    href: "/challenge",
+    label: "Step by step",
+    title: "Solve the challenge step by step",
+    summary: "The four challenge objectives in order, animated: variable, region, time series, trend tests.",
+    steps: [
+      "Identify a variable: browse four themes and read what each variable measures.",
+      "Acquire the data: pick a region on the globe and fetch its monthly NASA POWER record.",
+      "Build the time series: take the seasons out and watch the series draw in.",
+      "Test the trend: rate of change, a t-test, the Mann-Kendall test and 95% confidence intervals, then the verdict.",
+    ],
+    kind: "real",
   },
   {
     href: "/detective",

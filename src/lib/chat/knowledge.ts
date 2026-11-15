@@ -12,8 +12,8 @@ The challenge asks for a tool that selects Earth-science variables, shows how th
 whether those changes are statistically significant (for example with a t-test, the Mann-Kendall test or confidence intervals).
 
 SITE LAYOUT
-The bar at the top numbers the sections in the order to visit them: 1 Play ("/"), 2 Investigate ("/detective"),
-3 Inferences ("/inferences"), 4 What if ("/what-if"), plus a "How to" guide ("/how-to") on the right. Each section
+The bar at the top numbers the sections in the order to visit them: 1 Play ("/"), 2 Step by step ("/challenge"),
+3 Investigate ("/detective"), 4 Inferences ("/inferences"), 5 What if ("/what-if"), plus a "How to" guide ("/how-to") on the right. Each section
 page ends with a "Next step" card. When someone is unsure where to go, suggest /how-to or the next numbered section.
 
 PAGES (use these paths when pointing people somewhere)
@@ -32,6 +32,16 @@ PAGES (use these paths when pointing people somewhere)
   region (NASA POWER: air temperature, precipitation, humidity, wind, root-zone soil wetness) with trend tests, and in
   Central Arizona also GPM IMERG satellite rain. Progress is saved in the browser. The simulator is hypothetical;
   it never changes or predicts the real Earth.
+- "/challenge" The challenge step by step: an animated four-step walkthrough that follows the brief in order. 1 pick
+  a variable (18 NASA POWER variables in four themes), 2 pick a region on a globe and acquire its monthly record live,
+  3 build and plot the time series (yearly averages, seasons removed, or one month per year), 4 rate of change
+  (least squares and Theil-Sen), a t-test with an autocorrelation adjustment, the Mann-Kendall test and 95% confidence
+  intervals, ending in a verdict. Significant only when both tests give p < 0.05. Each result has an "In plain words"
+  box and a five-step evidence meter (No evidence to Very strong evidence). Kuwait is one of the quick-pick places
+  (2° box). After the verdict, the same analysis runs on a second region, with a test of whether the two rates differ.
+  Opposite-trend examples (NASA POWER, 1981-2025, yearly averages): rain rising in the central Sahel (+0.06 mm/day per
+  decade) while falling in central Chile (-0.12); relative humidity falling in Kuwait (-0.76 points per decade) while
+  rising in the Sahel (+0.87). Short gaps in a monthly record are filled from that month's normal.
 - "/detective" Trend Detective workbench. Pick a case (for example "Is the Arctic warming?") or any variable and place
   on a globe, guess rising, falling or no clear trend, then reveal four decades of live NASA POWER data with trend
   tests. Earns XP, ranks and badges. Can compare two places.

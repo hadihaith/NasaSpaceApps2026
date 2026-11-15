@@ -157,8 +157,8 @@ namespace Homecoming.Editor
             director.stage = stage;
             director.script = AssetDatabase.LoadAssetAtPath<TextAsset>(Root + "/Resources/Story.json");
             var story = JsonUtility.FromJson<StoryScript>(director.script.text);
-            if (story.prologue.Length != 11 || story.briefing.Length != 1 || story.ending.Length != 2)
-                throw new InvalidOperationException("The source story must have 11 prologue, 1 briefing and 2 ending shots.");
+            if (story.prologue.Length != 11 || story.briefing.Length != 1 || story.ending.Length != 4)
+                throw new InvalidOperationException("The source story must have 11 prologue, 1 briefing and 4 ending shots.");
 
             // Set an intentional, lit starting composition in the editor without preparing video.
             stage.bridge.SetActive(true);

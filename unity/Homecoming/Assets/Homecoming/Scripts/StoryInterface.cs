@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,7 +18,7 @@ namespace Homecoming
         GUIStyle micro, body, display, heading, captionStyle, inputStyle, buttonStyle, mono;
         Texture2D white, disc, gradient;
         bool interfaceReady, focusRecruit;
-        string hoveredControl;
+        string hoveredControl, operationResetError;
         float lastPointerActivity, interfaceClock, uiOpacity = 1;
         Vector2 lastPointer;
 
@@ -64,7 +65,7 @@ namespace Homecoming
             inputStyle = Style(bodyFont, 29, paper, TextAnchor.MiddleLeft);
             inputStyle.padding = new RectOffset(21, 21, 0, 0);
             inputStyle.clipping = TextClipping.Clip;
-            inputStyle.focused.textColor = paper;
+            inputStyle.hover.textColor = inputStyle.active.textColor = inputStyle.focused.textColor = paper;
             GUI.skin.settings.selectionColor = new Color(.16f, .36f, .4f);
             GUI.skin.settings.cursorColor = orange.linear;
             white = Texture2D.whiteTexture;
@@ -123,11 +124,12 @@ namespace Homecoming
         }
         void Label(Rect rect, string text, GUIStyle style, Color? color = null)
         {
+            if (Event.current.type != EventType.Repaint) return;
             Color previous = style.normal.textColor;
             if (color.HasValue) style.normal.textColor = color.Value;
             var guiColor = GUI.color;
             GUI.color = new Color(1, 1, 1, guiColor.a * uiOpacity);
-            GUI.Label(rect, text, style);
+            style.Draw(rect, new GUIContent(text), false, false, false, false);
             GUI.color = guiColor;
             style.normal.textColor = previous;
         }
@@ -191,8 +193,12 @@ namespace Homecoming
         {
             bool over = rect.Contains(Event.current.mousePosition);
             float hover = Hover(id, over || GUI.GetNameOfFocusedControl() == id);
+            if (hover > .01f)
+            {
+                Fill(new Rect(rect.x-6,rect.y,rect.width+6,rect.height),new Color(panel.r,panel.g,panel.b,hover));
+                Rule(rect.x-6,rect.yMax-2,(rect.width+6)*hover,orange,2);
+            }
             Text(rect.x + hover * 3, rect.y, rect.width, rect.height, text, mono, Color.Lerp(color ?? muted, paper, hover));
-            if (hover > .01f) Rule(rect.x, rect.yMax - 5, (rect.width - 8) * hover, orange);
             GUI.SetNextControlName(id);
             bool clicked = GUI.Button(rect, GUIContent.none, GUIStyle.none);
             if (clicked) sound.Cue("click");
@@ -238,7 +244,7 @@ namespace Homecoming
             Rule(46, 814, 1508, new Color(muted.r, muted.g, muted.b, .23f));
             Text(48, 843, 450, 25, "NASA SPACE APPS   /   KUWAIT", micro);
             if (Link("footer-sound", new Rect(826, 836, 150, 35), sound.Muted ? "AUDIO  OFF" : "AUDIO  ON")) sound.SetMuted(!sound.Muted);
-            if (Link("footer-chapters", new Rect(1002, 836, 190, 35), "CHAPTERS / OPTIONS")) Show(Page.Chapters);
+            if (Link("footer-chapters", new Rect(1002, 836, 190, 35), "STORY & SETTINGS")) Show(Page.Chapters);
             if (Link("footer-credits", new Rect(1235, 836, 100, 35), "CREDITS")) Show(Page.Credits);
             if (page != Page.Home && Link("footer-menu", new Rect(1392, 836, 165, 35), "MAIN MENU")) Show(Page.Home);
         }
@@ -253,11 +259,12 @@ namespace Homecoming
             if (page == Page.Film) FilmGUI();
             else
             {
-                Backdrop(page == Page.Chapters || page == Page.Credits || page == Page.Reset || page == Page.Epilogue);
+                Backdrop(page == Page.Chapters || page == Page.Credits || page == Page.Reset || page == Page.Epilogue || page == Page.Report);
                 if (page == Page.Home) HomeGUI();
                 else if (page == Page.Recruit) RecruitGUI();
                 else if (page == Page.Ready) ReadyGUI();
                 else if (page == Page.Epilogue) EpilogueGUI();
+                else if (page == Page.Report) ReportGUI();
                 else if (page == Page.Chapters) ChaptersGUI();
                 else if (page == Page.Credits) CreditsGUI();
                 else ResetGUI();
@@ -279,12 +286,16 @@ namespace Homecoming
             Text(137, 420, 460, 30, "AN INTERGALACTIC MISUNDERSTANDING", micro, orange);
             uiOpacity = Enter(.12f);
             Text(60, 478, 485, 85, "One human reached the Moon.\nThree aliens set the table.", body);
-            if (Action("start", new Rect(60, 600, 470, 72), "PLAY TRANSMISSION", true, "01")) Play("prologue");
             if (StorySession.BriefingComplete)
             {
-                if (Action("continue", new Rect(60, 698, 470, 58), "Continue as " + StorySession.RecruitName)) Show(Page.Ready);
+                if (Action("continue", new Rect(60, 600, 470, 72), "Continue mission", true) || TakeSubmitKey("continue")) Show(Page.Ready);
+                if (Link("start", new Rect(62, 706, 390, 40), "REPLAY STORY  →")) Play("prologue");
             }
-            else if (Link("skip", new Rect(62, 706, 390, 40), "SKIP TO RECRUITMENT  →")) Show(Page.Recruit);
+            else
+            {
+                if (Action("start", new Rect(60, 600, 470, 72), "Start story", true) || TakeSubmitKey("start")) Play("prologue");
+                if (Link("skip", new Rect(62, 706, 390, 40), "SKIP TO RECRUITMENT  →")) Show(Page.Recruit);
+            }
             uiOpacity = Enter(.22f);
             Frame(new Rect(1090, 650, 443, 113), new Color(mint.r, mint.g, mint.b, .5f), 14);
             Text(1115, 669, 360, 25, "HUMAN ARRIVAL", micro);
@@ -310,13 +321,9 @@ namespace Homecoming
                 Badge(63, 88, shotTime < 3.2f ? "ARTEMIS II  /  CREWED LUNAR FLYBY" : "ARTEMIS II  /  CREW RETURNED TO EARTH", mint);
             if (shot.id == "lab")
                 Badge(63, 88, shotTime < 4.2f ? "EARTH SIMULATION" : "EARTH SIMULATION  /  ADJUST WEATHER, THEN PREVIEW", mint);
-            if (shot.id == "hearing" && shotTime >= 2.5f)
-            {
-                var kind = StorySession.HearingEvidence;
-                string label = kind == StoryEvidence.Scenario ? "SIMULATION" :
-                    kind == StoryEvidence.Historical ? "HISTORICAL RECORD" : "HISTORICAL RECORD  /  SIMULATION";
-                Badge(63, 88, label, orange);
-            }
+            if (shot.id == "hearing") Badge(63, 88, "GOVERNMENT HEARING", orange);
+            if (shot.id == "deflate" && shotTime >= 1.8f)
+                Fill(new Rect(0, 0, 1600, 900), new Color(0, 0, 0, Ease((shotTime - 1.8f) / 1.4f)));
             if (shot.id == "title")
             {
                 Fill(new Rect(0, 0, 1600, 794), Color.black);
@@ -399,6 +406,8 @@ namespace Homecoming
             Text(884, 524, 530, 25, "01 / RECRUIT DESIGNATION", micro, mint);
             var rect = new Rect(884, 568, 600, 70);
             bool focused = GUI.GetNameOfFocusedControl() == "designation";
+            bool submit = SubmitKey && !string.IsNullOrWhiteSpace(designation);
+            if (submit) Event.current.Use();
             Fill(rect, panel);
             Rule(rect.x, rect.yMax, rect.width, focused ? orange : muted, focused ? 2 : 1);
             Fill(new Rect(rect.x, rect.y + 16, 3, 38), orange);
@@ -406,11 +415,9 @@ namespace Homecoming
             designation = GUI.TextField(rect, designation, 28, inputStyle);
             if (string.IsNullOrEmpty(designation) && !focused) Text(rect.x + 21, rect.y + 21, 520, 38, "Your alien name", body, muted);
             if (focusRecruit && Event.current.type == EventType.Repaint) { GUI.FocusControl("designation"); focusRecruit = false; }
-            bool submit = Event.current.type == EventType.KeyDown && (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter);
             bool valid = !string.IsNullOrWhiteSpace(designation);
             if (Action("recruit", new Rect(884, 676, 600, 70), "JOIN THE OPERATION", true, null, valid) || (submit && valid))
             {
-                if (submit) Event.current.Use();
                 designation = System.Text.RegularExpressions.Regex.Replace(designation.Trim(), @"\s+", " ");
                 StorySession.RecruitName = designation;
                 sound.Cue("stamp");
@@ -423,24 +430,42 @@ namespace Homecoming
             Text(84, 669, 325, 48, "ZORVAX", Style(displayFont, 42, paper));
             Text(86, 724, 320, 24, "RELOCATION PROGRAM / 1969–", micro);
         }
+        static bool SubmitKey => Event.current.type == EventType.KeyDown &&
+            (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter);
+
+        static bool TakeSubmitKey(string control)
+        {
+            if (!SubmitKey) return false;
+            string focused = GUI.GetNameOfFocusedControl();
+            if (!string.IsNullOrEmpty(focused) && focused != control) return false;
+            Event.current.Use();
+            return true;
+        }
+
         void ReadyGUI()
         {
-            Header("RESEARCH / LABORATORY");
+            Header("COMMUNICATIONS / BROADCAST DECK");
             uiOpacity = Enter();
             Fill(new Rect(46, 527, 700, 248), new Color(ink.r, ink.g, ink.b, .96f));
-            Badge(70, 549, "BRIEFING COMPLETE", mint);
-            Text(67, 596, 650, 76, "YOUR PLANET. TRY THE DIALS.", Style(displayFont, 57, paper));
+            Badge(70, 549, "FIRST CONTACT / YOUR ASSIGNMENT", mint);
+            Text(67, 596, 650, 76, "EARTH ON THE LINE.", Style(displayFont, 57, paper));
             bool available = Application.CanStreamedLevelBeLoaded(simulationScene);
             if (available)
             {
-                if (Action("enter-lab", new Rect(70, 690, 630, 62), "ENTER LABORATORY", true)) SceneManager.LoadSceneAsync(simulationScene);
+                bool submit = TakeSubmitKey("enter-broadcast");
+                if (Action("enter-broadcast", new Rect(70, 690, 630, 62), "TAKE OVER THE BROADCAST", true) || submit)
+                    StorySession.OpenBroadcast(simulationScene);
+                if (Action("enter-lab", new Rect(1044, 699, 488, 62), "Open field station")) SceneManager.LoadSceneAsync(simulationScene);
             }
             else
             {
                 Text(70, 688, 625, 58, "The simulation scene will continue the operation here.", body);
                 Text(70, 752, 625, 22, "AWAITING LABORATORY CONNECTION", micro, mint);
             }
-            if (Action("preview-ending", new Rect(1044, 699, 488, 62), "Preview the final hearing")) Play("ending", true);
+            if (StorySession.EndingComplete && StorySession.FiledReport != null)
+            {
+                if (Action("open-report", new Rect(1044, 621, 488, 62), "Read my report")) ShowFiledReport();
+            }
             uiOpacity = 1;
         }
         void EpilogueGUI()
@@ -449,13 +474,65 @@ namespace Homecoming
             uiOpacity = Enter();
             Insignia(800, 202, 45, orange);
             Text(200, 294, 1200, 40, "THE GREAT HOMECOMING", Style(monoFont, 16, mint, TextAnchor.MiddleCenter));
-            Text(150, 356, 1300, 120, "STILL WAITING FOR HUMANITY.", Style(displayFont, 94, paper, TextAnchor.MiddleCenter));
+            Text(150, 356, 1300, 120, "STILL WAITING FOR HUMANITY", Style(displayFont, 94, paper, TextAnchor.MiddleCenter));
             Text(200, 507, 1200, 60, "Better Together. Eventually.", Style(bodyFont, 31, paper, TextAnchor.MiddleCenter));
             Rule(745, 599, 110, orange, 3);
-            if (Action("replay", new Rect(363, 660, 410, 68), "REPLAY TRANSMISSION", true)) Play("prologue");
-            if (Action("return-lab", new Rect(825, 660, 410, 68), "Return to laboratory")) Show(Page.Ready);
-            if (preview) Text(480, 768, 640, 25, "ENDING PREVIEW / PROGRESS UNCHANGED", Style(monoFont, 12, muted, TextAnchor.MiddleCenter));
+            if (preview)
+            {
+                if (Action("back-chapters", new Rect(595, 659, 410, 68), "Back to chapters", true)) Show(Page.Chapters);
+            }
+            else
+            {
+                bool hasReport = StorySession.FiledReport != null;
+                if (hasReport && Action("filed-report", new Rect(172, 660, 378, 68), "Read my report", true)) ShowFiledReport();
+                if (Action("return-lab", new Rect(611, 660, 378, 68), "Continue experimenting", !hasReport))
+                {
+                    if (Application.CanStreamedLevelBeLoaded(simulationScene)) SceneManager.LoadSceneAsync(simulationScene);
+                    else Show(Page.Ready);
+                }
+                if (Action("epilogue-reset", new Rect(1050, 660, 378, 68), "Start over")) Show(Page.Reset);
+            }
             uiOpacity = 1;
+        }
+        void ReportGUI()
+        {
+            var report = StorySession.FiledReport;
+            if (report == null) return;
+            Header("RELOCATION / FILED REPORT");
+            Text(57, 120, 1488, 82, "THE GREAT HOMECOMING REPORT", Style(displayFont, 69, paper));
+            Text(60, 204, 1450, 36, "An entirely objective assessment of humanity’s relocation prospects.", body);
+            Text(62, 245, 1400, 26, string.IsNullOrWhiteSpace(report.recruit) ? "FILED BY THE FIELD AGENT" : $"FILED BY AGENT {report.recruit.ToUpperInvariant()}", micro, mint);
+            DrawReportStat(62, $"{report.discoveries}/{report.totalDiscoveries}", "DISCOVERIES");
+            DrawReportStat(436, report.experiments.ToString(), "EXPERIMENTS");
+            DrawReportStat(810, report.investigations.ToString(), "EARTH INVESTIGATIONS");
+            DrawReportStat(1184, "0", "HUMANS RELOCATED");
+            Text(63, 415, 1420, 25, "COMMANDER’S ASSESSMENT", micro, orange);
+            Text(63, 443, 1450, 38, "“Outstanding progress. Human arrival is practically guaranteed.”", Style(bodyFont, 30, paper));
+            Text(63, 489, 1440, 31, "Scientific confidence in this assessment: nonexistent.", body, muted);
+            var link = report.link;
+            bool canLoad = Application.CanStreamedLevelBeLoaded(simulationScene);
+            if (!string.IsNullOrEmpty(link?.runId))
+            {
+                Badge(62, 552, link.site.ToUpperInvariant() + "  /  " + link.variable.ToUpperInvariant(), mint);
+                Text(63, 593, 720, 28, "MODELED EXPERIMENT", micro);
+                Text(63, 624, 720, 60, link.scenario, body);
+                Text(810, 593, 720, 28, "HISTORICAL EARTH RECORD", micro);
+                Text(810, 624, 720, 60, link.historical, body);
+                if (canLoad && Action("replay-linked", new Rect(62, 699, 338, 52), "Replay linked experiment"))
+                    StorySession.OpenSimulationHistory(simulationScene, SimulationHistory.LinkedRun);
+                if (canLoad && Action("open-earth-record", new Rect(810, 699, 338, 52), "Open linked Earth record"))
+                    StorySession.OpenSimulationHistory(simulationScene, SimulationHistory.EarthRecord);
+            }
+            else Text(63, 569, 1440, 36, "No filed Earth record matches a weather variable tested at the same site.", body, muted);
+            if (canLoad && Action("open-history", new Rect(62, 759, 338, 42), "Simulation history"))
+                StorySession.OpenSimulationHistory(simulationScene, SimulationHistory.Branches);
+            if (Action("back-epilogue", new Rect(1184, 759, 338, 42), "Back to final status")) Show(Page.Epilogue);
+        }
+        void DrawReportStat(float x, string value, string label)
+        {
+            Fill(new Rect(x, 295, 340, 94), panel);
+            Text(x + 17, 300, 300, 51, value, Style(displayFont, 48, paper));
+            Text(x + 18, 356, 300, 27, label, micro, mint);
         }
         bool Chapter(string id, int index, float y, string name, string detail)
         {
@@ -506,7 +583,11 @@ namespace Homecoming
             Text(905, 649, 624, 62, "SPACE  PAUSE     ← / →  SHOTS\nM  AUDIO        C  CAPTIONS     ESC  MENU", micro);
             Text(904, 722, 624, 24, "DISCOVERY CUTSCENES / PREVIEW", micro, orange);
             if (Link("cutscene-drought", new Rect(904, 750, 624, 35), "01  THE WELCOME BASKETS  (SOIL DROUGHT)  →")) Play("drought", true);
-            if (Link("reset", new Rect(62, 755, 580, 35), "START A NEW OPERATION", orange)) Show(Page.Reset);
+            if (Link("reset", new Rect(62, 755, 580, 35), "START A NEW OPERATION", orange))
+            {
+                operationResetError = null;
+                Show(Page.Reset);
+            }
         }
         void CreditsGUI()
         {
@@ -526,9 +607,24 @@ namespace Homecoming
             Header("PERSONNEL / NEW OPERATION");
             Insignia(800, 226, 44, orange);
             Text(260, 323, 1080, 115, "START A NEW OPERATION?", Style(displayFont, 83, paper, TextAnchor.MiddleCenter));
-            Text(380, 470, 840, 90, "This clears the recruit designation and story progress saved on this device.", Style(bodyFont, 26, paper, TextAnchor.MiddleCenter, true));
-            if (Action("reset-confirm", new Rect(365, 633, 410, 68), "START OVER", true)) { StorySession.Reset(); designation = ""; Play("prologue"); }
+            Text(300, 461, 1000, 138,
+                "This clears your designation, story and broadcast progress, saved experiments, and in-game casebook on this device. Your exported report files and settings stay available.",
+                Style(bodyFont, 26, paper, TextAnchor.MiddleCenter, true));
+            if (Action("reset-confirm", new Rect(365, 633, 410, 68), "START NEW OPERATION", true))
+            {
+                try { StorySession.StartNewOperation(); }
+                catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
+                {
+                    operationResetError = "The operation could not be reset. " + error.Message;
+                    return;
+                }
+                designation = "";
+                Play("prologue");
+                return;
+            }
             if (Action("reset-cancel", new Rect(825, 633, 410, 68), "Keep this operation")) Show(Page.Home);
+            if (operationResetError != null)
+                Text(300, 711, 1000, 85, operationResetError, Style(bodyFont, 22, orange, TextAnchor.MiddleCenter, true));
         }
     }
 }

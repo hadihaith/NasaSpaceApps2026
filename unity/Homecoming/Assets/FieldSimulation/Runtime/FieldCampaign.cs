@@ -123,6 +123,15 @@ namespace Homecoming.Field
     public sealed class FieldCampaign
     {
         const int SchemaVersion = 2;
+        internal static string SavePath
+        {
+            get
+            {
+                string operation = StorySession.OperationId;
+                return Path.Combine(Application.persistentDataPath,
+                    string.IsNullOrEmpty(operation) ? "field-campaign-v2.json" : $"field-campaign-{operation}.json");
+            }
+        }
         readonly ClimateData climate;
         readonly string path, fingerprint;
         string savedText;
@@ -324,6 +333,25 @@ namespace Homecoming.Field
 
         public void StartNew(string selectedSiteId = null) => Write(Create(null, selectedSiteId ?? SelectedSiteId));
 
+        public void ResetEarth()
+        {
+            var next = Copy(campaign);
+            next.journal.sites.Clear();
+            int resetNumber = next.revisions.Count(revision => string.IsNullOrEmpty(revision.parentId));
+            AddBaseline(next, $"Earth reset {resetNumber}", next.selectedSiteId);
+            Write(next);
+        }
+
+        public static void ClearSavedCampaign(string path)
+        {
+            try
+            {
+                using var writeLock = LockFile(path);
+                File.Delete(path);
+            }
+            catch (DirectoryNotFoundException) { }
+        }
+
         FieldCampaignFile Create(FieldSave legacy, string selectedSiteId)
         {
             var journal = Copy(legacy) ?? new FieldSave();
@@ -334,26 +362,33 @@ namespace Homecoming.Field
                 !Array.Exists(climate.regions, r => r.id == site.id));
             // The migrated snapshot is retained even when a current catalog lacks these entries.
             journal.notes.RemoveAll(note => note == null);
-            var branch = new FieldBranch { id = NewId(), name = "Main", headRevisionId = NewId() };
+            var next = new FieldCampaignFile
+            {
+                version = SchemaVersion, id = NewId(), migratedFromV1 = legacy != null,
+                journal = journal, runs = new List<ScenarioRun>(),
+                revisions = new List<WorldRevision>(), branches = new List<FieldBranch>()
+            };
+            AddBaseline(next, "Main", selectedSiteId, journal.sites);
+            return next;
+        }
+
+        void AddBaseline(FieldCampaignFile next, string name, string selectedSiteId, List<SavedLand> legacySites = null)
+        {
+            var branch = new FieldBranch { id = NewId(), name = name, headRevisionId = NewId() };
             var root = new WorldRevision
             {
                 id = branch.headRevisionId, branchId = branch.id, nextMonth = FieldCalendar.StartMonth,
                 modelVersion = ClimateModel.Version, dataFingerprint = fingerprint,
-                sites = climate.regions.Select(region => InitializeSite(region, journal)).ToArray()
+                sites = climate.regions.Select(region => InitializeSite(region, legacySites?.Find(site => site.id == region.id))).ToArray()
             };
-            return new FieldCampaignFile
-            {
-                version = SchemaVersion, id = NewId(), migratedFromV1 = legacy != null,
-                activeBranchId = branch.id,
-                selectedSiteId = root.Site(selectedSiteId)?.id ?? root.sites[0].id,
-                journal = journal, runs = new List<ScenarioRun>(),
-                revisions = new List<WorldRevision> { root }, branches = new List<FieldBranch> { branch }
-            };
+            next.branches.Add(branch);
+            next.revisions.Add(root);
+            next.activeBranchId = branch.id;
+            next.selectedSiteId = root.Site(selectedSiteId)?.id ?? root.sites[0].id;
         }
 
-        static FieldSiteState InitializeSite(RegionClimate region, FieldSave journal)
+        static FieldSiteState InitializeSite(RegionClimate region, SavedLand legacy)
         {
-            var legacy = journal.sites.Find(site => site.id == region.id);
             var state = legacy?.land ?? ClimateModel.Initialize(region, FieldCalendar.StartMonth);
             // V1 wetness was illustrative, with no supported conversion to a storage depth.
             // Retain the index trajectory for sites that already have one.
@@ -409,13 +444,15 @@ namespace Homecoming.Field
         internal static T Copy<T>(T value) where T : class =>
             value == null ? null : JsonUtility.FromJson<T>(JsonUtility.ToJson(value));
 
+        static FileStream LockFile(string path) => new(path + ".lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+
         void Write(FieldCampaignFile next)
         {
             if (path != null)
             {
                 string serialized = JsonUtility.ToJson(next);
                 Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
-                using var writeLock = new FileStream(path + ".lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                using var writeLock = LockFile(path);
                 string current = File.Exists(path) ? File.ReadAllText(path) : null;
                 if (savedText != current) throw new IOException("The campaign was updated by another session. Reopen it before saving.");
                 string temp = path + "." + NewId() + ".tmp";

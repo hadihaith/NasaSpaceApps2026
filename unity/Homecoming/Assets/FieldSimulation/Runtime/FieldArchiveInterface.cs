@@ -6,6 +6,104 @@ namespace Homecoming.Field
 {
     public sealed partial class FieldSimulation
     {
+        enum ArchiveFilter { None, Place, Measurement }
+        ArchiveFilter archiveFilter;
+        Texture2D siteMap;
+        static readonly string[] MeasurementIcons = { "Archive", "Rain", "Soil", "Temperature", "Droplet", "Wind" };
+
+        bool DrawArchiveFilters()
+        {
+            Tag(56,216,"PLACE",Dim);
+            Tag(428,216,"MEASUREMENT",Dim);
+            int keyIndex = Array.IndexOf(EvidenceKeys,evidenceKey);
+            string measurement = keyIndex < 0 ? "All measurements" : EvidenceNames[keyIndex];
+            if (Button(Box(56,245,350,52),Region.name,active:archiveFilter == ArchiveFilter.Place,icon:"Choose"))
+                archiveFilter = archiveFilter == ArchiveFilter.Place ? ArchiveFilter.None : ArchiveFilter.Place;
+            if (Button(Box(428,245,350,52),measurement,active:archiveFilter == ArchiveFilter.Measurement,icon:"Choose"))
+                archiveFilter = archiveFilter == ArchiveFilter.Measurement ? ArchiveFilter.None : ArchiveFilter.Measurement;
+            if (investigation != null && Button(Box(1301,245,243,52),"Back to case",icon:"Back")) OpenCase();
+            if (archiveFilter == ArchiveFilter.Place)
+            {
+                DrawSitePicker(333,false);
+                return true;
+            }
+            if (archiveFilter != ArchiveFilter.Measurement) return false;
+            for (int i = 0; i < MeasurementIcons.Length; i++)
+            {
+                if (ControlTile(Box(56+i*187,333,171,126),MeasurementIcons[i],
+                    i == 0 ? "All measurements" : EvidenceNames[i-1],keyIndex+1 == i))
+                {
+                    evidenceKey = i == 0 ? null : EvidenceKeys[i-1];
+                    evidenceIndex = 0;
+                    archiveFilter = ArchiveFilter.None;
+                }
+            }
+            return true;
+        }
+
+        void DrawSitePicker(float top, bool fly)
+        {
+            if (LegacyCapture)
+            {
+                Card(Box(54,top-7,290,248),Ink);
+                for (int i = 0; i < data.regions.Length; i++)
+                    if (Button(Box(60,top+i*39,278,35),data.regions[i].name,active:siteIndex == i,size:17))
+                    {
+                        Select(i);
+                        showSites = false;
+                    }
+                return;
+            }
+
+            const float pinSize = 33;
+            Card(Box(54,top,1017,365),Ink);
+            var map = Box(70,top+16,666,333);
+            siteMap ??= Resources.Load<Texture2D>("Film/earth");
+            if (siteMap != null)
+            {
+                GUI.DrawTexture(map,siteMap,ScaleMode.StretchToFill);
+                Fill(map,Alpha(Ink,.55f));
+            }
+            else Fill(map,Panel);
+            for (int i = 1; i < 6; i++) Fill(Box(map.x+i*map.width/6,map.y,1,map.height),Alpha(Mint,.23f));
+            for (int i = 1; i < 4; i++) Fill(Box(map.x,map.y+i*map.height/4,map.width,1),Alpha(Mint,.23f));
+            DrawButtonEdge(map,Line);
+
+            DrawIcon("Location",new Vector2(798,top+71),Mint,3);
+            Text(Box(766,top+106,275,51),"Choose a place",32,White,headingFont);
+            Text(Box(766,top+162,269,64),fly ? "Select a pin to fly there." : "Select a pin to see its records.",
+                23,Dim,bodyFont,TextAnchor.UpperLeft,true);
+            Tag(766,top+248,"CURRENT SITE",Dim);
+            Text(Box(766,top+277,282,41),Region.name,23,Mint,strongFont);
+
+            for (int i = 0; i < data.regions.Length; i++)
+            {
+                var region = data.regions[i];
+                var position = new Vector2(map.x+((region.longitude+180)/360)*map.width,
+                    map.y+((90-region.latitude)/180)*map.height);
+                var marker = Box(position.x-pinSize/2,position.y-pinSize/2,pinSize,pinSize);
+                bool selected = siteIndex == i;
+                Color face = ButtonBackground(marker,selected,false,true);
+                var state = ButtonInput(marker,region.name);
+                Fill(marker,face);
+                DrawButtonEdge(marker,state.focused ? Yellow : Mint);
+                DrawIcon("Location",position,selected ? Ink : Mint);
+                float labelWidth = region.name.Length > 19 ? 174 : 155;
+                float labelX = region.id != GuidedRainOrigin && marker.xMax+3+labelWidth < map.xMax
+                    ? marker.xMax+3 : marker.x-labelWidth-3;
+                var label = Box(labelX,position.y-12,labelWidth,24);
+                Fill(label,Ink);
+                Text(Box(label.x+5,label.y,label.width-10,label.height),region.name,16,selected ? Mint : White,strongFont);
+                if (!state.pressed) continue;
+                if (fly && !selected) BeginSiteTransfer(i);
+                else Select(i);
+                showSites = false;
+                archiveFilter = ArchiveFilter.None;
+                evidenceIndex = 0;
+                return;
+            }
+        }
+
         void DrawArchiveRecord(EvidenceSeries[] records)
         {
             if (records.Length == 0)
@@ -67,7 +165,7 @@ namespace Homecoming.Field
             }
             else Text(Box(85,698,1410,41),"The archive has too few usable values for a trend in this view.",21,Dim);
             if (Button(Box(56,828,192,38),"Open data source",false,false,!string.IsNullOrEmpty(record.url),17)) Application.OpenURL(record.url);
-            if (Button(Box(264,828,232,38),"Investigation desk",true,false,true,17)) OpenCase();
+            if (investigation == null && Button(Box(264,828,232,38),"Browse cases",icon:"Search")) OpenCasePicker();
             if (!string.IsNullOrEmpty(finding?.reviewer))
                 Text(Box(522,829,1018,38),$"Reviewed by {finding.reviewer} · {finding.test}",18,Dim);
         }

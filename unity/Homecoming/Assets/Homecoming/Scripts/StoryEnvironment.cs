@@ -25,10 +25,33 @@ namespace Homecoming
         bool ready;
         int lastProbeFrame = -1000;
         string lastShot;
-        const int DustCount = 54, PuffCount = 10;
+        const int DustCount = 54, PuffCount = 10, VictoryScatter = 34, VictoryTail = 9;
+        static readonly Vector3 VictoryCenter = new Vector3(-.14f, 2.46f, .76f);
+        static readonly Vector3[] VictoryWord = BuildVictoryWord();
+        static int AirParticleCount => DustCount + PuffCount + VictoryWord.Length + VictoryScatter + VictoryTail;
         static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
         static float Hash(int index, int channel) => Mathf.Repeat(Mathf.Sin((index + 17) * 12.9898f + channel * 78.233f) * 43758.5453f, 1);
         static float Smooth(float a, float b, float t) => Mathf.SmoothStep(0, 1, Mathf.InverseLerp(a, b, t));
+
+        static Vector3[] BuildVictoryWord()
+        {
+            // The rows read V I C T O R Y. Empty cells preserve the individual letter shapes.
+            string[] rows =
+            {
+                "10001 11111 01111 11111 01110 11110 10001",
+                "10001 00100 10000 00100 10001 10001 10001",
+                "10001 00100 10000 00100 10001 10001 01010",
+                "10001 00100 10000 00100 10001 11110 00100",
+                "01010 00100 10000 00100 10001 10100 00100",
+                "01010 00100 10000 00100 10001 10010 00100",
+                "00100 11111 01111 00100 01110 10001 00100"
+            };
+            var dots = new List<Vector3>();
+            for (int y = 0; y < rows.Length; y++)
+                for (int x = 0; x < rows[y].Length; x++)
+                    if (rows[y][x] == '1') dots.Add(VictoryCenter + V((20 - x) * .087f, (3 - y) * .069f, 0));
+            return dots.ToArray();
+        }
 
         public void Initialize(StoryStage owner)
         {
@@ -267,9 +290,9 @@ namespace Homecoming
         }
         void BuildParticles()
         {
-            vertices = new Vector3[(DustCount + PuffCount) * 4]; colors = new Color[vertices.Length];
-            var uv = new Vector2[vertices.Length]; var indices = new int[(DustCount + PuffCount) * 6];
-            for (int i = 0; i < DustCount + PuffCount; i++)
+            vertices = new Vector3[AirParticleCount * 4]; colors = new Color[vertices.Length];
+            var uv = new Vector2[vertices.Length]; var indices = new int[AirParticleCount * 6];
+            for (int i = 0; i < AirParticleCount; i++)
             {
                 int n = i * 4, p = i * 6;
                 uv[n] = new Vector2(0, 0); uv[n + 1] = new Vector2(1, 0); uv[n + 2] = new Vector2(1, 1); uv[n + 3] = new Vector2(0, 1);
@@ -322,7 +345,7 @@ namespace Homecoming
         void UpdateAir(string id, float t, bool reduced, float power)
         {
             Vector3 right = stage.filmCamera.transform.right, up = stage.filmCamera.transform.up;
-            for (int i = 0; i < DustCount + PuffCount; i++)
+            for (int i = 0; i < AirParticleCount; i++)
             {
                 Vector3 center; float size, alpha; Color color;
                 if (i < DustCount)
@@ -334,17 +357,25 @@ namespace Homecoming
                     alpha = (.045f + Hash(i, 4) * .04f) * power;
                     color = new Color(.9f, .87f, .74f);
                 }
-                else
+                else if (i < DustCount + PuffCount)
                 {
                     int puff = i - DustCount;
-                    float at = id == "party" ? .74f : puff < 5 ? .58f : 1.08f;
+                    float at = id == "party" ? .74f : id == "hearing" ? StoryStage.VictoryLaunch : puff < 5 ? .58f : 1.08f;
                     float age = t - at - (puff % 5) * .017f;
-                    bool visible = (id == "party" || id == "jam") && age > 0 && age < 1.5f && !reduced;
+                    bool visible = (id == "party" || id == "jam" || id == "hearing") && age > 0 && age < 1.5f && !reduced;
                     float a = Mathf.Max(0, age);
                     center = stage.cannon.transform.TransformPoint(V(0, .26f, .44f)) + V((Hash(i, 0) - .5f) * a * .5f, a * .55f, a * .5f);
                     size = .04f + a * .13f;
                     alpha = visible ? .08f * (1 - a / 1.5f) : 0;
                     color = new Color(.58f, .65f, .7f);
+                }
+                else if (id == "hearing")
+                    VictoryParticle(i - DustCount - PuffCount, t - StoryStage.VictoryLaunch, reduced, out center, out size, out alpha, out color);
+                else
+                {
+                    center = Vector3.zero;
+                    size = alpha = 0;
+                    color = Color.clear;
                 }
                 int n = i * 4;
                 vertices[n] = center - right * size - up * size; vertices[n + 1] = center + right * size - up * size;
@@ -353,6 +384,52 @@ namespace Homecoming
                 colors[n] = colors[n + 1] = colors[n + 2] = colors[n + 3] = color;
             }
             dustMesh.vertices = vertices; dustMesh.colors = colors; dustMesh.RecalculateBounds();
+        }
+
+        void VictoryParticle(int index, float age, bool reduced, out Vector3 center, out float size, out float alpha, out Color color)
+        {
+            const float burst = .40f;
+            float light = Hash(index, 7);
+            color = Color.Lerp(new Color(1.16f, .49f, .065f), new Color(1.38f, .91f, .25f), light);
+            size = .049f + .022f * light;
+            alpha = 0;
+            center = VictoryCenter;
+            if (age < 0) return;
+
+            if (index >= VictoryWord.Length + VictoryScatter)
+            {
+                if (reduced) return;
+                float time = age - .024f * (index - VictoryWord.Length - VictoryScatter);
+                float rise = Mathf.Clamp01(time / burst);
+                var muzzle = stage.cannon.transform.TransformPoint(V(0, .26f, .44f));
+                center = Vector3.Lerp(muzzle, VictoryCenter, rise) + V(0, .17f * Mathf.Sin(Mathf.PI * rise), 0);
+                alpha = time > 0 ? 1 - Smooth(burst, burst + .18f, age) : 0;
+                size *= 1.3f;
+                return;
+            }
+
+            float after = age - burst;
+            if (after < 0) return;
+            if (index < VictoryWord.Length)
+            {
+                var dot = VictoryWord[index] + V((Hash(index, 12) - .5f) * .018f,
+                    (Hash(index, 13) - .5f) * .025f, (Hash(index, 14) - .5f) * .06f);
+                float delay = Mathf.Abs(dot.x - VictoryCenter.x) * .11f;
+                float grow = reduced ? 1 : Smooth(delay, delay + .63f, after);
+                center = Vector3.Lerp(VictoryCenter, dot, grow);
+                size = .046f + light * .009f;
+                float shimmer = reduced ? 1 : .88f + .12f * Mathf.Sin(after * 14 + index * .8f);
+                alpha = .97f * shimmer * (reduced ? 1 : Smooth(0, .10f, after) * (1 - .38f * Smooth(2.35f, 3.20f, after)));
+                return;
+            }
+
+            if (reduced) return;
+            float angle = Hash(index, 8) * Mathf.PI * 2;
+            float speed = .35f + Hash(index, 9) * 1.12f;
+            center += V(Mathf.Cos(angle) * speed * after, Mathf.Sin(angle) * speed * after - .24f * after * after,
+                (Hash(index, 10) - .5f) * after * .56f);
+            size *= .45f + light * .22f;
+            alpha = .76f * Smooth(0, .14f, after) * (1 - Smooth(.65f, 2.22f, after));
         }
         public void Teardown()
         {

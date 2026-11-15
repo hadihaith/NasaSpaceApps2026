@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -11,7 +12,9 @@ namespace Homecoming.Field
         const string HistoricalLink = "Historical comparison of matched records";
         const string NoComparison = "Comparable evidence unavailable";
         Investigation investigation;
+        readonly Dictionary<InvestigationKind, Investigation> savedCases = new();
         bool caseLoaded, hearingRequested;
+        bool openedFromFiledReport;
         string reportStatus, transientGap;
         bool reportDetails, temperatureOpen;
         EvidenceSeries pairedOrigin, pairedTarget;
@@ -27,6 +30,11 @@ namespace Homecoming.Field
             caseLoaded = true;
             if (!LegacyCapture)
             {
+                foreach (InvestigationKind kind in Enum.GetValues(typeof(InvestigationKind)))
+                {
+                    var saved = FieldCaseStore.Find(kind);
+                    if (saved != null) savedCases[kind] = saved;
+                }
                 investigation = FieldCaseStore.Load();
                 RestoreFiledTest();
                 RecoverScenarioCommit();
@@ -47,10 +55,10 @@ namespace Homecoming.Field
 
         string CaseQuestion => investigation?.kind switch
         {
-            InvestigationKind.Rainfall => "Did rainfall change at the same rate at the Sahel and central Chile points?",
-            InvestigationKind.Temperature => "How did 2 m air temperature change across Phoenix and central Arizona?",
-            InvestigationKind.Soil => "How does a year of changed rainfall affect root-zone water? What happens when you make one more weather edit?",
-            _ => "What changed in the Earth record, and where can you check it?"
+            InvestigationKind.Rainfall => "Did rainfall change the same way in the Sahel and central Chile?",
+            InvestigationKind.Temperature => "How has the air temperature around Phoenix changed over time?",
+            InvestigationKind.Soil => "How do rainfall and temperature change the water stored in Central Arizona's soil?",
+            _ => "Find something that changed over time and see where else it changed."
         };
 
         void NewInvestigation(InvestigationKind kind)
@@ -63,6 +71,8 @@ namespace Homecoming.Field
                 investigation.first = investigation.second = null;
                 investigation.scenarioCall = Direction.Unset;
                 investigation.committingRunId = null;
+                investigation.soilInterpretation = investigation.soilInterpretationRevisionId = null;
+                investigation.conclusion = investigation.submittedUtc = null;
                 investigation.campaignId = Campaign?.Id;
             }
             reportDetails = temperatureOpen = false;
@@ -92,8 +102,21 @@ namespace Homecoming.Field
 #if HOMECOMING_FIELD_PREVIEW || UNITY_EDITOR
             if (capture) return;
 #endif
-            if (investigation != null && !demoActive && !investigationTest) FieldCaseStore.Save(investigation);
+            if (investigation != null && !demoActive && !investigationTest)
+            {
+                FieldCaseStore.Save(investigation);
+                savedCases[investigation.kind] = investigation;
+            }
         }
+
+        bool IsCompletedCase(Investigation entry) => entry?.IsReady == true &&
+            (entry.kind != InvestigationKind.Soil || entry.campaignId == Campaign?.Id);
+
+        Investigation FinaleCase => IsCompletedCase(investigation)
+            ? investigation : savedCases.Values.FirstOrDefault(IsCompletedCase);
+
+        int DiscoveryCount => save.notes.Select(note => note.id).Distinct().Count();
+        bool ReadyForFinale => !demoActive && DiscoveryCount >= data.requiredDiscoveries && FinaleCase != null;
 
         static bool Usable(EvidenceSeries record) => record != null && record.hasSlope && record.years is { Length: > 1 };
         static string Period(EvidenceSeries record) => $"{record.years[0].year}–{record.years[^1].year}";
@@ -217,7 +240,7 @@ namespace Homecoming.Field
             Go(View.Report);
             temperatureOpen = investigation.callsRevealed = true;
             archiveValuePage = 0;
-            showArchiveValues = false;
+            showArchiveValues = showPredictionEdits = false;
             SaveInvestigation();
             return true;
         }
@@ -236,7 +259,8 @@ namespace Homecoming.Field
         {
             LoadInvestigation();
             Go(View.Report);
-            orbitOpen = reportDetails = temperatureOpen = false;
+            orbitOpen = reportDetails = temperatureOpen = casePickerOpen = false;
+            soilInterpretationCorrection = false;
         }
 
         bool StartComparison()
@@ -290,12 +314,129 @@ namespace Homecoming.Field
                 hearingRequested = true;
                 var evidence = investigation.first != null || investigation.second != null
                     ? StoryEvidence.Mixed : StoryEvidence.Historical;
-                StorySession.ReturnFromSimulation(evidence);
+                if (save.runs > 0) evidence = StoryEvidence.Mixed;
+                var report = BuildHomecomingReport();
+                StorySession.ReturnFromSimulation(evidence, report);
             }
             catch (Exception error) when (error is System.IO.IOException || error is UnauthorizedAccessException || error is InvalidOperationException)
             {
                 hearingRequested = false;
                 reportStatus = "The report could not be submitted. " + error.Message;
+            }
+        }
+
+        HomecomingReport BuildHomecomingReport()
+        {
+            var completed = savedCases.Values.Where(entry => entry.kind != investigation.kind && IsCompletedCase(entry))
+                .Prepend(investigation).ToArray();
+            var report = new HomecomingReport
+            {
+                recruit = StorySession.RecruitName, discoveries = DiscoveryCount, totalDiscoveries = data.discoveries.Length,
+                experiments = save.runs, investigations = completed.Length
+            };
+            var findings = completed.SelectMany(entry => new[] { entry.origin, entry.other }).Where(finding => finding != null).ToArray();
+            if (Campaign == null) return report;
+            var recentIds = Campaign.RunIds.Reverse().ToArray();
+            report.recentRuns = recentIds.Take(4).Select(id => BriefOf(Campaign.GetRun(id))).ToArray();
+            foreach (var id in recentIds)
+            {
+                var run = Campaign.GetRun(id);
+                if (run == null) continue;
+                foreach (var edit in run.edits)
+                {
+                    var key = edit.control == ForcingControl.Heat ? "temperature" : edit.control.ToString().ToLowerInvariant();
+                    var record = data.evidence.FirstOrDefault(item => item.region == run.editedSiteId && item.key == key &&
+                        findings.Any(finding => finding.datasetId == item.id || finding.id == item.id));
+                    if (record == null) continue;
+                    var historical = findings.First(finding => finding.datasetId == record.id || finding.id == record.id);
+                    var projection = run.Site(record.region);
+                    var final = projection.scenario.months[run.committedMonths - 1];
+                    var exported = Exported(record);
+                    var trend = new[] { exported?.finding, exported?.anomalyFinding }
+                        .Concat(exported?.monthFindings ?? Array.Empty<ArchiveTrend>())
+                        .FirstOrDefault(item => item?.id == historical.id);
+                    var archive = trend?.points;
+                    var result = final.water.available
+                        ? $"Final modeled root-zone storage {final.water.storageMm:0.#} mm"
+                        : $"Final modeled root-zone wetness index {Rate(final.land.soil)}";
+                    report.link = new HomecomingReportLink
+                    {
+                        runId = id, siteId = record.region, recordId = record.id, findingId = historical.id, variable = record.variable,
+                        site = data.regions.First(region => region.id == record.region).name,
+                        scenario = $"{FieldCalendar.Date(run.startMonth):MMM yyyy} · {record.variable} edit {Signed(edit.value)} {edit.Unit}\n{result}",
+                        historical = $"{historical.window} · {FindingRate(historical)}",
+                        simulationPeriod = $"{FieldCalendar.Date(run.startMonth):MMM yyyy} – {final.Date:MMM yyyy}",
+                        simulationUnit = key == "rain" ? "mm/month" : key == "temperature" ? "°C" : key == "humidity" ? "%" : "m/s",
+                        archivePeriod = historical.window, archiveUnit = historical.unit,
+                        editedWeather = projection.scenario.months.Take(run.committedMonths).Select(month => WeatherValue(month.weather, key)).ToArray(),
+                        inheritedWeather = projection.reference.months.Take(run.committedMonths).Select(month => WeatherValue(month.weather, key)).ToArray(),
+                        archiveValues = archive?.Select(point => point.value).ToArray() ??
+                            (historical.id == record.id ? record.years.Select(point => point.value).ToArray() : null),
+                        archiveTimes = archive?.Select(point => point.t).ToArray() ??
+                            (historical.id == record.id ? record.years.Select(point => (float)point.year).ToArray() : null)
+                    };
+                    return report;
+                }
+            }
+            return report;
+        }
+
+        HomecomingRunBrief BriefOf(ScenarioRun run)
+        {
+            var projection = run.Site(run.editedSiteId);
+            var last = projection.scenario.months[run.committedMonths - 1];
+            bool physical = last.water.available;
+            float Result(FieldMonth month) => physical ? (float)month.water.storageMm : month.land.soil * 100;
+            return new HomecomingRunBrief
+            {
+                site = data.regions.First(region => region.id == run.editedSiteId).name,
+                period = $"{FieldCalendar.Date(run.startMonth):MMM yyyy} – {last.Date:MMM yyyy}",
+                unit = physical ? "mm storage" : "% wetness index",
+                edited = projection.scenario.months.Take(run.committedMonths).Select(Result).ToArray(),
+                inherited = projection.reference.months.Take(run.committedMonths).Select(Result).ToArray()
+            };
+        }
+
+        static float WeatherValue(Weather weather, string variable) => variable switch
+        {
+            "rain" => weather.rain,
+            "temperature" => weather.temperature,
+            "humidity" => weather.humidity,
+            _ => weather.wind
+        };
+
+        void OpenHistory(SimulationHistory destination)
+        {
+            openedFromFiledReport = true;
+            var link = StorySession.FiledReport?.link;
+            if (link != null && destination == SimulationHistory.LinkedRun && ReplayRun(link.runId, link.siteId)) return;
+            if (link != null && destination == SimulationHistory.EarthRecord)
+            {
+                var record = Array.Find(data.evidence, item => item.id == link.recordId && item.region == link.siteId);
+                int index = Array.FindIndex(data.regions, region => region.id == link.siteId);
+                if (record != null && index >= 0)
+                {
+                    Select(index);
+                    OpenArchive(record.key);
+                    var records = data.evidence.Where(item => item.region == record.region && item.key == record.key).ToArray();
+                    evidenceIndex = Array.IndexOf(records, record);
+                    archiveRecordId = record.id;
+                    archiveMode = archiveMonth = archiveValuePage = 0;
+                    var trends = Exported(record);
+                    if (trends?.anomalyFinding?.id == link.findingId) archiveMode = 2;
+                    else if (trends?.monthFindings != null)
+                    {
+                        int month = Array.FindIndex(trends.monthFindings, trend => trend?.id == link.findingId);
+                        if (month >= 0) { archiveMode = 1; archiveMonth = month; }
+                    }
+                    return;
+                }
+            }
+            if (Campaign == null) Go(View.Journal);
+            else
+            {
+                OpenWeatherLab();
+                branchesOpen = true;
             }
         }
     }

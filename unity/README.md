@@ -23,15 +23,17 @@ the repository root to rebuild the bundled Apple Silicon and Intel plug-in.
 
 ## Play
 
-- **Play transmission** begins the prologue, recruitment and lab introduction.
-  **Enter laboratory** opens the field simulation.
-- **Chapters / options** lets you replay sections and preview the ending now.
+- **Start story** begins the prologue, recruitment and lab introduction.
+  **Take over the broadcast** starts *Return to Sender*. Cut Zorvax's feed, tune both rainfall
+  receivers, read the shared timeline, and send an evidence-backed broadcast to Earth.
+  The first-contact receipt completes the broadcast and offers **Take the Weather and soil case**.
+  The field station lets you resume the broadcast or open the weather lab and other investigations.
+- **Story & settings** lets you replay sections and preview the ending now.
   Previewing a chapter does not mark it complete.
 - **Space** pauses, **left/right arrows** change shots, **M** toggles sound,
   **C** toggles dialogue captions, and **Esc** pauses, then returns to the menu.
 - Scene descriptions and reduced camera motion are available in playback options.
-- Designation, story progress and options are saved locally using `PlayerPrefs`.
-  **Start a new operation** clears only this story's designation and progress.
+- **Start a new operation** in **Story & settings** asks for confirmation before it clears your local designation, story and broadcast progress, saved experiments, and in-game casebook. Your exported report files and settings stay available.
 - During the AUK intro, **Space** pauses, **Right Arrow** or **Esc** skips, and **M** toggles sound.
 - The AUK and Apollo clips are bundled. The title card and archival still are available
   when their videos cannot play. Dialogue has captions and uses the packaged voice takes.
@@ -40,31 +42,37 @@ the repository root to rebuild the bundled Apple Silicon and Intel plug-in.
 
 ## Field simulation
 
-Open **`Assets/Scenes/Intro.unity`** for the full opening and choose **Enter laboratory** after the briefing. Open **`Assets/Scenes/Story.unity`** to preview the story directly or **`Assets/Scenes/Simulation.unity`** to start in the lab. The curated records and scenarios work offline.
+Open **`Assets/Scenes/Intro.unity`** for the full opening and choose **Open field station** after the briefing. Open **`Assets/Scenes/Story.unity`** to preview the story directly or **`Assets/Scenes/Simulation.unity`** to start at the field station. The curated records and scenarios work offline.
+
+The field station opens on a suggested first case or resumes your current one. The case path highlights the current step and checks off completed steps as you play.
 
 ### Play the cases
 
-- **Two places, one measurement** · Open **Investigation**, select the rainfall case and call the direction at both sites. Fly to the comparison, inspect the matched years and the paired difference, revise your calls if you wish, then file the findings. For 1991–2025, the descriptive Theil–Sen slopes are +2.133 for the Central Sahel grid point and −18.840 for Central Chile, in mm/month per decade. The paired series has a descriptive slope of +24.645 and a reviewed OLS slope of +22.844 in the same units. Only the paired OLS result carries a significance test. Read the mission report and submit it to the hearing.
-- **Phoenix temperature** · Make a call, open the 1981–2025 record, and examine the fit and its uncertainty before filing. The descriptive slope is +0.509 °C per decade across 45 complete years. The reviewed OLS estimate is +0.468 °C per decade.
-- **Same weather, different ground** · File the Central Arizona rainfall record and predict which way root-zone water will move under changed precipitation. Set precipitation to +100%, leave the other controls at their inherited values, and preview twelve months. **Advance 12 months** saves the run and turns its ending state into the start of the next run. Return to the lab, change only temperature to +4 °C, then preview and advance again. Check the comparison or file the coverage gap. A wrong prediction can complete the case with an explanation.
-- **Free investigation** · Choose a preset site, variable, product and available time view in the Earth archive. File a comparable record or document the gap. Climate projections support the six terrain presets. Central Chile is a historical grid point.
+- **Rainfall in two places** · Select **Start the rainfall case** and predict how rainfall changed at both sites. Fly to the comparison, inspect the matched years and the paired difference, revise your calls if you wish, then file the findings. For 1991–2025, the descriptive Theil–Sen slopes are +2.133 for the Central Sahel grid point and −18.840 for Central Chile, in mm/month per decade. The paired series has a descriptive slope of +24.645 and a reviewed OLS slope of +22.844 in the same units. Only the paired OLS result carries a significance test.
+- **Is Phoenix warming?** · Make a call, open the 1981–2025 record, and examine the fit and its uncertainty before filing. The descriptive slope is +0.509 °C per decade across 45 complete years. The reviewed OLS estimate is +0.468 °C per decade.
+- **Weather and soil** · File the Central Arizona rainfall record and predict how root-zone water will respond. Change only precipitation and preview twelve months. **Save and advance one year** makes the ending ground and weather the start of the next test. Keep that rain setting and change only temperature for the follow-up. Try +100% precipitation and +4 °C from a fresh setup. Check the historical comparison or file the coverage gap, then use the Earth Intelligence Report's monthly log to interpret the follow-up and file the case. A wrong prediction or readings that stay within tolerance can complete the case with an explanation.
+- **Your own investigation** · Choose a place, measurement, product and available time view in the Earth archive. File a comparable record or document the gap. Climate projections support the six terrain presets. Central Chile is a historical grid point.
+After three discoveries and one completed Earth-data investigation, select **Incoming · Commander Zorvax** on the field station. **Submit findings** plays the final hearing. Nyxen cues the monitor to show the linked simulation and Earth record, followed by up to four recent saved runs. **Read my report** on the final status screen opens the campaign summary and its evidence links.
 
-Use **Tab** and **Shift+Tab** to focus actions, **Enter** to activate, and the arrow keys to adjust a focused weather control. **Space** skips the descent or pauses playback. **M** toggles sound. On the ground use **WASD** to move and hold the **right mouse button** to look. The playback controls let you select a month, compare inherited weather, inspect tabular values, or discard a preview. The branch controls fork and replay saved revisions. The Investigation desk includes guided demos.
+Use **Tab** and **Shift+Tab** to focus actions, **Enter** to activate, and the arrow keys to adjust a focused weather control or move along the playback timeline. **Space** skips the descent or pauses playback. **M** toggles sound. On the ground use **WASD** to move and hold the **right mouse button** to look. The playback controls let you select a month, compare inherited weather, inspect tabular values, or discard a preview. **Saved experiments** in the weather lab lets you copy an experiment, replay its last run, or compare two runs. The rainfall and soil cases include guided demos.
 
 The weather console shows inherited readings and draft readings on the same
 monitor. Drag a dial or focus it and use the arrow keys. **Preview 12 months**
-opens the simulation playback. **Advance & save 12 months** commits the weather
-and end state to the active branch.
+opens the simulation playback. **Save and advance one year** saves the weather
+and resulting ground conditions to the active experiment.
 
-**Change site** pulls back from the terrain, crosses the KU Exchange Earth globe,
-and descends to the destination. **Space** skips the flight and **Esc** cancels it.
+**Change site** opens the Earth map. Select a pin to pull back from the terrain,
+cross the KU Exchange Earth globe, and descend to the destination. **Space**
+skips the flight and **Esc** cancels it.
 Reduced motion changes sites immediately.
 
 ### Read the numbers
 
 The Arizona scenario uses a 150 mm teaching bucket and FAO-56 reference evapotranspiration, driven by monthly NASA POWER climate normals with a documented estimate of temperature range. The 150 mm capacity is uncalibrated. The model starts from a normals-based spin-up, then carries local storage and weather forward. The other five sites and migrated v1 snapshots use illustrative indices. Ground visuals are illustrative throughout. The paired flight shows a historical comparison. The Potomac routing screen and Phoenix benchmark replay remain research checks. [Historical evidence and provenance](../docs/homecoming-evidence.md) · [Routing and forecast verification](../docs/homecoming-routing-forecast.md)
 
-Campaign data and exported JSON reports use Unity's application data folder. On macOS the default is `~/Library/Application Support/NASA Space Apps Kuwait/The Great Homecoming/`. Use **Open saved reports** on the Investigation desk to locate the exported reports. The campaign keeps the active forcing and land history per branch. Previewing or playing a saved run leaves the branch revision at its last committed month.
+Campaign data and exported JSON reports use Unity's application data folder. On macOS the default is `~/Library/Application Support/NASA Space Apps Kuwait/The Great Homecoming/`. Use **Open saved reports** on the case picker to locate the exported reports. Each experiment keeps its own weather and land history. Previewing or replaying a run leaves the experiment at its last saved month.
+
+In **Weather lab → Saved experiments**, choose **Reset Earth** to start a fresh experiment at the January 2026 baseline. Your casebook, discoveries, and previous experiments stay available. Switch to an earlier experiment to replay its saved run or continue a case from its original conditions.
 
 ### Build and check
 
@@ -73,6 +81,7 @@ Run `node scripts/prepare-unity-simulation.mjs --check` from the repository root
 Run **Homecoming → Field simulation → Validate model and campaign** and
 **Homecoming → Run playback smoke check** before building the release. The latter
 enters Play Mode and can be run in batch mode without `-quit`.
+Use **Homecoming → Field simulation → Validate reset behavior** to check both campaign reset paths against temporary saves.
 
 For end-to-end QA, **Homecoming → Field simulation → Build story-first macOS QA player**
 places a separate app in `Builds/`. In an isolated project copy, use a different
@@ -156,7 +165,7 @@ Short comic scenes that can play after a discovery. Scripts are in
 `docs/cutscene-scripts.md`. The Unity shot data lives in
 `Homecoming/Assets/Homecoming/Resources/Cutscenes.json`.
 
-- **Preview:** Play → **Chapters / options** → *Discovery cutscenes / preview*.
+- **Preview:** Play → **Story & settings** → *Discovery cutscenes / preview*.
 - **From the simulation:** call `Homecoming.StorySession.PlayCutscene("drought");`. The story
   scene plays it, then loads `Simulation` again.
 - **Done:** 1, *The Welcome Baskets* (`drought`). Camera: `StoryStage.EvaluateCamera`;

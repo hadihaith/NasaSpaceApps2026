@@ -1,0 +1,353 @@
+/*
+ * Motion for the step-by-step walkthrough (/challenge). Every animation here
+ * is decorative: the global prefers-reduced-motion rule cuts them to an instant.
+ */
+
+/* ---------- Progress rail ---------- */
+.ch-rail {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.ch-rail-track,
+.ch-rail-fill {
+  position: absolute;
+  top: 22px;
+  left: 12.5%;
+  height: 4px;
+  border-radius: 999px;
+}
+.ch-rail-track {
+  right: 12.5%;
+  background: var(--line-strong);
+}
+.ch-rail-fill {
+  background: var(--gold);
+  box-shadow: 0 0 0 1.5px var(--edge);
+  transition: width 700ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+.ch-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  text-align: center;
+}
+.ch-node:disabled {
+  cursor: not-allowed;
+}
+.ch-node-dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 2.5px solid var(--edge);
+  border-radius: 50%;
+  background: var(--surface);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  transition: background-color 300ms, transform 300ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+.ch-node[data-state="current"] .ch-node-dot {
+  background: var(--gold);
+  color: #10242e;
+  transform: scale(1.12);
+  box-shadow: 3px 3px 0 var(--drop);
+}
+.ch-node[data-state="current"] .ch-node-dot::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border: 2.5px solid var(--gold);
+  border-radius: 50%;
+  animation: ch-ring 1.8s ease-out infinite;
+}
+.ch-node[data-state="done"] .ch-node-dot {
+  background: var(--good);
+  border-color: var(--edge);
+  color: #fff;
+}
+.ch-node[data-state="locked"] .ch-node-dot {
+  color: var(--muted);
+  border-style: dashed;
+}
+.ch-node-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink-2);
+}
+.ch-node[data-state="current"] .ch-node-label {
+  color: var(--ink);
+}
+@keyframes ch-ring {
+  from {
+    opacity: 0.9;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+/* ---------- Panels slide in from the side they come from ---------- */
+@keyframes ch-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+}
+@keyframes ch-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-48px);
+  }
+}
+.ch-panel[data-dir="forward"] {
+  animation: ch-in-right 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.ch-panel[data-dir="back"] {
+  animation: ch-in-left 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ---------- General entrances ---------- */
+@keyframes ch-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+.ch-rise {
+  animation: ch-rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes ch-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+.ch-pop {
+  animation: ch-pop 380ms ease-out both;
+}
+.ch-fade {
+  animation: fade 700ms ease-out both;
+}
+
+/* ---------- Chart pieces ---------- */
+.ch-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.2s ease-out both;
+}
+.ch-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ch-pop 320ms ease-out both;
+}
+.ch-grow-x {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ch-grow-x 800ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes ch-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+.ch-bar {
+  transform-origin: left center;
+  animation: ch-grow-x 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.ch-bar-right {
+  transform-origin: right center;
+  animation: ch-grow-x 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* The observed statistic slides out from zero to where it lands. */
+@keyframes ch-slide {
+  from {
+    transform: translateX(var(--from, 0px));
+  }
+}
+.ch-slide {
+  animation: ch-slide 1300ms cubic-bezier(0.3, 0.7, 0.2, 1) 300ms both;
+}
+
+/* ---------- Data acquisition pipeline ---------- */
+.ch-pipe {
+  display: grid;
+  gap: 0.65rem;
+}
+.ch-pipe-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.ch-pipe-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border: 2.5px solid var(--edge);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+.ch-pipe-step[data-state="active"] .ch-pipe-icon {
+  border-color: var(--series-a);
+  border-top-color: transparent;
+  animation: ch-spin 900ms linear infinite;
+}
+.ch-pipe-step[data-state="done"] .ch-pipe-icon {
+  background: var(--good);
+  color: #fff;
+  animation: ch-pop 380ms ease-out both;
+  animation-delay: inherit;
+}
+.ch-pipe-step[data-state="waiting"] {
+  opacity: 0.5;
+}
+@keyframes ch-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Analysis cards ---------- */
+.ch-test {
+  transition: box-shadow 300ms, border-color 300ms;
+}
+.ch-test[data-current="true"] {
+  box-shadow: 5px 5px 0 var(--gold), 0 0 0 2px var(--gold);
+}
+.ch-formula {
+  display: inline-block;
+  border: 2px dashed var(--line-strong);
+  border-radius: 10px;
+  padding: 0.3rem 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  background: var(--surface-2);
+}
+.ch-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+/* The objectives checklist ticks itself off */
+.ch-tick path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 420ms ease-out both;
+  animation-delay: inherit;
+}
+.ch-stamp {
+  animation: stamp-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.25s both;
+}
+
+@media (max-width: 640px) {
+  .ch-node-label {
+    font-size: 0.7rem;
+  }
+  .ch-node-dot {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
+  .ch-rail-track,
+  .ch-rail-fill {
+    top: 18px;
+  }
+}
+
+/* ---------- Plain-language reading ---------- */
+.ch-plain {
+  border: 2.5px solid var(--edge);
+  border-left-width: 8px;
+  border-left-color: var(--gold);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--gold) 12%, var(--surface));
+  padding: 0.9rem 1.1rem;
+}
+.ch-plain-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* Evidence meter: five segments light up in turn, then the pointer slides to the level. */
+.ch-meter {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  padding-top: 26px;
+}
+.ch-meter-seg {
+  height: 16px;
+  border: 2px solid var(--edge);
+  background: var(--surface);
+  animation: ch-pop 300ms ease-out both;
+}
+.ch-meter-seg:first-child {
+  border-radius: 999px 0 0 999px;
+}
+.ch-meter-seg:last-child {
+  border-radius: 0 999px 999px 0;
+}
+.ch-meter-seg[data-on="true"] {
+  background: var(--seg-color);
+}
+.ch-meter-pointer {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
+  line-height: 1;
+  animation: ch-meter-in 1400ms cubic-bezier(0.3, 0.7, 0.2, 1) 500ms both;
+}
+@keyframes ch-meter-in {
+  from {
+    left: 0%;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+}
+
+/* Comparison: the two places' arrows swing into their direction. */
+.ch-arrow {
+  display: inline-block;
+  animation: ch-swing 900ms cubic-bezier(0.2, 0.9, 0.3, 1.3) 400ms both;
+}
+@keyframes ch-swing {
+  from {
+    opacity: 0;
+    transform: rotate(0deg) scale(0.5);
+  }
+}

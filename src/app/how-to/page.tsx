@@ -17,6 +17,12 @@ const PATHS = [
     cta: "Play the story",
   },
   {
+    question: "I want to see the challenge solved",
+    answer: "Walk the four objectives in order, animated: variable, region, time series, then the trend tests.",
+    href: "/challenge",
+    cta: "Go step by step",
+  },
+  {
     question: "I want to test real data",
     answer: "Pick any variable and place, guess the trend, then check it on 40 years of NASA data.",
     href: "/detective",
@@ -76,7 +82,7 @@ export default function HowToPage() {
           <h2 id="paths-heading" className="display text-4xl">
             Where do you want to start?
           </h2>
-          <ul className="mt-6 grid gap-5 md:grid-cols-3" role="list">
+          <ul className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4" role="list">
             {PATHS.map((path) => (
               <li key={path.href} className="card flex flex-col p-5">
                 <h3 className="display text-2xl">{path.question}</h3>

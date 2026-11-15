@@ -28,9 +28,10 @@ The bar at the top numbers the sections in the order to visit them, and each sec
 | # | Page | What it does |
 | --- | --- | --- |
 | 1 | **Play** (`/`) | Operation: The Great Homecoming, the story game: climate experiments with an alien crew, and an Earth Archive of real NASA records |
-| 2 | **Investigate** (`/detective`) | Test any variable, anywhere, with live NASA POWER data |
-| 3 | **Inferences** (`/inferences`) | What 45 years of real Phoenix records show: every record tested for a trend, plus city-vs-region warming, agreement between three rain records, and which variables move together |
-| 4 | **What if** (`/what-if`) | Turn dials for temperature, rain, humidity and wind on Phoenix's real climate. A small physics model (FAO-56 evaporation and a soil-water bucket) reports what follows, with graphs. Hypothetical, not a forecast. An optional AI briefing (Google Gemini) needs `GEMINI_API_KEY` (see [docs/deployment.md](docs/deployment.md)) |
+| 2 | **Step by step** (`/challenge`) | The four challenge objectives in order, animated: pick a variable, acquire a region's NASA POWER record (Kuwait included), build the time series, then rate of change, t-test, Mann-Kendall and 95% confidence intervals. Every result has an "In plain words" reading and an evidence meter, and the same analysis can be run on a second region, with one-click opposite-trend examples (Sahel vs Chile rain, Kuwait vs Sahel humidity) |
+| 3 | **Investigate** (`/detective`) | Test any variable, anywhere, with live NASA POWER data |
+| 4 | **Inferences** (`/inferences`) | What 45 years of real Phoenix records show: every record tested for a trend, plus city-vs-region warming, agreement between three rain records, and which variables move together |
+| 5 | **What if** (`/what-if`) | Turn dials for temperature, rain, humidity and wind on Phoenix's real climate. A small physics model (FAO-56 evaporation and a soil-water bucket) reports what follows, with graphs. Hypothetical, not a forecast. An optional AI briefing (Google Gemini) needs `GEMINI_API_KEY` (see [docs/deployment.md](docs/deployment.md)) |
 |   | **How to** (`/how-to`) | Where to start, what to do in each section, real data versus simulation, and how to read the results |
 
 The order, labels and step-by-step instructions live in one place, `src/lib/site.ts`. The navbar, the How-to page and the "Next step" cards all read it.
@@ -69,6 +70,7 @@ browser's local storage. The rules are pure functions in `src/lib/game.ts`, with
 
 | Challenge objective | Where it lives |
 | --- | --- |
+| All four, shown in order | `/challenge` (`src/components/challenge/`, statistics in `src/lib/challenge.ts`): each step is labelled with its objective and ticks off when met |
 | Identify variables of interest | `src/lib/catalog.ts`: 18 variables in four themes, each with a plain definition |
 | Acquire data for a region | `src/lib/power.ts` and `/api/timeseries`: a point or an area-weighted 2°, 5° or 10° box |
 | Generate and visualise a time series | `src/lib/series.ts` (yearly means, deseasonalised monthly anomalies, one month per year) and `src/components/TrendChart.tsx` |

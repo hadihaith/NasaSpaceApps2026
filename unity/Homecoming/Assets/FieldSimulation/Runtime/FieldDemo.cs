@@ -52,7 +52,7 @@ namespace Homecoming.Field
             investigation.scenarioCall = Direction.Rise;
             int index = Array.FindIndex(data.regions, region => region.id == GuidedSoilOrigin);
             Select(index);
-            Go(View.Lab);
+            OpenWeatherLab();
             for (demoStage = 0; demoStage < 2; demoStage++)
             {
                 if (demoStage == 0) settings.rain = 100;
@@ -222,7 +222,7 @@ namespace Homecoming.Field
             CheckInvestigation(investigation.origin?.hasRate == true && investigation.origin.footprint.Contains("32.5°N") &&
                 investigation.origin.footprint.Contains("111°W") && !investigation.IsReady,"Missing historical record, area footprint or initial report gate");
             investigation.scenarioCall = Direction.Fall;
-            Go(View.Lab);
+            OpenWeatherLab();
             var beforeId = Campaign.Current.id;
             settings.rain = 100;
             yield return CaptureInvestigation(output,"00-weather-console-draft");
@@ -260,7 +260,10 @@ namespace Homecoming.Field
             CheckInvestigation(!FindPair(),"The Arizona area unexpectedly matched a point");
             FileGap("The archive has only one MERRA-2 area averaging this variable.");
             CheckInvestigation(!investigation.IsReady,"A wrong prediction had no explanation");
-            investigation.conclusion = "Additional precipitation left more water in the model bucket at the end of year one.";
+            CheckInvestigation(!TryFileSoilInterpretation(SoilInterpretation.WithinTolerance) && !investigation.IsReady,
+                "An interpretation contradicted by the monthly comparison could file the case");
+            CheckInvestigation(TryFileSoilInterpretation(SoilInterpretation.LessAtEnd),
+                "The saved temperature test did not support the expected year-end result");
             CheckInvestigation(investigation.IsReady,"An explained wrong prediction could not complete the scenario case");
             var linked = BuildHomecomingReport().link;
             CheckInvestigation(linked?.runId == investigation.first.runId && linked.recordId == investigation.origin.datasetId &&
@@ -388,12 +391,13 @@ namespace Homecoming.Field
 
         static IEnumerator CaptureValidatedHearing(StoryDirector director, string output)
         {
-            float deadline = Time.realtimeSinceStartup + 48;
+            float deadline = Time.realtimeSinceStartup + 75;
             yield return new WaitUntil(() => director.ShotTime >= StoryStage.VictoryLaunch + .25f || Time.realtimeSinceStartup >= deadline);
             CheckInvestigation(director.CurrentShot == "hearing", "The party cannon cue did not play in the hearing");
             yield return CaptureInvestigation(output, "08c-victory-launch");
-            yield return new WaitUntil(() => director.ShotTime >= 4.52f || Time.realtimeSinceStartup >= deadline);
-            CheckInvestigation(director.CurrentShot == "hearing", "The hearing cut away before the victory fireworks formed");
+            yield return new WaitUntil(() => director.ShotTime >= 5.13f || Time.realtimeSinceStartup >= deadline);
+            CheckInvestigation(director.CurrentShot == "hearing" && !director.stage.report.activeSelf,
+                "The hearing cut away before the victory fireworks formed or still displayed the signpost");
             yield return CaptureInvestigation(output, "08d-victory-fireworks");
             yield return new WaitUntil(() => director.CurrentShot == "evidence" && director.ShotTime >= 1.3f || Time.realtimeSinceStartup >= deadline);
             CheckInvestigation(director.CurrentShot == "evidence", "The hearing skipped the monitor scene");
@@ -411,8 +415,11 @@ namespace Homecoming.Field
                 "The four-run brief did not appear on the monitor alone");
             yield return CaptureInvestigation(output, "09c-four-saved-simulations");
             yield return new WaitUntil(() => director.CurrentShot == "epilogue" || Time.realtimeSinceStartup >= deadline);
-            CheckInvestigation(director.CurrentShot == "epilogue" && StorySession.FiledReport is { experiments: 4, investigations: >= 2, link: not null, recentRuns: { Length: 4 } },
-                "The personalized report did not become available after the story");
+            CheckInvestigation(director.CurrentShot == "epilogue",
+                $"The hearing stopped during {director.CurrentShot} at {director.ShotTime:0.00}s");
+            var report = StorySession.FiledReport;
+            CheckInvestigation(report is { experiments: 4, investigations: >= 2, link: not null, recentRuns: { Length: 4 } },
+                $"Filed report had {report?.experiments ?? 0} experiments, {report?.investigations ?? 0} investigations and {report?.recentRuns?.Length ?? 0} recent runs");
             yield return new WaitForSecondsRealtime(.6f);
             yield return CaptureInvestigation(output, "10-finale-status");
             director.ShowFiledReport();

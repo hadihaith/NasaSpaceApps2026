@@ -24,7 +24,6 @@ namespace Homecoming
         GameObject archiveBackdrop;
         Renderer[] cabinet, hullLettering;
         Vector3 cabinetScreenScale;
-        TextMesh reportHeading, reportSecondHeading;
         bool paused;
         const double ArchiveStart = 0;
         const double RevealStart = 0;
@@ -138,14 +137,6 @@ namespace Homecoming
             trigger = cannon.transform.GetChild(cannon.transform.childCount - 1);
             trigger.name = "Round cannon trigger";
 
-            reportHeading = report.transform.Find("Report heading").GetComponent<TextMesh>();
-            var subheading = report.transform.Find("Report subheading").GetComponent<TextMesh>();
-            reportSecondHeading = Instantiate(subheading, report.transform);
-            reportSecondHeading.transform.localPosition = V(0, -.14f, .025f);
-            subheading.gameObject.SetActive(false);
-            reportHeading.name = "Evidence type";
-            reportSecondHeading.name = "Second evidence type";
-            reportHeading.color = reportSecondHeading.color = new Color(.07f, .11f, .13f);
         }
         public void ApplyTypography()
         {
@@ -235,7 +226,7 @@ namespace Homecoming
             float aged = id == "years" ? Lapse(t, reducedMotion) : old ? 1 : 0;
             banner.transform.localRotation = Quaternion.Euler(0, 0, old ? Mathf.Lerp(-2, -9, aged) : -2 + (reducedMotion ? 0 : Mathf.Sin(t * 5) * Mathf.Exp(-Mathf.Max(0, t - 1.2f) * 2) * 2));
             banner.transform.localScale = new Vector3(1, old ? Mathf.Lerp(1, .83f, aged) : Mathf.Max(.02f, Mathf.SmoothStep(0, 1, unfurl) + overshoot), 1);
-            report.SetActive(id == "hearing");
+            report.SetActive(false);
             switchProp.SetActive(id == "launch");
             balloon.SetActive((old || id == "party") && id != "recruit");
             float deflateAge = id == "deflate" ? Mathf.Max(0, t - .84f) : 0;
@@ -367,7 +358,7 @@ namespace Homecoming
                 case "launch": from = V(.86f, 1.72f, 3.8f); to = V(.74f, 1.62f, 3.45f); look = target = V(-.05f, 1.12f, .8f); duration = 1.5f; break;
                 case "lab": from = V(-.8f, 2.1f, 8.8f); to = V(.1f, 1.9f, 7.8f); look = target = V(0, 1.45f, -.4f); duration = 6.4f; break;
                 case "ready": from = to = V(.1f, 2.1f, 8.6f); look = target = V(0, 1.5f, -.4f); break;
-                case "hearing": from = V(-.25f, 2.1f, 8.4f); to = V(-.6f, 2.0f, 7.6f); look = V(.05f, 1.4f, .35f); target = V(-.31f, 1.75f, .35f); duration = 5.35f; break;
+                case "hearing": from = V(-.25f, 2.1f, 8.4f); to = V(-.6f, 2.0f, 7.6f); look = V(.05f, 1.4f, .35f); target = V(-.31f, 1.75f, .35f); duration = 5.75f; break;
                 case "evidence": from = V(.72f, 2.23f, 7.2f); to = V(.23f, 2.0f, 6.7f); look = V(.25f, 1.28f, .35f); target = V(.22f, 1.45f, .6f); duration = 3.55f; break;
                 case "reaction": from = V(-.88f, 1.95f, 6.15f); to = V(-1.42f, 1.82f, 4.85f); look = V(-.57f, 1.44f, .6f); target = V(-1.22f, 1.49f, .75f); duration = 8.5f; break;
                 case "deflate": from = V(.32f, 1.76f, 4.3f); to = V(.33f, 1.49f, 4.26f); look = V(.35f, 1.45f, .55f); target = V(.42f, 1.04f, .55f); duration = 2.65f; break;

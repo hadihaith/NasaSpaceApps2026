@@ -283,7 +283,25 @@ namespace Homecoming
             {
                 if (role == 2) { x += .73f * (1 - Smooth(3.6f, 4.95f, t)); z += .2f * Smooth(3.6f, 4.95f, t); }
                 if (role == 0) { headYaw = -16 * Smooth(1.4f, 2.1f, t); torsoPitch = -5 * Beat(t, 1.8f, .8f); }
-                headPitch -= (role == 0 ? 12 : 18) * Smooth(StoryStage.VictoryLaunch + .28f, 4.15f, t);
+                float up = Smooth(StoryStage.VictoryLaunch + .20f, 3.9f, t);
+                float glance = Smooth(4.10f + role * .10f, 4.65f + role * .10f, t);
+                headPitch = Mathf.Lerp(-(role == 0 ? 12 : 18) * up, role == 0 ? 4 : 1, glance);
+                if (role == 0)
+                {
+                    yaw += 15 * glance;
+                    headYaw = Mathf.Lerp(headYaw, 25, glance);
+                }
+                else if (role == 1)
+                {
+                    float backToZorvax = Smooth(4.93f, 5.46f, t);
+                    yaw += glance * Mathf.Lerp(11, -9, backToZorvax);
+                    headYaw = glance * Mathf.Lerp(28, -30, backToZorvax);
+                }
+                else
+                {
+                    yaw -= 13 * glance;
+                    headYaw = -31 * glance;
+                }
             }
             if (shot == "evidence")
             {
@@ -375,7 +393,6 @@ namespace Homecoming
                     Smooth(.16f, .66f, t) * (1 - Smooth(.76f, 1.35f, t)));
             if (shot == "hearing" && role == 0)
             {
-                Reach(rightArm, rightForearm, rightHand, new Vector3(-.74f, 1.41f, 1.36f), .9f * Smooth(.08f, .4f, t));
                 Reach(leftArm, leftForearm, leftHand, new Vector3(.59f, .98f, .91f),
                     .9f * Smooth(.95f, StoryStage.VictoryLaunch, t) * (1 - Smooth(StoryStage.VictoryLaunch + .12f, 3.75f, t)));
             }

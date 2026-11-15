@@ -260,8 +260,8 @@
   "ending": [
     {
       "id": "hearing",
-      "description": "Zorvax holds up the report and trips the party cannon as he declares victory. Golden fireworks form a V above the crew. Cadet B hurries in with the archive cartridge.",
-      "seconds": 5.35,
+      "description": "Zorvax trips the party cannon as he declares victory. Golden fireworks spell VICTORY above the crew. The aliens exchange looks. Cadet B arrives with the archive cartridge.",
+      "seconds": 5.75,
       "lines": [
         {
           "id": "hearing.01",

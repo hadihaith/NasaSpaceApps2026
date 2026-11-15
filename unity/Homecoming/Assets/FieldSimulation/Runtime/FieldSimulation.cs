@@ -14,7 +14,8 @@ namespace Homecoming.Field
         public Texture2D commander;
 
         public const string SaveKey = "homecoming.unity.field.v1";
-        enum View { Lab, Descent, Field, Journal, Archive, Report, SiteTransfer, Submission }
+        const string IncompatibleWorld = "The saved world uses different simulation inputs. Recorded runs are available for replay.";
+        enum View { Lab, Descent, Field, Journal, Archive, Report, SiteTransfer, Broadcast, Submission }
         View view;
         ClimateData data;
         FieldSave save;
@@ -69,6 +70,7 @@ namespace Homecoming.Field
             loading = false;
             var history = StorySession.ConsumeHistoryRequest();
             if (history != SimulationHistory.None) OpenHistory(history);
+            if (StorySession.ConsumeBroadcastRequest()) OpenBroadcast();
         }
 
         void Load()
@@ -100,9 +102,7 @@ namespace Homecoming.Field
 
             try
             {
-                string fileName = string.IsNullOrEmpty(operation) ? "field-campaign-v2.json" : $"field-campaign-{operation}.json";
-                campaign = FieldCampaign.Open(data, Path.Combine(Application.persistentDataPath, fileName),
-                    legacy, Region.id);
+                campaign = FieldCampaign.Open(data, FieldCampaign.SavePath, legacy, Region.id);
             }
             catch (Exception error) when (IsCampaignError(error))
             {
@@ -113,8 +113,7 @@ namespace Homecoming.Field
                 return;
             }
             RestoreJournal();
-            if (!campaign.CanProject)
-                SimulationStatus = "The saved world uses different simulation inputs. Recorded runs are available for replay.";
+            if (!campaign.CanProject) SimulationStatus = IncompatibleWorld;
             int savedIndex = Array.FindIndex(data.regions, region => region.id == campaign.SelectedSiteId);
             if (savedIndex >= 0) siteIndex = savedIndex;
         }
@@ -292,6 +291,7 @@ namespace Homecoming.Field
                     return;
                 }
             }
+            CloseCascadeReport();
             displayed = before;
             shownMonth = 0;
             added.Clear();
@@ -316,7 +316,7 @@ namespace Homecoming.Field
         {
             running = false;
             shownMonth = duration - 1;
-            displayed = trial.months[shownMonth];
+            displayed = comparing && referenceTrial != null ? referenceTrial.months[shownMonth] : trial.months[shownMonth];
             if (legacyPlayback)
             {
                 save.runs++;
@@ -380,11 +380,13 @@ namespace Homecoming.Field
             int index = Array.FindIndex(data.regions, region => region.id == siteId);
             if (projection == null || index < 0) return false;
             ReleaseLook();
+            CloseCascadeReport();
             pendingPreview = null;
             siteIndex = index;
             world.SelectRegion(index, Region);
             trial = projection.scenario;
             referenceTrial = projection.reference;
+            BindScenarioCascade(FieldCascade.Analyze(run,siteId));
             var first = trial.months[0];
             var inherited = referenceTrial.months[0];
             before = new FieldMonth { land = trial.before, normal = first.normal, monthIndex = first.monthIndex,
@@ -422,10 +424,13 @@ namespace Homecoming.Field
         {
             if (view == View.SiteTransfer) return;
             if (view == View.Submission && submissionVoice != null) submissionVoice.Stop();
+            CloseCascadeReport();
             ReleaseLook();
             paused = false;
             hotDial = -1;
             focusIndex = 0;
+            archiveFilter = ArchiveFilter.None;
+            showSites = branchesOpen = branchComparisonOpen = labOptionsOpen = false;
             view = next;
             switch (next)
             {
@@ -465,6 +470,17 @@ namespace Homecoming.Field
 #endif
             elapsed += dt;
             if (Input.GetKeyDown(KeyCode.M)) ToggleMute();
+            if (CascadeReportOpen)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape)) CloseCascadeReport();
+                return;
+            }
+            if (view == View.Broadcast)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape)) OpenStation();
+                else TickBroadcast();
+                return;
+            }
             if (view == View.SiteTransfer)
             {
                 if (Input.GetKeyDown(KeyCode.Escape)) FinishSiteTransfer(false);
@@ -478,8 +494,16 @@ namespace Homecoming.Field
                 else if (view == View.Descent) Arrive();
                 else if (view == View.Field && showResult) showResult = false;
                 else if (view == View.Field && running) paused = !paused;
-                else if (view != View.Lab) Go(View.Lab);
+                else if (view == View.Field) Go(View.Lab);
+                else if (view == View.Report && orbitOpen) CloseComparison();
+                else if (view == View.Report && (reportDetails || temperatureOpen || (casePickerOpen && investigation != null))) OpenCase();
+                else if (view == View.Archive && archiveFilter != ArchiveFilter.None) archiveFilter = ArchiveFilter.None;
+                else if (view != View.Lab) OpenStation();
                 else if (showSites) showSites = false;
+                else if (branchComparisonOpen) branchComparisonOpen = false;
+                else if (branchesOpen) branchesOpen = false;
+                else if (labOptionsOpen) labOptionsOpen = false;
+                else if (weatherLabOpen) OpenStation();
             }
 
             switch (view)
@@ -509,7 +533,7 @@ namespace Homecoming.Field
                             if (runClock >= RunTime + ObservationHold) Finish();
                         }
                     }
-                    if (Input.GetKeyDown(KeyCode.Tab)) showTelemetry = !showTelemetry;
+                    if (LegacyCapture && Input.GetKeyDown(KeyCode.Tab)) showTelemetry = !showTelemetry;
                     if (Input.GetMouseButtonDown(1) && Application.isFocused)
                     {
                         lookHeld = true;
@@ -517,7 +541,9 @@ namespace Homecoming.Field
                         Cursor.visible = false;
                     }
                     if (lookHeld && (!Input.GetMouseButton(1) || !Application.isFocused)) ReleaseLook();
-                    Vector2 movement = new(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+                    Vector2 movement = new(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
+                    if (!LegacyCapture && !lookHeld && keyboardFocus && focusIndex == timelineControlIndex &&
+                        (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow))) movement.x = 0;
                     Vector2 look = lookHeld ? new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) : Vector2.zero;
                     if (!paused) world.Explore(dt, movement, look, reduced);
                     break;
@@ -542,6 +568,7 @@ namespace Homecoming.Field
         void ToggleMute()
         {
             muted = !muted;
+            if (broadcastAudio != null) broadcastAudio.mute = muted;
             PlayerPrefs.SetInt("homecoming.unity.mute", muted ? 1 : 0);
             PlayerPrefs.Save();
         }

@@ -25,11 +25,32 @@ namespace Homecoming
         bool ready;
         int lastProbeFrame = -1000;
         string lastShot;
-        const int DustCount = 54, PuffCount = 10, VictoryArmSparks = 44, VictoryScatter = 30, VictoryTail = 9;
-        const int AirParticleCount = DustCount + PuffCount + 2 * VictoryArmSparks + VictoryScatter + VictoryTail;
+        const int DustCount = 54, PuffCount = 10, VictoryScatter = 34, VictoryTail = 9;
+        static readonly Vector3[] VictoryWord = BuildVictoryWord();
+        static int AirParticleCount => DustCount + PuffCount + VictoryWord.Length + VictoryScatter + VictoryTail;
         static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
         static float Hash(int index, int channel) => Mathf.Repeat(Mathf.Sin((index + 17) * 12.9898f + channel * 78.233f) * 43758.5453f, 1);
         static float Smooth(float a, float b, float t) => Mathf.SmoothStep(0, 1, Mathf.InverseLerp(a, b, t));
+
+        static Vector3[] BuildVictoryWord()
+        {
+            // The rows read V I C T O R Y. Empty cells preserve the individual letter shapes.
+            string[] rows =
+            {
+                "10001 11111 01111 11111 01110 11110 10001",
+                "10001 00100 10000 00100 10001 10001 10001",
+                "10001 00100 10000 00100 10001 10001 01010",
+                "10001 00100 10000 00100 10001 11110 00100",
+                "01010 00100 10000 00100 10001 10100 00100",
+                "01010 00100 10000 00100 10001 10010 00100",
+                "00100 11111 01111 00100 01110 10001 00100"
+            };
+            var dots = new List<Vector3>();
+            for (int y = 0; y < rows.Length; y++)
+                for (int x = 0; x < rows[y].Length; x++)
+                    if (rows[y][x] == '1') dots.Add(V(.08f - (x - 20) * .091f, 3.46f - y * .117f, .76f));
+            return dots.ToArray();
+        }
 
         public void Initialize(StoryStage owner)
         {
@@ -375,10 +396,10 @@ namespace Homecoming
             center = crown;
             if (age < 0) return;
 
-            if (index >= 2 * VictoryArmSparks + VictoryScatter)
+            if (index >= VictoryWord.Length + VictoryScatter)
             {
                 if (reduced) return;
-                float time = age - .024f * (index - 2 * VictoryArmSparks - VictoryScatter);
+                float time = age - .024f * (index - VictoryWord.Length - VictoryScatter);
                 float rise = Mathf.Clamp01(time / burst);
                 var muzzle = stage.cannon.transform.TransformPoint(V(0, .26f, .44f));
                 center = Vector3.Lerp(muzzle, crown, rise) + V(0, .17f * Mathf.Sin(Mathf.PI * rise), 0);
@@ -389,16 +410,16 @@ namespace Homecoming
 
             float after = age - burst;
             if (after < 0) return;
-            if (index < 2 * VictoryArmSparks)
+            if (index < VictoryWord.Length)
             {
-                float along = index % VictoryArmSparks / (float)(VictoryArmSparks - 1);
-                float side = index < VictoryArmSparks ? -1 : 1;
-                var tip = V(crown.x + side * along * 1.11f, 2.53f + along * 1.05f, crown.z)
-                    + V((Hash(index, 12) - .5f) * .05f, (Hash(index, 13) - .5f) * .06f, (Hash(index, 14) - .5f) * .1f);
-                float grow = reduced ? 1 : Smooth(along * .12f, .53f + along * .23f, after);
-                center = Vector3.Lerp(crown, tip, grow);
+                var dot = VictoryWord[index] + V((Hash(index, 12) - .5f) * .018f,
+                    (Hash(index, 13) - .5f) * .025f, (Hash(index, 14) - .5f) * .06f);
+                float delay = Mathf.Abs(dot.x - crown.x) * .11f;
+                float grow = reduced ? 1 : Smooth(delay, delay + .63f, after);
+                center = Vector3.Lerp(crown, dot, grow);
+                size = .053f + light * .011f;
                 float shimmer = reduced ? 1 : .88f + .12f * Mathf.Sin(after * 14 + index * .8f);
-                alpha = .97f * shimmer * (reduced ? 1 : Smooth(0, .10f, after) * (1 - .38f * Smooth(1.30f, 1.92f, after)));
+                alpha = .97f * shimmer * (reduced ? 1 : Smooth(0, .10f, after) * (1 - .38f * Smooth(1.55f, 2.20f, after)));
                 return;
             }
 

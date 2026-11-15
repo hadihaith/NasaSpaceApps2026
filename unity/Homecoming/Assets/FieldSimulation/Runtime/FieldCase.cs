@@ -33,12 +33,16 @@ namespace Homecoming.Field
         public bool callsRevealed;
         public InvestigationRun first, second;
         public string comparisonId, relationship, relationshipScope, gap, conclusion, campaignId, submittedUtc, committingRunId;
+        public string soilInterpretation, soilInterpretationRevisionId;
+        public bool HasSoilInterpretation => second != null && second.id == soilInterpretationRevisionId &&
+            !string.IsNullOrWhiteSpace(soilInterpretation);
         public bool IsReady => origin != null && origin.hasRate &&
             (kind == InvestigationKind.Temperature ? originCall != Direction.Unset && origin.hasPValue :
                 !string.IsNullOrEmpty(relationship) && (other != null || !string.IsNullOrWhiteSpace(gap))) &&
             (kind != InvestigationKind.Rainfall || (originCall != Direction.Unset && otherCall != Direction.Unset &&
                 difference?.hasPValue == true)) &&
             (kind != InvestigationKind.Soil || (scenarioCall != Direction.Unset && first != null && second != null &&
+                (HasSoilInterpretation || !string.IsNullOrEmpty(submittedUtc)) &&
                 (first.result == scenarioCall || !string.IsNullOrWhiteSpace(conclusion))));
     }
 
@@ -78,6 +82,9 @@ namespace Homecoming.Field
             if (string.IsNullOrEmpty(result.difference?.id)) result.difference = null;
             if (string.IsNullOrEmpty(result.first?.id)) result.first = null;
             if (string.IsNullOrEmpty(result.second?.id)) result.second = null;
+            // JsonUtility serializes unset strings as empty strings. Restore the unset comparison.
+            if (string.IsNullOrWhiteSpace(result.relationship)) result.relationship = null;
+            if (string.IsNullOrWhiteSpace(result.gap)) result.gap = null;
             return result;
         }
 
@@ -86,6 +93,13 @@ namespace Homecoming.Field
             PlayerPrefs.SetInt(Key, (int)value.kind);
             PlayerPrefs.SetString(Key+"."+value.kind, JsonUtility.ToJson(value));
             PlayerPrefs.Save();
+        }
+
+        internal static void ClearSavedCases()
+        {
+            PlayerPrefs.DeleteKey(Key);
+            foreach (InvestigationKind kind in Enum.GetValues(typeof(InvestigationKind)))
+                PlayerPrefs.DeleteKey(Key+"."+kind);
         }
 
         public static string Export(FieldReport report, string outputFolder = null)

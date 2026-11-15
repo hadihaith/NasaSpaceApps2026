@@ -102,18 +102,6 @@ namespace Homecoming
             bool evidence = shot == "evidence";
             if (evidence && evidenceStand == null) BuildEvidenceStand();
             if (evidenceStand != null) evidenceStand.SetActive(evidence);
-            if (report.activeSelf)
-            {
-                var grip = crew[0].ReportGrip;
-                var held = grip != null ? grip.position + V(.15f, .18f, .19f) : V(-.6f, 1.3f, 1.2f);
-                reportHeading.text = "THE GREAT HOMECOMING";
-                reportHeading.characterSize = .0058f;
-                reportSecondHeading.gameObject.SetActive(true);
-                reportSecondHeading.text = "SUBMITTED FINDINGS";
-                reportSecondHeading.characterSize = .0048f;
-                report.transform.SetPositionAndRotation(held, Quaternion.Euler(-13, -9, -6));
-            }
-
             bool showMonitor = evidence && t >= MonitorStarts;
             if (showMonitor && evidenceMonitor == null) BuildEvidenceMonitor();
             if (evidenceMonitor != null) evidenceMonitor.SetActive(showMonitor);

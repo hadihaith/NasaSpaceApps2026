@@ -66,6 +66,12 @@ namespace Homecoming
 
         void OnGUI()
         {
+            var input = Event.current;
+            if (!restarting && input.type == EventType.KeyDown && input.keyCode == KeyCode.R)
+            {
+                input.Use();
+                Restart();
+            }
             if (restartError == null) return;
             GUI.Box(new Rect(20,20,Screen.width-40,60),restartError);
         }

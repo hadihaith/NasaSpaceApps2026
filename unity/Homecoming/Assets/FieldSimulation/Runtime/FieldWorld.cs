@@ -38,7 +38,7 @@ namespace Homecoming.Field
         Vector3[] drops;
         float[] speeds;
         int region = -1;
-        float waterLevel, rainStrength, exposure, animationTime;
+        float waterLevel, rainStrength, exposure, animationTime, shuttleGroundOffset;
         float yaw, pitch;
         Vector3 velocity;
         Quaternion mapRotation;
@@ -66,6 +66,8 @@ namespace Homecoming.Field
             shuttle.name = "Survey shuttle";
             shuttle.gameObject.SetActive(false);
             shuttle.localScale = Vector3.one * 3.8f;
+            foreach (var renderer in shuttle.GetComponentsInChildren<Renderer>(true))
+                shuttleGroundOffset = Mathf.Max(shuttleGroundOffset,shuttle.position.y-renderer.bounds.min.y);
             globeRadius = globe.GetComponent<MeshFilter>().sharedMesh.bounds.extents.x;
             MakeRain();
         }
@@ -87,6 +89,7 @@ namespace Homecoming.Field
         {
             mapRotation = OrbitRotation(data.latitude, data.longitude);
             if (region == index) return;
+            shuttle.gameObject.SetActive(false);
             if (site != null) { site.gameObject.SetActive(false); Destroy(site.gameObject); }
             foreach (var mesh in meshes) Destroy(mesh);
             foreach (var material in propMaterials) Destroy(material);
@@ -526,16 +529,23 @@ namespace Homecoming.Field
             position.x += Mathf.Sin(a * Mathf.PI) * 5;
             var look = Vector3.Lerp(new Vector3(0, 0, 17), GroundLook, a);
             Aim(position, look, Mathf.Lerp(53, 60, a));
-            shuttle.gameObject.SetActive(!reduced && seconds > 1.68f && seconds < 4.65f);
-            shuttle.position = new Vector3(2.6f + 3 * a, Mathf.Lerp(31, 3.8f, a), Mathf.Lerp(-21, 10, a));
-            shuttle.rotation = Quaternion.Euler(8 + 9 * (1 - a), -9, -16 * (1 - a));
+            shuttle.gameObject.SetActive(!reduced && seconds > 1.68f);
+            SetShuttlePose(a);
             return reduced ? 0 : 1 - Mathf.SmoothStep(0, 1, (seconds - 1.4f) / .62f);
+        }
+
+        void SetShuttlePose(float progress)
+        {
+            float landingHeight = Height(16,20)+shuttleGroundOffset+.05f;
+            shuttle.position = Vector3.Lerp(new Vector3(2.6f,31,-21),new Vector3(16,landingHeight,20),progress);
+            shuttle.rotation = Quaternion.Euler(17*(1-progress),-9,-16*(1-progress));
         }
 
         public void Land()
         {
             SetField(true);
-            shuttle.gameObject.SetActive(false);
+            SetShuttlePose(1);
+            shuttle.gameObject.SetActive(true);
             Aim(Landing, GroundLook, 60);
             Vector3 angles = fieldCamera.transform.eulerAngles;
             yaw = angles.y;

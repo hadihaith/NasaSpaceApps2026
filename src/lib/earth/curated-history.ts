@@ -93,3 +93,82 @@ export function chileRainDataset(raw: unknown, rawSha256: string, sahelRain: Evi
     observations,
   };
 }
+
+export const DEMO_RAIN = {
+  id: "kuwait-united-kingdom-rainfall",
+  type: "historical-comparison",
+  question: "Did rainfall change at the same rate at the Kuwait City and London points?",
+  scope: "Matched NASA POWER MERRA-2 point estimates near Kuwait City and London. Each point represents its native grid estimate. Country-wide averages are unavailable in this example.",
+  startYear: 1991,
+  endYear: 2025,
+} as const;
+
+export const DEMO_RAIN_SOURCES = [
+  {
+    regionId: "kuwait", place: "Kuwait City", latitude: 29.3759, longitude: 47.9774,
+    returned: [47.977, 29.376],
+    path: "data/raw/homecoming/kuwait_rain_1991_2025.json",
+    retrievedAt: "2026-11-15T12:00:39.808998Z",
+    sha256: "2a921864ec30a6643892b7d18f0c3e2cc78219a004bd07250f6e45c4b779cddc",
+  },
+  {
+    regionId: "united-kingdom", place: "London · United Kingdom", latitude: 51.5074, longitude: -0.1278,
+    returned: [-0.128, 51.507],
+    path: "data/raw/homecoming/united-kingdom_rain_1991_2025.json",
+    retrievedAt: "2026-11-15T12:00:35.187513Z",
+    sha256: "d9be45f2e6d887f256fbf1aecebe3755fb4e4b35e8ab0e4a3e89775f81bb3e0a",
+  },
+] as const;
+
+export function demoRainDataset(raw: unknown, rawSha256: string,
+  source: typeof DEMO_RAIN_SOURCES[number], template: EvidenceDataset): EvidenceDataset {
+  const response = raw as ChileResponse;
+  const { header, geometry } = response;
+  if (rawSha256 !== source.sha256 || !header.sources.includes("MERRA2") ||
+      header.start !== "19910101" || header.end !== "20251231" ||
+      header.time_standard !== template.temporal.timeStandard ||
+      response.parameters.PRECTOTCORR.units !== "mm/day" ||
+      geometry.coordinates[0] !== source.returned[0] || geometry.coordinates[1] !== source.returned[1]) {
+    throw new Error(`The ${source.place} POWER response does not match its pinned source.`);
+  }
+  const observations = Array.from({ length: 35 * 12 }, (_, index) => {
+    const year = 1991 + Math.floor(index / 12);
+    const month = index % 12 + 1;
+    const mm = String(month).padStart(2, "0");
+    const rate = response.properties.parameter.PRECTOTCORR[`${year}${mm}`];
+    if (!Number.isFinite(rate) || rate === header.fill_value || rate < 0) {
+      throw new Error(`Incomplete ${source.place} coverage at ${year}-${mm}.`);
+    }
+    return { date: `${year}-${mm}`, value: Math.round(precipitationTotal(rate, year, month) * 100) / 100 };
+  });
+  const version = `POWER API ${header.api.version}; source ${header.sources.join(",")}`;
+  const url = `https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=PRECTOTCORR&community=AG&longitude=${source.longitude}&latitude=${source.latitude}&start=1991&end=2025&format=JSON`;
+  return {
+    ...template,
+    id: `${source.regionId}.merra2.precipitation.homecoming-v1-${rawSha256.slice(0, 12)}`,
+    seriesId: `${source.regionId}.merra2.precipitation`,
+    regionId: source.regionId, gameRegionId: source.regionId, region: source.place,
+    rawSha256,
+    provenance: {
+      ...template.provenance,
+      version: `${version}; homecoming-v1; raw SHA-256 ${rawSha256}`,
+      sourceUrl: url, retrievedAt: source.retrievedAt,
+      processing: ["Selected one POWER point and omitted annual month 13.",
+        "Converted monthly mean mm/day to monthly totals with calendar days and rounded to 0.01 mm."],
+      limitations: ["Single native-grid estimate near the named city.",
+        "Reanalysis input changes can affect trends. Statistical assumptions require review."],
+    },
+    source: { parameter: "PRECTOTCORR", nativeUnit: "mm/day", citation: template.source.citation,
+      version, rawFile: source.path },
+    spatial: {
+      type: "grid-point", nativeResolution: "0.5° latitude x 0.625° longitude",
+      requestedCoordinates: { lat: source.latitude, lon: source.longitude },
+      returnedCoordinates: geometry.coordinates, gridCells: 1,
+      footprintNote: "Single POWER point/grid estimate. Exact cell bounds were not supplied.",
+    },
+    temporal: { start: "1991-01", end: "2025-12", timeStandard: header.time_standard },
+    quality: { missingMonths: 0, longestMissingRunMonths: 0, monthsWithMissingDays: 0,
+      completeYears: Array.from({ length: 35 }, (_, index) => 1991 + index), excludedAnnualYears: [] },
+    observations,
+  };
+}

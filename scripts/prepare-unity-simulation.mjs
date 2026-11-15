@@ -18,11 +18,12 @@ try {
   const [
     { EARTH_REGIONS }, { CONTROLS, DISCOVERIES, REQUIRED_DISCOVERIES, toNormals }, { parseArchive },
     { HISTORICAL_SCHEMA_VERSION, analyzeHistoricalRecord, analyzeHistoricalComparison },
-    { CHILE_RAIN_SOURCE, chileRainDataset, GUIDED_RAIN, PHOENIX_RAIN },
+    { CHILE_RAIN_SOURCE, chileRainDataset, GUIDED_RAIN, PHOENIX_RAIN, DEMO_RAIN, DEMO_RAIN_SOURCES, demoRainDataset },
+    { ols },
     { THEMES, VARIABLES },
   ] = await Promise.all([
     "earth/regions.js", "homecoming/model.ts", "lib/earth/member3.ts",
-    "lib/earth/historical.ts", "lib/earth/curated-history.ts", "lib/catalog.ts",
+    "lib/earth/historical.ts", "lib/earth/curated-history.ts", "lib/stats/trend.ts", "lib/catalog.ts",
   ].map((path) => server.ssrLoadModule("/src/" + path)));
   const [climate, archiveFile, index, reviews, chileRaw] = await Promise.all([
     read("public/homecoming/regional-climate.json"), read("public/data/earth-archive.json"),
@@ -36,7 +37,12 @@ try {
   }
   const chile = chileRainDataset(JSON.parse(chileRaw), sha256(chileRaw),
     archive.find((d) => d.seriesId === "sahel.merra2.precipitation"));
-  const datasets = [...archive.filter((dataset) => dataset.gameVariable), chile];
+  const demoDatasets = await Promise.all(DEMO_RAIN_SOURCES.map(async (source) => {
+    const raw = await readFile(pathFromRoot(source.path));
+    return demoRainDataset(JSON.parse(raw), sha256(raw), source,
+      archive.find((dataset) => dataset.seriesId === "sahel.merra2.precipitation"));
+  }));
+  const datasets = [...archive.filter((dataset) => dataset.gameVariable), chile, ...demoDatasets];
   const rawFiles = [...new Set(datasets.map(({ source }) => source.rawFile))];
   const rawSources = new Map(await Promise.all(rawFiles.map(async (path) => {
     const raw = await readFile(pathFromRoot(path));
@@ -89,7 +95,24 @@ try {
       anomalyFinding: analyzeHistoricalRecord(dataset, window, "anomaly", 0, reviews),
     };
   });
+  const demoComparison = analyzeHistoricalComparison(DEMO_RAIN, ...demoDatasets);
+  const exploratory = ols(demoComparison.difference.points.map(({ t, value }) => ({ t, v: value })));
+  demoComparison.difference.exploratoryTest = {
+    method: "Two-sided OLS slope t-test (exploratory)",
+    hypothesis: "Zero linear slope in the Kuwait-minus-UK annual rainfall difference.",
+    alpha: 0.05, p: exploratory.p, tStatistic: exploratory.t, degreesOfFreedom: exploratory.df,
+    slopePerDecade: exploratory.slope * 10,
+    lowerPerDecade: exploratory.ci[0] * 10, upperPerDecade: exploratory.ci[1] * 10,
+  };
+  const leftValues = demoComparison.left.points.map(({ value }) => value);
+  const rightValues = demoComparison.right.points.map(({ value }) => value);
+  const mean = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  const leftMean = mean(leftValues), rightMean = mean(rightValues);
+  const covariance = leftValues.reduce((sum, value, i) => sum + (value-leftMean)*(rightValues[i]-rightMean), 0);
+  const squares = (values, average) => values.reduce((sum, value) => sum + (value-average)**2, 0);
+  demoComparison.pearsonR = covariance / Math.sqrt(squares(leftValues,leftMean)*squares(rightValues,rightMean));
   const comparisons = [
+    demoComparison,
     analyzeHistoricalComparison(GUIDED_RAIN, inputs.get("sahel.merra2.precipitation"),
       inputs.get("central-chile.merra2.precipitation"), reviews),
     analyzeHistoricalComparison(PHOENIX_RAIN, inputs.get("region_01.merra2.precipitation"),

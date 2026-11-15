@@ -23,11 +23,17 @@ the repository root to rebuild the bundled Apple Silicon and Intel plug-in.
 
 ## Play
 
+- Press **R** anywhere to clear all local gameplay saves, reports and settings and restart from the opening video.
 - **Start story** begins the prologue, recruitment and lab introduction.
-  **Take over the broadcast** starts *Return to Sender*. Cut Zorvax's feed, tune both rainfall
-  receivers, read the shared timeline, and send an evidence-backed broadcast to Earth.
-  The first-contact receipt completes the broadcast and offers **Take the Weather and soil case**.
-  The field station lets you resume the broadcast or open the weather lab and other investigations.
+  **Open weather lab** leads directly to the weather controls. Change temperature, rain,
+  humidity or wind and choose **Run test · 12 months**. Completed tests save automatically
+  and open their results. **Next simulation** starts with the saved ground and weather.
+  **View saved tests** opens earlier records and their frozen evidence snapshots.
+- After a test, the **Kuwait / United Kingdom** tab shows matched NASA POWER rainfall
+  records near Kuwait City and London for 1991–2025. **T-test & relationship** shows
+  the OLS slope t-test of the yearly Kuwait-minus-UK difference and the Pearson correlation.
+  This test is exploratory and its statistical assumptions await review. The city grid points
+  and historical observations are identified on screen. The earlier Earth-call activity has been removed.
 - **Story & settings** lets you replay sections and preview the ending now.
   Previewing a chapter does not mark it complete.
 - **Space** pauses, **left/right arrows** change shots, **M** toggles sound,
@@ -48,7 +54,7 @@ The field station opens on a suggested first case or resumes your current one. T
 
 ### Play the cases
 
-- **Rainfall in two places** · Select **Start the rainfall case** and predict how rainfall changed at both sites. Fly to the comparison, inspect the matched years and the paired difference, revise your calls if you wish, then file the findings. For 1991–2025, the descriptive Theil–Sen slopes are +2.133 for the Central Sahel grid point and −18.840 for Central Chile, in mm/month per decade. The paired series has a descriptive slope of +24.645 and a reviewed OLS slope of +22.844 in the same units. Only the paired OLS result carries a significance test.
+- **Rainfall in two places** · The optional case compares Kuwait City and London over 1991–2025. Predict how rainfall changed, inspect the matched years and their difference, then file the findings. The exploratory two-sided OLS slope t-test of the Kuwait-minus-UK difference gives t(33) = −1.233 and p = 0.226. Its assumptions await review. The year-to-year Pearson correlation is −0.040.
 - **Is Phoenix warming?** · Make a call, open the 1981–2025 record, and examine the fit and its uncertainty before filing. The descriptive slope is +0.509 °C per decade across 45 complete years. The reviewed OLS estimate is +0.468 °C per decade.
 - **Weather and soil** · File the Central Arizona rainfall record and predict how root-zone water will respond. Change only precipitation and preview twelve months. **Save and advance one year** makes the ending ground and weather the start of the next test. Keep that rain setting and change only temperature for the follow-up. Try +100% precipitation and +4 °C from a fresh setup. Check the historical comparison or file the coverage gap, then use the Earth Intelligence Report's monthly log to interpret the follow-up and file the case. A wrong prediction or readings that stay within tolerance can complete the case with an explanation.
 - **Your own investigation** · Choose a place, measurement, product and available time view in the Earth archive. File a comparable record or document the gap. Climate projections support the six terrain presets. Central Chile is a historical grid point.
@@ -70,7 +76,7 @@ Reduced motion changes sites immediately.
 
 The Arizona scenario uses a 150 mm teaching bucket and FAO-56 reference evapotranspiration, driven by monthly NASA POWER climate normals with a documented estimate of temperature range. The 150 mm capacity is uncalibrated. The model starts from a normals-based spin-up, then carries local storage and weather forward. The other five sites and migrated v1 snapshots use illustrative indices. Ground visuals are illustrative throughout. The paired flight shows a historical comparison. The Potomac routing screen and Phoenix benchmark replay remain research checks. [Historical evidence and provenance](../docs/homecoming-evidence.md) · [Routing and forecast verification](../docs/homecoming-routing-forecast.md)
 
-Campaign data and exported JSON reports use Unity's application data folder. On macOS the default is `~/Library/Application Support/NASA Space Apps Kuwait/The Great Homecoming/`. Use **Open saved reports** on the case picker to locate the exported reports. Each experiment keeps its own weather and land history. Previewing or replaying a run leaves the experiment at its last saved month.
+Campaign data and exported JSON reports use Unity's application data folder. On macOS the default is `~/Library/Application Support/NASA Space Apps Kuwait/The Great Homecoming/`. Use **Open saved reports** on the case picker to locate the exported reports. Each experiment keeps its own weather and land history. A completed weather-lab test saves its full record and final ground state before the next simulation. Replaying a saved result opens its recorded comparison.
 
 In **Weather lab → Saved experiments**, choose **Reset Earth** to start a fresh experiment at the January 2026 baseline. Your casebook, discoveries, and previous experiments stay available. Switch to an earlier experiment to replay its saved run or continue a case from its original conditions.
 

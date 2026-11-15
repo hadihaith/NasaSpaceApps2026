@@ -7,7 +7,7 @@ namespace Homecoming.Field
 {
     public sealed partial class FieldSimulation
     {
-        const string GuidedRainOrigin = "sahel";
+        const string GuidedRainOrigin = "kuwait";
         const string GuidedSoilOrigin = "phoenix";
         const string HistoricalLink = "Historical comparison of matched records";
         const string NoComparison = "Comparable evidence unavailable";
@@ -55,7 +55,7 @@ namespace Homecoming.Field
 
         string CaseQuestion => investigation?.kind switch
         {
-            InvestigationKind.Rainfall => "Did rainfall change the same way in the Sahel and central Chile?",
+            InvestigationKind.Rainfall => "Did rainfall change the same way in Kuwait and the United Kingdom?",
             InvestigationKind.Temperature => "How has the air temperature around Phoenix changed over time?",
             InvestigationKind.Soil => "How do rainfall and temperature change the water stored in Central Arizona's soil?",
             _ => "Find something that changed over time and see where else it changed."
@@ -208,7 +208,7 @@ namespace Homecoming.Field
             pairedTrend = null;
             comparisonScope = null;
             if (investigation.kind == InvestigationKind.Rainfall)
-                return TryGetReviewedPair(out pairedOrigin, out pairedTarget, out pairedDifference);
+                return TryGetExamplePair(out pairedOrigin, out pairedTarget, out pairedDifference);
             pairedOrigin = FindFiledRecord(investigation.origin);
             pairedTarget = data.evidence.FirstOrDefault(record => Comparable(pairedOrigin, record) && SameScope(pairedOrigin, record));
             return Comparable(pairedOrigin, pairedTarget) && SameScope(pairedOrigin, pairedTarget);
@@ -219,7 +219,7 @@ namespace Homecoming.Field
             if (pairedOrigin == null || pairedTarget == null) return;
             if (investigation.kind == InvestigationKind.Rainfall)
             {
-                if (pairedDifference?.hasPValue != true) return;
+                if (pairedDifference?.hasRate != true) return;
                 investigation.origin = MakeFinding(pairedOrigin);
                 investigation.comparisonId = guidedRain.id;
             }

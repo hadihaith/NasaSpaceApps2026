@@ -6,6 +6,8 @@ namespace Homecoming.Field
 {
     public sealed partial class FieldSimulation
     {
+        const string LocalSignificance = "Statistical significance has not been established for this record.";
+        const string PairSource = "NASA POWER · MERRA-2 precipitation (PRECTOTCORR)";
         bool comparisonHasOrbit;
         bool comparisonTable, differenceOpen, comparisonMethods, showPredictionEdits;
         int comparisonRow, comparisonYear;
@@ -35,9 +37,12 @@ namespace Homecoming.Field
             world.SurveyOrbit(orbitStart,orbitEnd,orbitProgress);
         }
 
-        static string PairedVerdict(ArchiveTrend trend) => trend.status == "significant"
-            ? "The Sahel-minus-Chile rainfall difference had a statistically significant trend."
-            : "The test did not find a statistically significant trend in the Sahel-minus-Chile rainfall difference.";
+        static string PairedVerdict(ArchiveTrend trend) => trend.status switch
+        {
+            "significant" => "The Kuwait-minus-UK rainfall gap changed significantly over time.",
+            "not-significant" => "The test did not find a significant trend in the Kuwait-minus-UK rainfall gap.",
+            _ => "Statistical significance has not been established for this comparison."
+        };
 
         static string TrendRate(string subject, float rate, string unit, string period = null)
         {
@@ -49,7 +54,7 @@ namespace Homecoming.Field
 
         static string PairedTestDetails(ArchiveTrend trend)
         {
-            var test = trend.test;
+            var test = HasReviewedTest(trend) ? trend.test : trend.exploratoryTest;
             string statistic = HistoricalTestStatistic(test.degreesOfFreedom,test.tStatistic);
             return $"{test.method} · {statistic}p = {test.p.ToString("G3",Invariant)} · α = {test.alpha.ToString("0.##",Invariant)}\n"+
                 $"95% confidence interval: {Signed(test.lowerPerDecade,"0.00")} to {Signed(test.upperPerDecade,"0.00")} {trend.unit} per decade";
@@ -85,7 +90,7 @@ namespace Homecoming.Field
                 : PairedVerdict(pairedTrend);
             Text(Box(78,252,1440,69),verdict,32,White,headingFont,TextAnchor.MiddleLeft,true);
             string interpretation = pairedDifference == null ? $"Both records cover {Period(pairedOrigin)}."
-                : TrendRate("The difference",pairedTrend.test.slopePerDecade,pairedTrend.unit,Period(pairedOrigin));
+                : TrendRate("The difference",(HasReviewedTest(pairedTrend) ? pairedTrend.test : pairedTrend.exploratoryTest).slopePerDecade,pairedTrend.unit,Period(pairedOrigin));
             Text(Box(80,321,1424,42),interpretation,24,Mint,strongFont);
             Fill(Box(0,395,1600,505),Alpha(Ink,.95f));
             var a = MakeFinding(pairedOrigin);
@@ -119,7 +124,7 @@ namespace Homecoming.Field
             {
                 Card(Box(56,413,1488,263),Panel);
                 Text(Box(80,425,1410,35),$"{a.place} minus {b.place} · {pairedTrend.unit}",26,White,headingFont);
-                Text(Box(80,463,1410,30),"Each point subtracts Chile from the Sahel for the same year.",20,Dim);
+                Text(Box(80,463,1410,30),"Each point subtracts UK rainfall from Kuwait rainfall for the same year.",20,Dim);
                 DrawHistoricalChart(pairedTrend,Box(170,511,1346,124),includeZero: true,selectedIndex: comparisonYear);
                 Text(Box(687,641,312,27),"Year",15,Dim,dataFont,TextAnchor.MiddleCenter);
             }
@@ -148,8 +153,8 @@ namespace Homecoming.Field
                     showPredictionEdits = !showPredictionEdits;
                 if (showPredictionEdits)
                 {
-                    Text(Box(285,788,123,30),"Sahel",18,Mint,strongFont);
-                    Text(Box(916,788,116,30),"Chile",18,Aqua,strongFont);
+                    Text(Box(285,788,123,30),"Kuwait",18,Mint,strongFont);
+                    Text(Box(916,788,116,30),"UK",18,Aqua,strongFont);
                     DrawCall(414,783,ref investigation.revisedOriginCall,false,investigation.originCall);
                     DrawCall(1038,783,ref investigation.revisedOtherCall,false,investigation.otherCall);
                 }

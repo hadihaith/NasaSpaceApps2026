@@ -15,7 +15,7 @@ namespace Homecoming.Field
 
         public const string SaveKey = "homecoming.unity.field.v1";
         const string IncompatibleWorld = "The saved world uses different simulation inputs. Recorded runs are available for replay.";
-        enum View { Lab, Descent, Field, Journal, Archive, Report, SiteTransfer, Broadcast, Submission }
+        enum View { Lab, Descent, Field, Journal, Archive, Report, SiteTransfer, Results, Submission }
         View view;
         ClimateData data;
         FieldSave save;
@@ -70,7 +70,7 @@ namespace Homecoming.Field
             loading = false;
             var history = StorySession.ConsumeHistoryRequest();
             if (history != SimulationHistory.None) OpenHistory(history);
-            if (StorySession.ConsumeBroadcastRequest()) OpenBroadcast();
+            if (history == SimulationHistory.None && !legacyPlayback) OpenWeatherLab(guided:false);
         }
 
         void Load()
@@ -113,6 +113,7 @@ namespace Homecoming.Field
                 return;
             }
             RestoreJournal();
+            lastResultsRunId = campaign.RunIds.LastOrDefault();
             if (!campaign.CanProject) SimulationStatus = IncompatibleWorld;
             int savedIndex = Array.FindIndex(data.regions, region => region.id == campaign.SelectedSiteId);
             if (savedIndex >= 0) siteIndex = savedIndex;
@@ -340,6 +341,7 @@ namespace Homecoming.Field
             trial.findings = ClimateModel.Findings(trial.before, trial.months, duration);
             SetPrimary(trial.findings);
             showResult = true;
+            if (postTestResults && pendingPreview != null) SaveTestResults();
         }
 
         void SetPrimary(List<string> findings)
@@ -491,12 +493,6 @@ namespace Homecoming.Field
                 if (Input.GetKeyDown(KeyCode.Escape)) CloseCascadeReport();
                 return;
             }
-            if (view == View.Broadcast)
-            {
-                if (Input.GetKeyDown(KeyCode.Escape)) OpenStation();
-                else TickBroadcast();
-                return;
-            }
             if (view == View.SiteTransfer)
             {
                 if (Input.GetKeyDown(KeyCode.Escape)) FinishSiteTransfer(false);
@@ -514,6 +510,8 @@ namespace Homecoming.Field
                 else if (view == View.Report && orbitOpen) CloseComparison();
                 else if (view == View.Report && (reportDetails || temperatureOpen || (casePickerOpen && investigation != null))) OpenCase();
                 else if (view == View.Archive && archiveFilter != ArchiveFilter.None) archiveFilter = ArchiveFilter.None;
+                else if (view == View.Results && pendingPreview != null) RetrySaveTestResults();
+                else if (view == View.Results) OpenWeatherLab(guided:false);
                 else if (view != View.Lab) OpenStation();
                 else if (showSites)
                 {
@@ -588,7 +586,6 @@ namespace Homecoming.Field
         void ToggleMute()
         {
             muted = !muted;
-            if (broadcastAudio != null) broadcastAudio.mute = muted;
             PlayerPrefs.SetInt("homecoming.unity.mute", muted ? 1 : 0);
             PlayerPrefs.Save();
         }

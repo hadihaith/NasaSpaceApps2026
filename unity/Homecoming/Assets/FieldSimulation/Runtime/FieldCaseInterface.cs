@@ -94,7 +94,7 @@ namespace Homecoming.Field
                 casePickerOpen = false;
                 return;
             }
-            ChooseCase(Box(56,288,728,200),InvestigationKind.Rainfall,"Rain","Compare rainfall in the Sahel and central Chile.");
+            ChooseCase(Box(56,288,728,200),InvestigationKind.Rainfall,"Rain","Compare rainfall in Kuwait and the United Kingdom.");
             ChooseCase(Box(816,288,728,200),InvestigationKind.Temperature,"Temperature",
                 "Explore 45 years of Phoenix temperatures.");
             ChooseCase(Box(56,512,728,200),InvestigationKind.Soil,"Soil",
@@ -206,11 +206,11 @@ namespace Homecoming.Field
             bool filed = investigation.other != null;
             bool revealed = investigation.callsRevealed || filed;
             Step(324,madeCalls,madeCalls ? "Predictions ready" : "Predict the change",
-                madeCalls ? $"Compare rainfall over {Period(guidedSahel)}." : "Pick a direction for each place before you see the data.");
+                madeCalls ? $"Compare rainfall over {Period(guidedKuwait)}." : "Pick a direction for each place before you see the data.");
             Card(Box(56,420,728,180),Panel);
             Card(Box(816,420,728,180),Panel);
-            Text(Box(80,441,678,54),"Central Sahel",34,White,headingFont);
-            Text(Box(840,441,678,54),"Central Chile",34,White,headingFont);
+            Text(Box(80,441,678,54),"Kuwait City",34,White,headingFont);
+            Text(Box(840,441,678,54),"United Kingdom",34,White,headingFont);
             DrawCall(80,503,ref investigation.originCall,revealed,large:true);
             DrawCall(840,503,ref investigation.otherCall,revealed,large:true);
             if (Button(Box(56,632,311,52),revealed ? "Review the data" : "Check the data",

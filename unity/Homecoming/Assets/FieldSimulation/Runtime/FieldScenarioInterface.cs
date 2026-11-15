@@ -89,6 +89,7 @@ namespace Homecoming.Field
             duration = FieldCalendar.MonthsInPreview;
             scenarioTable = scenarioMethods = false;
             scenarioError = null;
+            postTestResults = !LegacyCapture && !demoActive && !investigationTest;
             Launch();
             if (view == View.Descent) focusIndex = 0;
             if (IsGuidedScenario && PendingPreview != null)

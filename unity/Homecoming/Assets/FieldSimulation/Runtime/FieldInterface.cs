@@ -44,7 +44,6 @@ namespace Homecoming.Field
         void OnGUI()
         {
             if (data == null || save == null) return;
-            if (view != View.Broadcast) ReleaseBroadcastControls();
             EnsureStyles();
             LoadInvestigation();
             if (!LegacyCapture && view != View.Report) orbitOpen = false;
@@ -77,7 +76,7 @@ namespace Homecoming.Field
                 case View.Report: if (LegacyCapture) DrawReport(); else DrawInvestigation(); break;
                 case View.SiteTransfer: DrawSiteTransfer(); break;
                 case View.Submission: DrawSubmission(); break;
-                case View.Broadcast: DrawBroadcast(); break;
+                case View.Results: DrawTestResults(); break;
             }
             if (demoActive) DrawDemoControls();
             if (Event.current.type == EventType.Repaint && !string.IsNullOrEmpty(GUI.tooltip))
@@ -262,25 +261,19 @@ namespace Homecoming.Field
             Rect welcome = Box(54,172,667,451);
             Card(welcome,Ink);
             Fill(Box(welcome.x,welcome.y,76,3),Mint);
-            var kind = investigation?.kind ?? InvestigationKind.Rainfall;
-            Tag(87,203,investigation == null ? "YOUR FIRST ASSIGNMENT" : "CURRENT CASE",Mint);
-            Text(Box(83,236,610,80),investigation == null ? "Investigate Earth" : CaseTitle(kind),62,White,headingFont);
-            Text(Box(87,331,580,68),investigation == null
-                ? "Guess how rainfall changed in two places, then check the records."
-                : CaseQuestion,27,Dim,bodyFont,TextAnchor.UpperLeft,true);
-            DrawCaseProgress(Box(93,406,574,70),kind);
-            if (Button(Box(87,498,429,59),investigation == null ? "Start the rainfall case" : "Continue case",
+            Tag(87,203,"PREPARE A HOME FOR HUMAN GUESTS",Mint);
+            Text(Box(83,236,610,80),"Weather lab",62,White,headingFont);
+            Text(Box(87,331,580,68),"Change the weather. Watch the ground respond.",27,Dim,bodyFont,TextAnchor.UpperLeft,true);
+            if (Button(Box(87,498,429,59),"Run a weather test",
                 accent:true,size:27,icon:"Next"))
-            {
-                if (investigation == null) NewInvestigation(InvestigationKind.Rainfall);
-                OpenCase();
-            }
+                OpenWeatherLab(guided:false);
             if (Button(Box(87,570,216,37),"Browse all cases",icon:"Search")) OpenCasePicker();
 
             if (ControlTile(Box(54,648,157,114),"Weather","Weather lab")) OpenWeatherLab(guided:false);
             if (ControlTile(Box(224,648,157,114),"Archive","Earth archive")) OpenArchive(null);
             if (ControlTile(Box(394,648,157,114),"Journal","Field journal")) Go(View.Journal);
-            if (ControlTile(Box(564,648,157,114),"Signal","Return to Sender")) OpenBroadcast();
+            if (lastResultsRunId != null && ControlTile(Box(564,648,157,114),"Chart","Latest test"))
+                OpenTestResults(lastResultsRunId);
             if (ReadyForFinale && Button(Box(768,172,352,55),"Incoming · Commander Zorvax",accent:true,icon:"Next"))
                 OpenSubmission();
 
@@ -568,9 +561,15 @@ namespace Homecoming.Field
             string hint = guided ? first ? "" : "Starts with the rain and soil water from test 1." :
                 $"Forecast starts {FieldCalendar.Date(displayed.monthIndex).ToString("MMM yyyy",Invariant)}.";
             Text(Box(1117,actionTop-63,417,53),blocker ?? SimulationStatus ?? hint,18,White,bodyFont,TextAnchor.MiddleLeft,true);
-            if (Button(Box(1116,actionTop,419,51),"Preview 12 months",true,false,blocker == null,25,icon:"Next")) LaunchScenario();
+            if (Button(Box(1116,actionTop,419,51),"Run test · 12 months",true,false,blocker == null,25,icon:"Next")) LaunchScenario();
             bool changed = Campaign != null && Enumerable.Range(0,data.controls.Length).Any(i => settings[i] != displayed.forcing[i]);
             if (Button(Box(1116,actionTop+60,419,36),"Reset to saved weather",enabled:changed,size:18)) Select(siteIndex);
+            if (!guided && lastResultsRunId != null && Button(Box(1116,actionTop+106,419,36),"View saved tests",size:20,icon:"Journal"))
+            {
+                OpenTestResults(lastResultsRunId);
+                resultsTab = 3;
+                resultsPage = 0;
+            }
             if (!guided && !showSites && !branchesOpen && !branchComparisonOpen) DrawWeatherMonitor();
         }
 

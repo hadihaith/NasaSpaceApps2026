@@ -41,7 +41,7 @@ namespace Homecoming.Field
             (kind == InvestigationKind.Temperature ? originCall != Direction.Unset && origin.hasPValue :
                 !string.IsNullOrEmpty(relationship) && (other != null || !string.IsNullOrWhiteSpace(gap))) &&
             (kind != InvestigationKind.Rainfall || (originCall != Direction.Unset && otherCall != Direction.Unset &&
-                difference?.hasPValue == true)) &&
+                difference?.hasRate == true)) &&
             (kind != InvestigationKind.Soil || (scenarioCall != Direction.Unset && first != null && second != null &&
                 (HasSoilInterpretation || !string.IsNullOrEmpty(submittedUtc)) &&
                 (first.result == scenarioCall || !string.IsNullOrWhiteSpace(conclusion))));

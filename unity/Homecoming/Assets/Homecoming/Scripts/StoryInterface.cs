@@ -462,18 +462,17 @@ namespace Homecoming
 
         void ReadyGUI()
         {
-            Header("COMMUNICATIONS / BROADCAST DECK");
+            Header("MISSION / WEATHER LAB");
             uiOpacity = Enter();
             Fill(new Rect(46, 527, 700, 248), new Color(ink.r, ink.g, ink.b, .96f));
-            Badge(70, 549, "FIRST CONTACT / YOUR ASSIGNMENT", mint);
-            Text(67, 596, 650, 76, "EARTH ON THE LINE.", Style(displayFont, 57, paper));
+            Badge(70, 549, "PREPARE A HOME FOR HUMAN GUESTS", mint);
+            Text(67, 596, 650, 76, "TRY EARTH'S WEATHER.", Style(displayFont, 57, paper));
             bool available = Application.CanStreamedLevelBeLoaded(simulationScene);
             if (available)
             {
-                bool submit = TakeSubmitKey("enter-broadcast");
-                if (Action("enter-broadcast", new Rect(70, 690, 630, 62), "INVESTIGATE THE RAIN ALERT", true) || submit)
-                    StorySession.OpenBroadcast(simulationScene);
-                if (Action("enter-lab", new Rect(1044, 699, 488, 62), "Open field station")) SceneManager.LoadSceneAsync(simulationScene);
+                bool submit = TakeSubmitKey("enter-lab");
+                if (Action("enter-lab", new Rect(70, 690, 630, 62), "OPEN WEATHER LAB", true) || submit)
+                    SceneManager.LoadSceneAsync(simulationScene);
             }
             else
             {

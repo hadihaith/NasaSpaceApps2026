@@ -318,22 +318,16 @@ namespace Homecoming.Field
             investigation.revisedOriginCall = Direction.LittleChange;
             FileComparison();
             var difference = investigation.difference;
-            CheckInvestigation(investigation.IsReady && investigation.comparisonId == "rain-two-ways" &&
+            CheckInvestigation(investigation.IsReady && investigation.comparisonId == "kuwait-united-kingdom-rainfall" &&
                 investigation.originCall == Direction.Rise && investigation.revisedOriginCall == Direction.LittleChange &&
                 investigation.origin.count == 35 && investigation.other.count == 35 && difference?.count == 35 &&
                 investigation.origin.status == "not-established" && !investigation.origin.hasPValue &&
                 investigation.other.status == "not-established" && !investigation.other.hasPValue &&
-                investigation.origin.unit == "mm/month" && difference.unit == "mm/month" &&
-                investigation.other.place == "Central Chile" &&
-                Mathf.Abs(investigation.origin.ratePerDecade - 2.1333333f) < .001f &&
-                Mathf.Abs(investigation.other.ratePerDecade + 18.8401515f) < .001f &&
-                difference.status == "significant" && difference.hasPValue && difference.hasOlsRate && difference.hasInterval &&
-                Mathf.Abs(difference.ratePerDecade - 24.6453125f) < .001f &&
-                Mathf.Abs(difference.olsRatePerDecade - 22.8439846f) < .001f &&
-                Mathf.Abs(difference.intervalLow - 16.3621244f) < .001f &&
-                Mathf.Abs(difference.intervalHigh - 29.3258448f) < .001f &&
-                Mathf.Abs(difference.pValue - 3.2300391e-8f) < 1e-11f,
-                "Filed rainfall evidence or prediction history differs from the reviewed comparison");
+                investigation.origin.place == "Kuwait City" && investigation.other.place == "United Kingdom" &&
+                difference.status == "not-established" && !difference.hasPValue &&
+                Mathf.Abs(difference.ratePerDecade + 2.2283333f) < .001f &&
+                guidedRain.difference.exploratoryTest.degreesOfFreedom == 33,
+                "Filed rainfall evidence or prediction history differs from the Kuwait / UK example");
             CloseComparison();
             reportDetails = true;
             yield return new WaitForSecondsRealtime(.5f);

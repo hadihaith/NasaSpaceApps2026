@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import archive from "../../../public/data/earth-archive.json";
 import reviews from "../../../data/reviews/homecoming-trends.json";
-import { chileRainDataset, CHILE_RAIN_SOURCE, GUIDED_RAIN } from "./curated-history";
+import { chileRainDataset, CHILE_RAIN_SOURCE, GUIDED_RAIN, DEMO_RAIN, DEMO_RAIN_SOURCES, demoRainDataset } from "./curated-history";
 import { analyzeHistoricalComparison, analyzeHistoricalRecord } from "./historical";
 import { parseArchive } from "./member3";
 
@@ -33,7 +33,7 @@ describe("historical evidence exported for Unity", () => {
   it("preserves the six simulation regions and traces every bundled observation to its input", () => {
     expect(regions).toHaveLength(6);
     expect(regions.every((region) => region.normals.length === 12)).toBe(true);
-    expect(evidence).toHaveLength(32);
+    expect(evidence).toHaveLength(34);
     for (const dataset of [...datasets.filter((d) => d.gameVariable), chile]) {
       const found = exported(dataset.seriesId);
       expect(found.id).toBe(dataset.id);
@@ -42,6 +42,27 @@ describe("historical evidence exported for Unity", () => {
       expect(found.fingerprint).toMatch(/^[a-f0-9]{64}$/);
       expect(found.observations).toEqual(dataset.observations.map(({ date, value }) => ({ date, value, hasValue: value !== null })));
     }
+  });
+
+  it("pins actual Kuwait and UK observations with a separately labeled exploratory test", () => {
+    const demo = DEMO_RAIN_SOURCES.map((source) => {
+      const bytes = readFileSync(source.path);
+      return demoRainDataset(JSON.parse(bytes.toString()), createHash("sha256").update(bytes).digest("hex"), source, sahel);
+    });
+    const comparison = comparisons.find((item) => item.id === DEMO_RAIN.id)!;
+    expect(comparison).toMatchObject(analyzeHistoricalComparison(DEMO_RAIN, demo[0], demo[1]));
+    for (const dataset of demo) {
+      expect(exported(dataset.seriesId).observations).toEqual(dataset.observations.map(({ date, value }) => ({ date, value, hasValue: true })));
+      expect(exported(dataset.seriesId).rawSha256).toBe(dataset.rawSha256);
+    }
+    expect(exported(demo[0].seriesId).footprint.point).toMatchObject({ latitude: 29.376, longitude: 47.977 });
+    expect(exported(demo[1].seriesId).footprint.point).toMatchObject({ latitude: 51.507, longitude: -0.128 });
+    expect(comparison.difference.status).toBe("not-established");
+    expect(comparison.difference.test).toBeNull();
+    expect(comparison.difference).toMatchObject({
+      exploratoryTest: { degreesOfFreedom: 33, tStatistic: -1.2333526679427778, p: 0.2261574433994732 },
+    });
+    expect(comparison).toMatchObject({ pearsonR: -0.03958287162742103 });
   });
 
   it("uses reported grid points and exact requested and contributing Phoenix bounds", () => {

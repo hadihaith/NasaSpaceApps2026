@@ -23,8 +23,13 @@ namespace Homecoming.Field
         bool showArchiveEvidence, archiveOfflineOnly, archiveWalkthrough;
         string archiveVerdictId;
         string ArchivePlaceId => LegacyCapture ? Region.id : archivePlaceId ?? Region.id;
-        string ArchivePlaceName => ArchivePlaceId == "central-chile" ? "Central Chile" :
-            data.regions.FirstOrDefault(site => site.id == ArchivePlaceId)?.name ?? ArchivePlaceId;
+        string ArchivePlaceName => ArchivePlaceId switch
+        {
+            "kuwait" => "Kuwait City",
+            "united-kingdom" => "United Kingdom",
+            "central-chile" => "Central Chile",
+            _ => data.regions.FirstOrDefault(site => site.id == ArchivePlaceId)?.name ?? ArchivePlaceId
+        };
         ArchiveVariableCatalog archiveCatalog;
         string archiveTheme = "water", draftArchiveVariable;
 

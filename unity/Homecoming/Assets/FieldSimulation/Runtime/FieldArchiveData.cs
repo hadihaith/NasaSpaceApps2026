@@ -56,6 +56,7 @@ namespace Homecoming.Field
     {
         public string id, type, question, scope, leftDatasetId, rightDatasetId;
         public ArchiveTrend left, right, difference;
+        public float pearsonR;
     }
 
     [Serializable] sealed class ArchiveTrend
@@ -67,7 +68,7 @@ namespace Homecoming.Field
         public float slopePerDecade, magnitude;
         public ArchiveBaseline baseline;
         public ArchiveTrendPoint[] points;
-        public ArchiveTest test;
+        public ArchiveTest test, exploratoryTest;
         public ArchiveReview review;
     }
 
@@ -85,7 +86,7 @@ namespace Homecoming.Field
     {
         FieldArchivePack historicalPack;
         ArchiveComparison guidedRain;
-        EvidenceSeries guidedSahel, guidedChile, guidedTemperature;
+        EvidenceSeries guidedKuwait, guidedUk, guidedTemperature;
         bool guidedRecordsChecked;
         ArchiveTrend pairedTrend;
         int archiveMode, archiveMonth, archiveValuePage;
@@ -102,6 +103,8 @@ namespace Homecoming.Field
         static string ArchivePlace(EvidenceSeries record) => record.region switch
         {
             "central-chile" => "Central Chile",
+            "kuwait" => "Kuwait City",
+            "united-kingdom" => "United Kingdom",
             "custom" => "Custom Earth location",
             _ => null
         };
@@ -242,7 +245,7 @@ namespace Homecoming.Field
         {
             CheckGuidedRecords();
             return (record == guidedTemperature && trend == Exported(record)?.finding) ||
-                (record == guidedSahel && trend == guidedRain?.difference);
+                (record == guidedKuwait && trend == guidedRain?.difference);
         }
 
         static bool MatchesCompleteAnnual(EvidenceSeries record, ArchiveTrend trend, int start, int end)
@@ -281,22 +284,23 @@ namespace Homecoming.Field
                     finding.review.id == "phoenix-temperature-review-v1")
                     guidedTemperature = temperature;
             }
-            var pair = historicalPack.comparisons?.FirstOrDefault(c => c.id == "rain-two-ways" && c.type == "historical-comparison");
+            var pair = historicalPack.comparisons?.FirstOrDefault(c => c.id == "kuwait-united-kingdom-rainfall" && c.type == "historical-comparison");
             if (pair == null) return;
             var a = data.evidence.FirstOrDefault(r => r.id == pair.leftDatasetId);
             var b = data.evidence.FirstOrDefault(r => r.id == pair.rightDatasetId);
-            if (!Comparable(a,b) || a.region != "sahel" || b.region != "central-chile" ||
+            if (!Comparable(a,b) || a.region != "kuwait" || b.region != "united-kingdom" ||
                 a.unit != "mm/month" || a.key != "rain" || a.provider != "reanalysis" || !SameScope(a,b)) return;
             var left = Exported(a);
             var right = Exported(b);
             if (left?.sourceParameter != "PRECTOTCORR" || left.footprint?.point == null || right?.footprint?.point == null ||
-                left.footprint.point.latitude != 14 || left.footprint.point.longitude != 6 ||
-                right.footprint.point.latitude != -36 || right.footprint.point.longitude != -72 ||
+                Mathf.Abs(left.footprint.point.latitude-29.376f) > .00001f || Mathf.Abs(left.footprint.point.longitude-47.977f) > .00001f ||
+                Mathf.Abs(right.footprint.point.latitude-51.507f) > .00001f || Mathf.Abs(right.footprint.point.longitude+.128f) > .00001f ||
                 pair.left?.id != left.finding?.id || pair.right?.id != right.finding?.id ||
                 !MatchesCompleteAnnual(a,pair.left,1991,2025) || !MatchesCompleteAnnual(b,pair.right,1991,2025) ||
                 left.finding?.status != "not-established" || right.finding?.status != "not-established") return;
             var delta = pair.difference;
-            if (!HasReviewedTest(delta) || delta.review.id != "rain-two-ways-paired-review-v1" ||
+            if (delta?.exploratoryTest == null || !float.IsFinite(delta.exploratoryTest.tStatistic) ||
+                delta.exploratoryTest.degreesOfFreedom != 33 ||
                 delta.mode != "annual" || delta.unit != a.unit || !delta.hasSlope || delta.n != 35 || delta.points?.Length != 35) return;
             for (int i = 0; i < delta.points.Length; i++)
             {
@@ -305,15 +309,15 @@ namespace Homecoming.Field
                     !float.IsFinite(point.value) || Mathf.Abs(point.value - (a.years[i].value - b.years[i].value)) > .00002f) return;
             }
             guidedRain = pair;
-            guidedSahel = a;
-            guidedChile = b;
+            guidedKuwait = a;
+            guidedUk = b;
         }
 
-        bool TryGetReviewedPair(out EvidenceSeries first, out EvidenceSeries second, out FiledFinding difference)
+        bool TryGetExamplePair(out EvidenceSeries first, out EvidenceSeries second, out FiledFinding difference)
         {
             CheckGuidedRecords();
-            first = guidedSahel;
-            second = guidedChile;
+            first = guidedKuwait;
+            second = guidedUk;
             difference = null;
             if (guidedRain == null) return false;
             comparisonScope = guidedRain.scope;

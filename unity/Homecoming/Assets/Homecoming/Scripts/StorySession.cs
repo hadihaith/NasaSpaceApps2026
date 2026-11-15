@@ -78,19 +78,6 @@ namespace Homecoming
         public const string StoryScene = "Story";
         public const string SimulationScene = "Simulation";
         public const string BroadcastProgressKey = Prefix + "broadcast.v1";
-        static bool pendingBroadcast;
-        public static void OpenBroadcast(string scene)
-        {
-            pendingBroadcast = true;
-            SceneManager.LoadSceneAsync(scene);
-        }
-
-        public static bool ConsumeBroadcastRequest()
-        {
-            bool requested = pendingBroadcast;
-            pendingBroadcast = false;
-            return requested;
-        }
         public static string RecruitName
         {
             get => PlayerPrefs.GetString(Prefix + "recruit", "");
@@ -216,7 +203,6 @@ namespace Homecoming
             pendingFiledReport = false;
             pendingReport = null;
             PlayerPrefs.DeleteKey(BroadcastProgressKey);
-            pendingBroadcast = false;
             HearingEvidence = StoryEvidence.Mixed;
             pendingCutscene = null;
             PlayerPrefs.Save();

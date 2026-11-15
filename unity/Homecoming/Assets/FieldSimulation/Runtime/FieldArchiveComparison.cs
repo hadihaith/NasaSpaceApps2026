@@ -187,12 +187,12 @@ namespace Homecoming.Field
                 new ArchiveTrendPoint { date = a.date, t = a.t, value = a.value-b.value }).ToArray());
 
             CheckGuidedRecords();
-            if (guidedRain != null && archiveOrigin.record == guidedSahel && other == guidedChile &&
+            if (guidedRain != null && archiveOrigin.record == guidedKuwait && other == guidedUk &&
                 archiveOrigin.trend.id == guidedRain.left.id && trend.id == guidedRain.right.id &&
                 archiveDelta.points.Select(p => p.date).SequenceEqual(guidedRain.difference.points.Select(p => p.date)))
             {
                 archiveDelta = guidedRain.difference;
-                archiveReviewedDifference = MakeFinding(guidedSahel,archiveDelta);
+                archiveReviewedDifference = MakeFinding(guidedKuwait,archiveDelta);
             }
             else if (archiveOrigin.connected != null && archiveDelta.n >= 10) StartArchivePair();
         }

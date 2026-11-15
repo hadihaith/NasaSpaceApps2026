@@ -26,6 +26,7 @@ namespace Homecoming
         int lastProbeFrame = -1000;
         string lastShot;
         const int DustCount = 54, PuffCount = 10, VictoryScatter = 34, VictoryTail = 9;
+        static readonly Vector3 VictoryCenter = new Vector3(-.14f, 2.46f, .76f);
         static readonly Vector3[] VictoryWord = BuildVictoryWord();
         static int AirParticleCount => DustCount + PuffCount + VictoryWord.Length + VictoryScatter + VictoryTail;
         static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
@@ -48,7 +49,7 @@ namespace Homecoming
             var dots = new List<Vector3>();
             for (int y = 0; y < rows.Length; y++)
                 for (int x = 0; x < rows[y].Length; x++)
-                    if (rows[y][x] == '1') dots.Add(V(.08f - (x - 20) * .091f, 3.46f - y * .117f, .76f));
+                    if (rows[y][x] == '1') dots.Add(VictoryCenter + V((20 - x) * .087f, (3 - y) * .069f, 0));
             return dots.ToArray();
         }
 
@@ -388,12 +389,11 @@ namespace Homecoming
         void VictoryParticle(int index, float age, bool reduced, out Vector3 center, out float size, out float alpha, out Color color)
         {
             const float burst = .40f;
-            var crown = V(.08f, 2.96f, .76f);
             float light = Hash(index, 7);
-            color = Color.Lerp(new Color(1.35f, .49f, .09f), new Color(1.65f, 1.31f, .55f), light);
+            color = Color.Lerp(new Color(1.16f, .49f, .065f), new Color(1.38f, .91f, .25f), light);
             size = .049f + .022f * light;
             alpha = 0;
-            center = crown;
+            center = VictoryCenter;
             if (age < 0) return;
 
             if (index >= VictoryWord.Length + VictoryScatter)
@@ -402,7 +402,7 @@ namespace Homecoming
                 float time = age - .024f * (index - VictoryWord.Length - VictoryScatter);
                 float rise = Mathf.Clamp01(time / burst);
                 var muzzle = stage.cannon.transform.TransformPoint(V(0, .26f, .44f));
-                center = Vector3.Lerp(muzzle, crown, rise) + V(0, .17f * Mathf.Sin(Mathf.PI * rise), 0);
+                center = Vector3.Lerp(muzzle, VictoryCenter, rise) + V(0, .17f * Mathf.Sin(Mathf.PI * rise), 0);
                 alpha = time > 0 ? 1 - Smooth(burst, burst + .18f, age) : 0;
                 size *= 1.3f;
                 return;
@@ -414,12 +414,12 @@ namespace Homecoming
             {
                 var dot = VictoryWord[index] + V((Hash(index, 12) - .5f) * .018f,
                     (Hash(index, 13) - .5f) * .025f, (Hash(index, 14) - .5f) * .06f);
-                float delay = Mathf.Abs(dot.x - crown.x) * .11f;
+                float delay = Mathf.Abs(dot.x - VictoryCenter.x) * .11f;
                 float grow = reduced ? 1 : Smooth(delay, delay + .63f, after);
-                center = Vector3.Lerp(crown, dot, grow);
-                size = .053f + light * .011f;
+                center = Vector3.Lerp(VictoryCenter, dot, grow);
+                size = .046f + light * .009f;
                 float shimmer = reduced ? 1 : .88f + .12f * Mathf.Sin(after * 14 + index * .8f);
-                alpha = .97f * shimmer * (reduced ? 1 : Smooth(0, .10f, after) * (1 - .38f * Smooth(1.55f, 2.20f, after)));
+                alpha = .97f * shimmer * (reduced ? 1 : Smooth(0, .10f, after) * (1 - .38f * Smooth(2.35f, 3.20f, after)));
                 return;
             }
 
@@ -429,7 +429,7 @@ namespace Homecoming
             center += V(Mathf.Cos(angle) * speed * after, Mathf.Sin(angle) * speed * after - .24f * after * after,
                 (Hash(index, 10) - .5f) * after * .56f);
             size *= .45f + light * .22f;
-            alpha = .76f * Smooth(0, .14f, after) * (1 - Smooth(.65f, 1.68f, after));
+            alpha = .76f * Smooth(0, .14f, after) * (1 - Smooth(.65f, 2.22f, after));
         }
         public void Teardown()
         {

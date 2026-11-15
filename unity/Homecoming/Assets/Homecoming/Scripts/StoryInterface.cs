@@ -322,6 +322,8 @@ namespace Homecoming
                 uiOpacity = 1;
             }
             string spoken = shot.LineAt(shotTime, out float lineAge, StorySession.HearingEvidence);
+            var activeLine = shot.ActiveLine(shotTime, StorySession.HearingEvidence);
+            if (activeLine != null && lineAge > sound.CaptionDuration(activeLine.id, activeLine.end - activeLine.at)) spoken = null;
             bool dialogue = captions && !string.IsNullOrEmpty(spoken);
             string line = dialogue ? spoken : descriptions ? shot.description : "";
             if (!string.IsNullOrEmpty(line))

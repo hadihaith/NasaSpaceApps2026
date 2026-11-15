@@ -23,7 +23,7 @@ namespace Homecoming
         readonly AudioClip[] themes = new AudioClip[4];
         readonly Dictionary<string, AudioClip> resourceClips = new Dictionary<string, AudioClip>();
         readonly Dictionary<string, VoiceTake> takes = new Dictionary<string, VoiceTake>();
-        readonly float[] levels = { .95f, .46f, .72f, .16f, .45f };
+        readonly float[] levels = { .95f, .46f, .72f, .16f, 1f };
         AudioSource source, controls, room, air, scoreA, scoreB, music, dialogue;
         string attemptedLine;
         bool dialogueActive;
@@ -157,7 +157,7 @@ namespace Homecoming
             bool space = id == "signal" || id == "earth";
             bool quiet = Time.unscaledTime < quietUntil || id == "deflate";
             float duck = dialogueActive && dialogue.volume > 0 ? .56f : 1;
-            float musicLevel = levels[(int)Bus.Music] * duck;
+            float musicLevel = levels[(int)Bus.Music] * duck * (id == "apollo" ? .35f : 1f);
             music.volume = Mathf.MoveTowards(music.volume, musicLevel, Time.unscaledDeltaTime * 4);
             float score = music.isPlaying ? 0 :
                 (id == "title" ? .42f : id == "party" ? .3f : .21f) * musicLevel * (quiet ? .2f : 1);
@@ -248,6 +248,27 @@ namespace Homecoming
 
         public bool PlayDialogue(string id) => !Muted && !paused && Speak(id, 0, float.PositiveInfinity);
 
+        // Give excited lines a little more energy and quieter lines a gentler delivery.
+        // AudioSource pitch also sets playback speed, so captions use the same rate.
+        static float DialogueRate(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return 1.12f;
+            if (id.StartsWith("reveal.") || id.StartsWith("party.") || id.StartsWith("launch.")) return 1.18f;
+            if (id.StartsWith("years.") || id.StartsWith("deflate.") || id.StartsWith("jam.")) return 1.08f;
+            return 1.12f;
+        }
+
+        public float CaptionDuration(string id, float window)
+        {
+            if (id == null || !takes.TryGetValue(id, out var take)) return window;
+            var clip = LoadClip(take.unityClip);
+            bool primaryReady = clip != null && clip.loadState == AudioDataLoadState.Loaded;
+            if (!primaryReady) clip = LoadClip(take.fallbackClip);
+            if (clip == null || clip.loadState != AudioDataLoadState.Loaded) return window;
+            float duration = primaryReady && take.duration > 0 ? Mathf.Min(take.duration, clip.length) : clip.length;
+            return Mathf.Min(window, Mathf.Max(.8f, duration / DialogueRate(id) + .15f));
+        }
+
         bool Speak(string id, float offset, float remaining)
         {
             if (id == null || !takes.TryGetValue(id, out var take)) return false;
@@ -256,11 +277,13 @@ namespace Homecoming
             if (!primaryReady) clip = LoadClip(take.fallbackClip);
             if (clip == null || clip.loadState != AudioDataLoadState.Loaded) return false;
             float duration = primaryReady && take.duration > 0 ? Mathf.Min(take.duration, clip.length) : clip.length;
-            float length = Mathf.Min(remaining, duration - offset);
+            float rate = DialogueRate(id);
+            float length = Mathf.Min(remaining, duration / rate - offset);
             if (length <= 0) return false;
             StopDialogue();
             dialogue.clip = clip;
-            dialogue.timeSamples = Mathf.Min(clip.samples - 1, Mathf.RoundToInt(offset * clip.frequency));
+            dialogue.pitch = rate;
+            dialogue.timeSamples = Mathf.Min(clip.samples - 1, Mathf.RoundToInt(offset * rate * clip.frequency));
             dialogue.Play();
             dialogueEnd = AudioSettings.dspTime + length;
             dialogueActive = true;

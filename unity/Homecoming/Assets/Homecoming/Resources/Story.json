@@ -19,7 +19,7 @@
       "id": "apollo",
       "description": "Apollo 11 television footage shows an astronaut beside the lunar module in 1969.",
       "label": "1969",
-      "seconds": 5.7,
+      "seconds": 9.843,
       "cues": []
     },
     {
@@ -196,9 +196,9 @@
       "lines": [
         {
           "id": "launch.01",
-          "at": 1,
+          "at": 0.6,
           "end": 2.6,
-          "text": "Zorvax: Let’s find out."
+          "text": "Zorvax: Commence operation: The Great Homecoming."
         }
       ],
       "cues": [

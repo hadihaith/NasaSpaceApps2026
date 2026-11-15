@@ -25,9 +25,9 @@ namespace Homecoming
         Vector3 cabinetScreenScale;
         TextMesh reportHeading, reportSecondHeading;
         bool paused;
-        const double ArchiveStart = 3;
-        const double RevealStart = 8.7;
-        const double CorrectionStart = 12.9;
+        const double ArchiveStart = 0;
+        const double RevealStart = 0;
+        const double CorrectionStart = 4.2;
         static readonly Vector3 PartyCamera = new Vector3(.35f, 2.35f, 9.1f);
         static readonly Vector3 PartyLook = new Vector3(.2f, 1.6f, 0);
         string current;
@@ -84,7 +84,7 @@ namespace Homecoming
             // Clone per player; the asset is never modified by playback.
             televisionMaterial = new Material(televisionMaterial);
             screen.sharedMaterial = televisionMaterial;
-            videoTexture = new RenderTexture(960, 720, 0, RenderTextureFormat.ARGB32);
+            videoTexture = new RenderTexture(1280, 720, 0, RenderTextureFormat.ARGB32);
             videoTexture.Create();
             television.renderMode = VideoRenderMode.RenderTexture;
             television.targetTexture = videoTexture;
@@ -104,7 +104,7 @@ namespace Homecoming
             var stencil = bridge.transform.Find("Hull stencil");
             hullLettering = new[] { identification?.GetComponent<Renderer>(), stencil?.GetComponent<Renderer>() };
             switchButton = switchProp.transform.Find("Red pushbutton");
-            // Frame the original 4:3 broadcast against black until the CRT is revealed.
+            // Frame the widescreen broadcast against black until the CRT is revealed.
             archiveBackdropMaterial = new Material(televisionMaterial) { name = "Archival picture mask", color = Color.black };
             archiveBackdrop = Part(PrimitiveType.Quad, screen.transform.parent,
                 screen.transform.localPosition - Vector3.forward * .015f, V(40, 24, 1), archiveBackdropMaterial);
@@ -318,7 +318,7 @@ namespace Homecoming
             if (cabinet != null)
             {
                 bool broadcast = UsesFilm(id) || id == "return";
-                screen.transform.localScale = broadcast ? V(cabinetScreenScale.y * 4f / 3f,
+                screen.transform.localScale = broadcast ? V(cabinetScreenScale.y * 16f / 9f,
                     cabinetScreenScale.y, cabinetScreenScale.z) : cabinetScreenScale;
                 foreach (var renderer in cabinet)
                     if (renderer != screen) renderer.enabled = !pictureOnly;

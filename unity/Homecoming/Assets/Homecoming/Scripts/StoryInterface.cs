@@ -323,6 +323,17 @@ namespace Homecoming
                 Badge(63, 88, lapse < 1 ? "TIME PASSING  /  " + year : "57 YEARS LATER  /  2026", orange);
                 Fill(new Rect(63, 126, 290, 4), new Color(paper.r, paper.g, paper.b, .2f));
                 Fill(new Rect(63, 126, 290 * lapse, 4), orange);
+                if (shotTime < 4f)
+                {
+                    // Keep the elapsed years legible beside the dialogue captions.
+                    uiOpacity = reducedMotion ? 1 : 1 - Ease((shotTime - 3.6f) / .4f);
+                    Fill(new Rect(63, 683, 470, 80), new Color(ink.r, ink.g, ink.b, .94f));
+                    Fill(new Rect(63, 683, 4, 80), orange);
+                    Text(82, 691, 80, 62, ">>", Style(displayFont, 50, orange, TextAnchor.MiddleCenter));
+                    Text(165, 691, 350, 62, Mathf.RoundToInt(57 * lapse) + " YEARS LATER",
+                        Style(displayFont, 48, paper, TextAnchor.MiddleLeft));
+                    uiOpacity = 1;
+                }
             }
             if (shot.id == "return")
                 Badge(63, 88, shotTime < 3.2f ? "ARTEMIS II  /  CREWED LUNAR FLYBY" : "ARTEMIS II  /  CREW RETURNED TO EARTH", mint);

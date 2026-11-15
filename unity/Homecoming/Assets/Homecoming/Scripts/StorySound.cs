@@ -252,10 +252,10 @@ namespace Homecoming
         // AudioSource pitch also sets playback speed, so captions use the same rate.
         static float DialogueRate(string id)
         {
-            if (string.IsNullOrEmpty(id)) return 1.12f;
-            if (id.StartsWith("reveal.") || id.StartsWith("party.") || id.StartsWith("launch.")) return 1.18f;
-            if (id.StartsWith("years.") || id.StartsWith("deflate.") || id.StartsWith("jam.")) return 1.08f;
-            return 1.12f;
+            if (string.IsNullOrEmpty(id)) return 1.04f;
+            if (id.StartsWith("reveal.") || id.StartsWith("party.") || id.StartsWith("launch.")) return 1.06f;
+            if (id.StartsWith("years.") || id.StartsWith("deflate.") || id.StartsWith("jam.")) return 1.02f;
+            return 1.04f;
         }
 
         public float CaptionDuration(string id, float window)

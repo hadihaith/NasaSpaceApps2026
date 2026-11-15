@@ -5,6 +5,15 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 
+# Generated files in nested projects and JavaScript tooling
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+**/[Uu]ser[Ss]ettings/
+**/node_modules/
+**/.plastic/
+
 # Player builds, exports and captures
 /[Bb]uild/
 /[Bb]uilds/

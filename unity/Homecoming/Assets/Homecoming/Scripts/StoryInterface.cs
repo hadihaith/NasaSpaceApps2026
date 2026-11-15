@@ -299,7 +299,13 @@ namespace Homecoming
             Fill(new Rect(0, 794, 1600, 106), ink);
             if (shot.id == "apollo") Badge(63, 88, "APOLLO 11  /  1969", orange);
             if (shot.id == "years")
-                Badge(63, 88, shotTime < 2.7f ? "1969" : "57 YEARS LATER  /  2026", orange);
+            {
+                float lapse = StoryStage.Lapse(shotTime, reducedMotion);
+                int year = 1969 + Mathf.RoundToInt(57 * lapse);
+                Badge(63, 88, lapse < 1 ? "TIME PASSING  /  " + year : "57 YEARS LATER  /  2026", orange);
+                Fill(new Rect(63, 126, 290, 4), new Color(paper.r, paper.g, paper.b, .2f));
+                Fill(new Rect(63, 126, 290 * lapse, 4), orange);
+            }
             if (shot.id == "return")
                 Badge(63, 88, shotTime < 3.2f ? "ARTEMIS II  /  CREWED LUNAR FLYBY" : "ARTEMIS II  /  CREW RETURNED TO EARTH", mint);
             if (shot.id == "lab")

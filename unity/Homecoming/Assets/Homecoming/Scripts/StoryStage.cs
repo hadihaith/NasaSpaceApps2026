@@ -352,7 +352,7 @@ namespace Homecoming
             switch (id)
             {
                 case "home": from = to = V(1.6f, 2.15f, 9.8f); look = target = V(1.7f, 1.55f, -.2f); break;
-                case "signal": from = V(5, 3, 65); to = V(-.35f, 1.45f, 5.9f); look = target = V(0, 1.2f, 0); duration = 4.5f; break;
+                case "signal": from = V(5, 3, 65); to = V(-.35f, 1.45f, 5.9f); look = target = V(0, 1.2f, 0); duration = 3.5f; break;
                 // Start back far enough to see the whole 1969 set, then ease toward the screen.
                 case "apollo": case "reveal":
                     var screenCenter = screen.transform.position;
@@ -371,7 +371,7 @@ namespace Homecoming
                 case "jam": from = V(.05f, 1.45f, 3.7f); to = V(.1f, 1.3f, 3.4f); look = target = V(.8f, 1.08f, .5f); duration = 2.6f; break;
                 case "years": from = to = PartyCamera; look = target = PartyLook; break;
                 case "return": from = V(.15f, 2.1f, 8.8f); to = V(.9f, 1.95f, 7.4f); duration = 4.8f; break;
-                case "earth": from = V(1.1f, 1.6f, 7.5f); to = V(-.1f, 1.4f, 5.9f); look = target = V(0, 1.2f, 0); duration = 5f; break;
+                case "earth": from = V(1.1f, 1.6f, 7.5f); to = V(-.1f, 1.4f, 5.9f); look = target = V(0, 1.2f, 0); duration = 5.2f; break;
                 case "launch": from = V(.86f, 1.72f, 3.8f); to = V(.74f, 1.62f, 3.45f); look = target = V(-.05f, 1.12f, .8f); duration = 1.5f; break;
                 case "lab": from = V(-.8f, 2.1f, 8.8f); to = V(.1f, 1.9f, 7.8f); look = target = V(0, 1.45f, -.4f); duration = 6.4f; break;
                 case "ready": from = to = V(.1f, 2.1f, 8.6f); look = target = V(0, 1.5f, -.4f); break;

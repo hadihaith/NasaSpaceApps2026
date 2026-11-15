@@ -3,14 +3,14 @@
     {
       "id": "signal",
       "description": "A pinprick in the dark becomes the Moon as the camera races toward it. A radio signal crackles.",
-      "seconds": 4.5,
+      "seconds": 3.5,
       "cues": [
         {
           "at": 0.08,
           "name": "radio"
         },
         {
-          "at": 2.9,
+          "at": 2.4,
           "name": "orbit"
         }
       ]
@@ -93,7 +93,7 @@
     {
       "id": "jam",
       "description": "One last streamer lodges in the cannon. The cannon coughs twice.",
-      "seconds": 2.6,
+      "seconds": 3.3,
       "lines": [
         {
           "id": "jam.coughs",
@@ -104,8 +104,8 @@
         {
           "id": "jam.01",
           "at": 1.3,
-          "end": 2.6,
-          "text": "Cadet B: It’s… resting."
+          "end": 3.3,
+          "text": "Cadet B: Oh, they went back to Earth."
         }
       ],
       "cues": [
@@ -173,13 +173,19 @@
     {
       "id": "earth",
       "description": "Through the window, Earth rolls out of the night and into the sunlight. Zorvax takes a long look at the planet humans keep coming home to.",
-      "seconds": 5.0,
+      "seconds": 5.2,
       "lines": [
         {
           "id": "earth.01",
-          "at": 3.1,
-          "end": 5,
+          "at": 1.75,
+          "end": 3.5,
           "text": "Zorvax: What does it have that ours doesn’t?"
+        },
+        {
+          "id": "earth.02",
+          "at": 3.5,
+          "end": 5.2,
+          "text": "Zorvax: We must bring them here."
         }
       ],
       "cues": [
@@ -192,13 +198,13 @@
     {
       "id": "launch",
       "description": "In the gloom, Zorvax slams a red switch. Every light on the bridge kicks on.",
-      "seconds": 2.6,
+      "seconds": 3.2,
       "lines": [
         {
           "id": "launch.01",
           "at": 0.6,
-          "end": 2.6,
-          "text": "Zorvax: Commence operation: The Great Homecoming."
+          "end": 3.2,
+          "text": "Zorvax: Commence mission: The Great Homecoming."
         }
       ],
       "cues": [

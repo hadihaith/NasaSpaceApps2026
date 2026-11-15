@@ -87,7 +87,7 @@ namespace Homecoming.Editor
             rt.Create();
             stage.filmCamera.targetTexture = rt;
             string[] names = { "home", "signal", "apollo", "reveal", "correction", "party", "jam", "years", "return", "earth", "launch", "lab", "hearing", "deflate" };
-            float[] times = { 1, 4.3f, 2, 3.2f, 1.4f, 1.55f, 1.4f, 3.1f, 3.55f, 3, .78f, 4, 3.2f, 2.6f };
+            float[] times = { 1, 3.35f, 2, 3.2f, 1.4f, 1.55f, 1.4f, 3.1f, 3.55f, 3, .78f, 4, 3.2f, 2.6f };
             for (int i = 0; i < names.Length; i++)
             {
                 stage.Evaluate(names[i], times[i], false, true);

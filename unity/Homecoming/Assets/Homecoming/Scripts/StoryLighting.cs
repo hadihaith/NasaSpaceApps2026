@@ -171,6 +171,13 @@ namespace Homecoming
                     welcome.party = 1; welcome.key = 2.4f; welcome.saturation = 1.15f;
                     welcome.tint = new Color(1.05f, .99f, .96f);
                     look = Look.Lerp(welcome, Faded(t, reduced), lapse);
+                    // A visible sweep of passing days, settling before the 2026 dialogue.
+                    if (!reduced && t >= .25f && t < 2.7f)
+                    {
+                        float sweep = .5f + .5f * Mathf.Sin((t - .25f) * 13f);
+                        look.exposure *= Mathf.Lerp(.55f, 1.18f, sweep);
+                        look.rim *= Mathf.Lerp(.35f, 1.8f, sweep);
+                    }
                     break;
                 }
                 case "deflate": case "epilogue":

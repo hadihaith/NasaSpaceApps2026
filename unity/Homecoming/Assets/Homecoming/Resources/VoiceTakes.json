@@ -42,6 +42,10 @@
       "fallbackClip": "HomecomingAudio/VoiceFallback/earth.01"
     },
     {
+      "id": "earth.02",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/earth.02"
+    },
+    {
       "id": "launch.01",
       "fallbackClip": "HomecomingAudio/VoiceFallback/launch.01"
     },

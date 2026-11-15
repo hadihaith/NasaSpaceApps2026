@@ -124,6 +124,8 @@ namespace Homecoming.Field
             Tag(44,28,physical ? "CONDITIONAL SCENARIO" : "ILLUSTRATIVE SCENARIO",Mint);
             Text(Box(41,55,900,66),Region.name,50,White,headingFont);
             Text(Box(45,128,980,34),$"{MonthName(current)} · {(comparing ? "Inherited weather" : "Edited weather")} view · Illustrative landscape",23,White);
+            if (openedFromFiledReport && Button(Box(956,33,230,42),"← Homecoming report",false,false,!running && PendingPreview == null))
+                StorySession.ReturnToFiledReport();
             if (Button(Box(1202,33,164,42),muted ? "Sound off" : "Sound on")) ToggleMute();
             if (Button(Box(1380,33,175,42),reduced ? "Motion reduced" : "Motion full")) ToggleMotion();
             if (Button(Box(1309,94,246,44),"Investigation desk",false,false,!HasPendingAdvance && !running)) OpenCase();

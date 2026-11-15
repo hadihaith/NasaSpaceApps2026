@@ -146,7 +146,8 @@ namespace Homecoming
         {
             if (!initialized) Initialize();
             bool visible = shot == "home" || (shot == "recruit" && role == 0) || (shot == "ready" && role > 0) || shot == "epilogue" ||
-                (shot == "jam" && role == 2) || shot == "reveal" || shot == "party" || shot == "years" || shot == "return" || shot == "hearing" ||
+                (shot == "jam" && role == 2) || shot == "reveal" || shot == "party" || shot == "years" || shot == "return" ||
+                shot == "hearing" || shot == "evidence" || shot == "reaction" ||
                 (shot == "correction" && role < 2) || (shot == "launch" && role == 0) || (shot == "lab" && role > 0) ||
                 CutsceneScript.IsCutsceneShot(shot);
             gameObject.SetActive(visible);
@@ -165,7 +166,19 @@ namespace Homecoming
                 case "return": action = role == 0 ? "Complain" : "Idle"; start = 1.12f; end = 4.65f; rate = 1.35f; break;
                 case "launch": action = "Nod"; start = .08f; end = 2.1f; rate = .8f; break;
                 case "lab": if (role == 1) { action = "Explain"; start = .35f; end = 6.5f; rate = .77f; hold = .9f; } break;
-                case "hearing": action = role == 0 ? "Welcome" : role == 1 ? "Eureka" : "Idle"; start = role == 1 ? 2.05f : .08f; end = 5.6f; hold = role == 0 ? 2 : .5f; rate = .9f; break;
+                case "hearing":
+                    if (role == 0) { action = "Welcome"; start = .08f; end = 5.1f; hold = 2; rate = .9f; }
+                    if (role == 2) { action = "Walk"; start = 3.6f; end = 5.1f; loop = true; }
+                    break;
+                case "evidence":
+                    if (role == 0) { action = "Complain"; start = 4.7f; end = 7.5f; }
+                    if (role == 1) { action = "Explain"; start = 2.4f; end = 8.4f; hold = 1.1f; }
+                    if (role == 2) { action = "Walk"; start = .03f; end = 1.7f; loop = true; }
+                    break;
+                case "reaction":
+                    if (role == 0) { action = "Nod"; start = 6.8f; end = 9.6f; rate = .85f; }
+                    if (role == 2) { action = "Walk"; start = .1f; end = 1.25f; loop = true; }
+                    break;
                 case "recruit": if (t < 3.4f) { action = "Welcome"; start = .1f; end = 3.5f; hold = .6f; } break;
                 // Cutscene 1, The Welcome Baskets: only Ibrahim's authored clips are used.
                 case "drought-alert": if (role == 1) { action = "Explain"; start = .3f; end = 2.8f; rate = .9f; } break;
@@ -268,10 +281,56 @@ namespace Homecoming
             }
             if (shot == "hearing")
             {
-                float interruption = Smooth(2.24f, 2.8f, t);
-                if (role == 0) { yaw += 15 * interruption; headYaw = 30 * interruption; headPitch = 9 * interruption; torsoPitch = -4 * interruption; }
-                if (role == 1) { headYaw = -20 * interruption; headPitch = 5 * interruption; }
-                if (role == 2) { headYaw = -17 * interruption; headPitch = 7 * interruption; }
+                if (role == 2) { x += .73f * (1 - Smooth(3.6f, 4.95f, t)); z += .2f * Smooth(3.6f, 4.95f, t); }
+                if (role == 0) { headYaw = -16 * Smooth(1.4f, 2.1f, t); torsoPitch = -5 * Beat(t, 1.8f, .8f); }
+                headPitch -= (role == 0 ? 12 : 18) * Smooth(StoryStage.VictoryLaunch + .28f, 4.15f, t);
+            }
+            if (shot == "evidence")
+            {
+                float readerOn = Smooth(2.7f, 3.55f, t);
+                float lean = Smooth(7.9f, 8.95f, t) * (1 - Smooth(9.4f, 10.65f, t));
+                if (role == 0)
+                {
+                    x -= .18f * readerOn - .69f * lean;
+                    z += .18f * lean;
+                    headYaw = 33 * readerOn - 12 * Smooth(5.65f, 6.45f, t);
+                    headPitch = 12 * readerOn + 18 * lean;
+                    torsoPitch = 10 * readerOn + 18 * lean - 9 * Beat(t, 5.65f, .37f);
+                    Face("Disbelief", .76f * readerOn * (1 - lean));
+                }
+                if (role == 1)
+                {
+                    z += .49f * Smooth(.18f, 1.3f, t) - .24f * Smooth(4.45f, 5.55f, t);
+                    x += .22f * readerOn;
+                    yaw -= 14 * (1 - readerOn);
+                    headYaw = -19 + 49 * Smooth(2.5f, 3.6f, t);
+                    headPitch = 9 + 10 * Beat(t, 2.65f, .59f);
+                    torsoPitch = 12 * Beat(t, 2.65f, .65f);
+                }
+                if (role == 2)
+                {
+                    float approach = Smooth(.08f, 1.7f, t);
+                    x -= .55f * approach;
+                    z += .65f * approach;
+                    headYaw = -24 * approach;
+                    headPitch = 7 + 18 * Beat(t, 5.53f, .47f);
+                    torsoPitch = 23 * Beat(t, 5.53f, .58f);
+                    if (!still) y -= .10f * Beat(t, 5.52f, .38f);
+                }
+            }
+            if (shot == "reaction")
+            {
+                float toPlayer = Smooth(5.05f, 6.5f, t);
+                if (role == 0)
+                {
+                    x -= .22f * (1 - toPlayer);
+                    yaw += 14 - 25 * toPlayer;
+                    headYaw = 23 * (1 - toPlayer);
+                    headPitch = 11 * (1 - toPlayer);
+                    Face("Disbelief", .62f * (1 - toPlayer));
+                }
+                if (role == 1) { headYaw = -21; headPitch = 5; }
+                if (role == 2) { x -= .55f * (1 - Smooth(.15f, 1.25f, t)); z += .65f * (1 - Smooth(.15f, 1.25f, t)); }
             }
             if (CutsceneScript.IsCutsceneShot(shot))
             {
@@ -318,7 +377,24 @@ namespace Homecoming
             {
                 Reach(rightArm, rightForearm, rightHand, new Vector3(-.74f, 1.41f, 1.36f), .9f * Smooth(.08f, .4f, t));
                 Reach(leftArm, leftForearm, leftHand, new Vector3(.59f, .98f, .91f),
-                    .9f * Smooth(.95f, 1.85f, t) * (1 - Smooth(2.43f, 3.47f, t)));
+                    .9f * Smooth(.95f, StoryStage.VictoryLaunch, t) * (1 - Smooth(StoryStage.VictoryLaunch + .12f, 3.75f, t)));
+            }
+            if (shot == "evidence")
+            {
+                if (role == 0)
+                {
+                    Reach(leftArm, leftForearm, leftHand, StoryStage.ReaderSwitch, Envelope(t, 8.35f, 9.95f));
+                }
+                if (role == 1)
+                {
+                    Reach(leftArm, leftForearm, leftHand, new Vector3(-.24f, 1.43f, .96f), Envelope(t, .14f, 1.15f));
+                    Reach(rightArm, rightForearm, rightHand, new Vector3(1.17f, 1.91f, -.27f), Envelope(t, 2.15f, 4.55f));
+                }
+                if (role == 2)
+                {
+                    var target = Vector3.Lerp(new Vector3(1.29f, 1.04f, 1.14f), StoryStage.ArchiveSocket, Smooth(4.85f, 5.6f, t));
+                    Reach(rightArm, rightForearm, rightHand, target, Envelope(t, 1.45f, 6.12f));
+                }
             }
         }
     }

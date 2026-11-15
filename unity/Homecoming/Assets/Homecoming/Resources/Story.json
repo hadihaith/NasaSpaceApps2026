@@ -260,60 +260,108 @@
   "ending": [
     {
       "id": "hearing",
-      "description": "Zorvax presents your report and reaches for the party cannon. Nyxen points to the evidence labels. Zorvax lowers his hand.",
-      "seconds": 5.8,
+      "description": "Zorvax holds up the report and trips the party cannon as he declares victory. Golden fireworks form a V above the crew. Cadet B hurries in with the archive cartridge.",
+      "seconds": 5.35,
       "lines": [
         {
           "id": "hearing.01",
           "at": 0.7,
-          "end": 2.5,
-          "text": "Zorvax: Proof! Now they’ll come!"
-        },
-        {
-          "id": "hearing.02.scenario",
-          "at": 2.5,
-          "end": 5.15,
-          "text": "Nyxen: Sir, we ran a simulation.",
-          "variant": "scenario"
-        },
-        {
-          "id": "hearing.02.historical",
-          "at": 2.5,
-          "end": 5.15,
-          "text": "Nyxen: Sir, these are weather records.",
-          "variant": "historical"
-        },
-        {
-          "id": "hearing.02.mixed",
-          "at": 2.5,
-          "end": 5.15,
-          "text": "Nyxen: Weather records here. Simulation here.",
-          "variant": "mixed"
+          "end": 4.7,
+          "text": "Zorvax: After 57 years, we have finally made Earth uninhabitable!"
         }
       ],
       "cues": [
         {
           "at": 0.6,
           "name": "paper"
+        },
+        {
+          "at": 3.08,
+          "name": "party-hit"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "description": "Nyxen stops the celebration and directs everyone's attention to the big monitor behind the crew. The saved simulation appears. Cadet B docks the archive cartridge, adding the historical finding. Zorvax taps the reader, and the monitor switches to the latest saved experiments.",
+      "seconds": 14.1,
+      "lines": [
+        {
+          "id": "hearing.02.scenario",
+          "at": 3.55,
+          "end": 6.55,
+          "text": "Nyxen: Sir, these were computer simulations.",
+          "variant": "scenario"
+        },
+        {
+          "id": "hearing.02.historical",
+          "at": 3.55,
+          "end": 6.55,
+          "text": "Nyxen: Sir, these are weather records.",
+          "variant": "historical"
+        },
+        {
+          "id": "hearing.02.mixed",
+          "at": 3.55,
+          "end": 6.55,
+          "text": "Nyxen: Sir, these were computer simulations.",
+          "variant": "mixed"
+        }
+      ],
+      "cues": [
+        {
+          "at": 2.6,
+          "name": "detent"
+        },
+        {
+          "at": 3.55,
+          "name": "projector"
+        },
+        {
+          "at": 5.6,
+          "name": "detent"
+        },
+        {
+          "at": 9.1,
+          "name": "projector"
+        }
+      ]
+    },
+    {
+      "id": "reaction",
+      "description": "Nyxen lets the data speak for a moment. Zorvax slowly looks away from the monitor and back toward you. Cadet B takes a step back from the party cannon.",
+      "seconds": 9.7,
+      "lines": [
+        {
+          "id": "hearing.silence",
+          "at": 0.15,
+          "end": 1.25,
+          "text": "Zorvax: …"
+        },
+        {
+          "id": "hearing.03",
+          "at": 1.7,
+          "end": 5.05,
+          "text": "Nyxen: We haven’t actually changed anything on Earth."
+        },
+        {
+          "id": "hearing.04",
+          "at": 6.55,
+          "end": 9.35,
+          "text": "Zorvax: So… we need more research."
         }
       ]
     },
     {
       "id": "deflate",
       "description": "The jammed streamer stays put. The last party balloon deflates next to the cannon.",
-      "seconds": 4.4,
+      "seconds": 3.4,
       "lines": [
         {
           "id": "deflate.squeak",
           "at": 0.84,
           "end": 2.65,
           "text": "[Balloon squeaks]"
-        },
-        {
-          "id": "deflate.01",
-          "at": 2.8,
-          "end": 4.4,
-          "text": "Cadet B: …Same time next year?"
         }
       ],
       "cues": [

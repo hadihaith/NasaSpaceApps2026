@@ -14,7 +14,7 @@ namespace Homecoming.Field
         public Texture2D commander;
 
         public const string SaveKey = "homecoming.unity.field.v1";
-        enum View { Lab, Descent, Field, Journal, Archive, Report, SiteTransfer }
+        enum View { Lab, Descent, Field, Journal, Archive, Report, SiteTransfer, Submission }
         View view;
         ClimateData data;
         FieldSave save;
@@ -67,6 +67,8 @@ namespace Homecoming.Field
             world.Initialize();
             Select(siteIndex);
             loading = false;
+            var history = StorySession.ConsumeHistoryRequest();
+            if (history != SimulationHistory.None) OpenHistory(history);
         }
 
         void Load()
@@ -88,7 +90,8 @@ namespace Homecoming.Field
             }
 
             FieldSave legacy = null;
-            string legacyJson = PlayerPrefs.GetString(SaveKey, "");
+            string operation = StorySession.OperationId;
+            string legacyJson = string.IsNullOrEmpty(operation) ? PlayerPrefs.GetString(SaveKey, "") : "";
             if (legacyJson.Length > 0)
             {
                 try { legacy = JsonUtility.FromJson<FieldSave>(legacyJson); }
@@ -97,7 +100,8 @@ namespace Homecoming.Field
 
             try
             {
-                campaign = FieldCampaign.Open(data, Path.Combine(Application.persistentDataPath, "field-campaign-v2.json"),
+                string fileName = string.IsNullOrEmpty(operation) ? "field-campaign-v2.json" : $"field-campaign-{operation}.json";
+                campaign = FieldCampaign.Open(data, Path.Combine(Application.persistentDataPath, fileName),
                     legacy, Region.id);
             }
             catch (Exception error) when (IsCampaignError(error))
@@ -417,6 +421,7 @@ namespace Homecoming.Field
         void Go(View next)
         {
             if (view == View.SiteTransfer) return;
+            if (view == View.Submission && submissionVoice != null) submissionVoice.Stop();
             ReleaseLook();
             paused = false;
             hotDial = -1;

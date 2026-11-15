@@ -51,10 +51,11 @@ namespace Homecoming.Field
                 case InvestigationKind.Soil: DrawSoilChecklist(); break;
                 default: DrawFreeChecklist(); break;
             }
-            if (Button(Box(56,830,253,43),"Read mission report",true,false,investigation.origin != null,21))
+            if (Button(Box(56,830,253,43),"Review investigation",false,false,investigation.origin != null,21))
             {
                 reportDetails = true;
             }
+            if (ReadyForFinale && Button(Box(328,830,228,43),"Meet Zorvax  →",true)) OpenSubmission();
             if (!demoActive && investigation.kind is (InvestigationKind.Rainfall or InvestigationKind.Soil) &&
                 Button(Box(1000,830,176,43),"Watch demo",false,false,true,19))
                 WatchCase(investigation.kind);
@@ -273,9 +274,11 @@ namespace Homecoming.Field
                 investigation.conclusion = conclusion;
                 SaveInvestigation();
             }
-            Text(Box(56,775,1488,35),reportStatus ?? (investigation.IsReady ? "The report is ready for the hearing." : "Finish the steps on the investigation desk to submit."),22,White);
+            Text(Box(56,775,1488,35),investigation.IsReady
+                ? (ReadyForFinale ? "Zorvax is ready to speak with you." : $"Discover {data.requiredDiscoveries} phenomena in the field to unlock the hearing.")
+                : "Finish the steps on the investigation desk to complete this case.",22,White);
             if (Button(Box(56,830,280,43),"Back to investigation")) reportDetails = false;
-            if (Button(Box(1214,830,330,43),"Submit to the hearing",true,false,investigation.IsReady && !hearingRequested && !demoActive,23)) SubmitInvestigation();
+            if (ReadyForFinale && Button(Box(1214,830,330,43),"Meet Zorvax  →",true)) OpenSubmission();
         }
 
         static string SignificanceLabel(FiledFinding finding, bool includeReason = true) => finding.significance + (finding.hasPValue

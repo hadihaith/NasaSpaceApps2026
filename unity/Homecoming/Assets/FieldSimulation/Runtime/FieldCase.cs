@@ -51,7 +51,8 @@ namespace Homecoming.Field
 
     static class FieldCaseStore
     {
-        const string Key = "homecoming.unity.investigation.v1";
+        const string LegacyKey = "homecoming.unity.investigation.v1";
+        static string Key => string.IsNullOrEmpty(StorySession.OperationId) ? LegacyKey : LegacyKey + "." + StorySession.OperationId;
         public const string FolderName = "Investigation reports";
         public static string Folder => Path.Combine(Application.persistentDataPath, FolderName);
 

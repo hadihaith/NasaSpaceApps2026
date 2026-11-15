@@ -262,6 +262,11 @@ namespace Homecoming.Field
             CheckInvestigation(!investigation.IsReady,"A wrong prediction had no explanation");
             investigation.conclusion = "Additional precipitation left more water in the model bucket at the end of year one.";
             CheckInvestigation(investigation.IsReady,"An explained wrong prediction could not complete the scenario case");
+            var linked = BuildHomecomingReport().link;
+            CheckInvestigation(linked?.runId == investigation.first.runId && linked.recordId == investigation.origin.datasetId &&
+                linked.siteId == GuidedSoilOrigin && linked.scenario.Contains("Final modeled"),
+                "The report did not link the saved rainfall scenario and the filed Earth record");
+            savedCases[investigation.kind] = investigation;
             OpenCase();
             reportDetails = true;
             yield return new WaitForSecondsRealtime(.5f);
@@ -332,6 +337,20 @@ namespace Homecoming.Field
             yield return CaptureInvestigation(output,"07-historical-report");
             yield return new WaitForSecondsRealtime(.4f);
 
+            // Commit two more real model runs in the disposable QA campaign to verify all four slots.
+            foreach (int site in new[] { 2, 4 })
+            {
+                var changes = new[] { new ForcingEdit(ForcingControl.Rain, 35, Campaign.Current.nextMonth) };
+                Campaign.Advance(Campaign.Preview(data.regions[site].id, changes));
+            }
+            RestoreJournal();
+            var summary = BuildHomecomingReport();
+            CheckInvestigation(summary.recentRuns.Length == 4 && summary.recentRuns[0].site == data.regions[4].name &&
+                summary.recentRuns[1].site == data.regions[2].name && summary.recentRuns[3].edited.Length == 12 &&
+                summary.link?.editedWeather?.Length == 12 && summary.link.archiveValues.Length > 1 &&
+                summary.link.archiveValues.Length == summary.link.archiveTimes.Length,
+                "The monitor does not have the four saved runs and exact historical series");
+
             UnityEngine.Events.UnityAction<Scene, LoadSceneMode> onHearing = null;
             onHearing = (scene, mode) =>
             {
@@ -339,6 +358,8 @@ namespace Homecoming.Field
                 FinishInvestigationValidation(scene, output);
             };
             SceneManager.sceneLoaded += onHearing;
+            OpenSubmission();
+            yield return CaptureInvestigation(output, "08b-findings-submission");
             SubmitInvestigation(output);
             CheckInvestigation(hearingRequested && File.Exists(Path.Combine(output,investigation.id+".json")),"Report export or story submission failed");
         }
@@ -360,18 +381,44 @@ namespace Homecoming.Field
         {
             var director = FindAnyObjectByType<StoryDirector>();
             CheckInvestigation(scene.name == StorySession.StoryScene && director?.CurrentShot == "hearing" &&
-                StorySession.HearingEvidence == StoryEvidence.Historical,
+                StorySession.HearingEvidence == StoryEvidence.Mixed,
                 "The report did not open the hearing");
             director.StartCoroutine(CaptureValidatedHearing(director, output));
         }
 
         static IEnumerator CaptureValidatedHearing(StoryDirector director, string output)
         {
-            float deadline = Time.realtimeSinceStartup + 15;
-            yield return new WaitUntil(() => director.ShotTime >= 3.2f || Time.realtimeSinceStartup >= deadline);
-            CheckInvestigation(director.CurrentShot == "hearing" && director.ShotTime >= 3.2f, "The hearing did not play through the report correction");
+            float deadline = Time.realtimeSinceStartup + 48;
+            yield return new WaitUntil(() => director.ShotTime >= StoryStage.VictoryLaunch + .25f || Time.realtimeSinceStartup >= deadline);
+            CheckInvestigation(director.CurrentShot == "hearing", "The party cannon cue did not play in the hearing");
+            yield return CaptureInvestigation(output, "08c-victory-launch");
+            yield return new WaitUntil(() => director.ShotTime >= 4.52f || Time.realtimeSinceStartup >= deadline);
+            CheckInvestigation(director.CurrentShot == "hearing", "The hearing cut away before the victory fireworks formed");
+            yield return CaptureInvestigation(output, "08d-victory-fireworks");
+            yield return new WaitUntil(() => director.CurrentShot == "evidence" && director.ShotTime >= 1.3f || Time.realtimeSinceStartup >= deadline);
+            CheckInvestigation(director.CurrentShot == "evidence", "The hearing skipped the monitor scene");
+            yield return CaptureInvestigation(output, "09a-monitor-setup");
+            yield return new WaitUntil(() => director.ShotTime >= 4.9f || Time.realtimeSinceStartup >= deadline);
             yield return CaptureInvestigation(output, "09-historical-hearing");
-            Debug.Log("INVESTIGATION_PLAYBACK_OK: two advances, inherited state, February scrubbing, wrong prediction, unresolved monthly view, reviewed Phoenix and paired rainfall, report export and hearing.");
+            yield return new WaitUntil(() => director.ShotTime >= 7.25f || Time.realtimeSinceStartup >= deadline);
+            CheckInvestigation(director.stage.EvidenceMonitorVisible && !director.stage.report.activeSelf,
+                "The evidence brief did not appear on the monitor alone");
+            yield return CaptureInvestigation(output, "09b-linked-history-on-monitor");
+            yield return new WaitUntil(() => director.ShotTime >= 10.85f || Time.realtimeSinceStartup >= deadline);
+            CheckInvestigation(director.CurrentShot == "evidence" && director.ShotTime >= StoryStage.MonitorChangesPage,
+                "The hearing did not hold on the four-run page");
+            CheckInvestigation(director.stage.EvidenceMonitorVisible && !director.stage.report.activeSelf,
+                "The four-run brief did not appear on the monitor alone");
+            yield return CaptureInvestigation(output, "09c-four-saved-simulations");
+            yield return new WaitUntil(() => director.CurrentShot == "epilogue" || Time.realtimeSinceStartup >= deadline);
+            CheckInvestigation(director.CurrentShot == "epilogue" && StorySession.FiledReport is { experiments: 4, investigations: >= 2, link: not null, recentRuns: { Length: 4 } },
+                "The personalized report did not become available after the story");
+            yield return new WaitForSecondsRealtime(.6f);
+            yield return CaptureInvestigation(output, "10-finale-status");
+            director.ShowFiledReport();
+            CheckInvestigation(director.CurrentShot == "report", "The personalized report did not open from the final status");
+            yield return CaptureInvestigation(output, "11-homecoming-report");
+            Debug.Log("INVESTIGATION_PLAYBACK_OK: scenario playback, reviewed Earth records, report export and the animated hearing with four committed simulation results.");
 #if !UNITY_EDITOR
             Application.Quit(0);
 #endif

@@ -71,6 +71,7 @@ namespace Homecoming.Field
                 case View.Archive: DrawArchive(); break;
                 case View.Report: if (LegacyCapture) DrawReport(); else DrawInvestigation(); break;
                 case View.SiteTransfer: DrawSiteTransfer(); break;
+                case View.Submission: DrawSubmission(); break;
             }
             if (demoActive) DrawDemoControls();
             GUI.matrix = matrix;
@@ -166,6 +167,8 @@ namespace Homecoming.Field
             Text(Box(50,27,300,31),"HOMECOMING",28,White,headingFont);
             Tag(51,57,screen,Mint);
             if (view == View.Field || view == View.Descent || demoActive) return;
+            if (StorySession.FiledReport != null && Button(Box(688,32,226,39),
+                openedFromFiledReport ? "← Homecoming report" : "Homecoming report")) StorySession.ReturnToFiledReport();
             if (Button(Box(934,32,144,39),"Flight deck",false,view == View.Lab)) Go(View.Lab);
             if (Button(Box(1086,32,144,39),"Field journal",false,view == View.Journal)) Go(View.Journal);
             if (Button(Box(1238,32,144,39),"Earth archive",false,view == View.Archive)) OpenArchive(null);
@@ -188,6 +191,8 @@ namespace Homecoming.Field
             {
                 if (Button(Box(260,336,223,41), "Investigation desk",true)) OpenCase();
                 DrawBranches();
+                if (ReadyForFinale && Button(Box(741,336,292,41), "Incoming · Commander Zorvax",true,false,true,19))
+                    OpenSubmission();
                 if (investigation == null && !showSites && !branchesOpen)
                     Text(Box(56,390,906,46),"Choose a case to investigate Earth's historical records or test a change in weather.",24,White);
             }
@@ -617,6 +622,45 @@ namespace Homecoming.Field
             Fill(Box(-2200,-2200,6000,5000),Alpha(Ink,.89f));
             Top(tag);
             Text(Box(53,111,1469,92),title,75,White,headingFont);
+        }
+
+        void OpenSubmission()
+        {
+            reportStatus = null;
+            Go(View.Submission);
+            if (muted) return;
+            var clip = Resources.Load<AudioClip>("HomecomingAudio/VoiceFallback/submission.01");
+            if (clip == null) return;
+            if (submissionVoice == null)
+            {
+                submissionVoice = gameObject.AddComponent<AudioSource>();
+                submissionVoice.playOnAwake = false;
+            }
+            submissionVoice.PlayOneShot(clip);
+        }
+
+        AudioSource submissionVoice;
+
+        void DrawSubmission()
+        {
+            Fill(Box(-2200,-2200,6000,5000), Alpha(Ink,.96f));
+            Fill(Box(54,82,1490,2), Line);
+            Tag(55,44,"INTERGALACTIC AFFECTION DEPARTMENT",Mint);
+            if (commander != null) GUI.DrawTexture(Box(65,151,615,625),commander,ScaleMode.ScaleToFit);
+            Tag(726,205,"INCOMING TRANSMISSION  /  COMMANDER ZORVAX",Yellow);
+            string recruit = string.IsNullOrWhiteSpace(StorySession.RecruitName) ? "AGENT!" : $"AGENT {StorySession.RecruitName.ToUpperInvariant()}!";
+            Text(Box(719,248,800,110),recruit,recruit.Length > 24 ? 56 : 72,White,headingFont);
+            Text(Box(726,374,744,146),"“Agent! I believe we have enough evidence to begin the Great Homecoming!”",
+                36,White,bodyFont,TextAnchor.UpperLeft,true);
+            if (reportStatus != null)
+                Text(Box(726,520,744,82),reportStatus,23,Yellow,bodyFont,TextAnchor.MiddleLeft,true);
+            if (Button(Box(726,616,372,58),"Submit findings   →",true,false,ReadyForFinale && !hearingRequested,26))
+            {
+                investigation = FinaleCase;
+                if (submissionVoice != null) submissionVoice.Stop();
+                SubmitInvestigation();
+            }
+            if (Button(Box(726,698,372,50),"Continue experimenting")) Go(View.Lab);
         }
 
         void DrawJournal()

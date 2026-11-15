@@ -63,7 +63,7 @@
     },
     {
       "id": "hearing.02.scenario",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.scenario"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.mixed"
     },
     {
       "id": "hearing.02.historical",
@@ -74,8 +74,12 @@
       "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.mixed"
     },
     {
-      "id": "deflate.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/deflate.01"
+      "id": "hearing.03",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.03"
+    },
+    {
+      "id": "hearing.04",
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.04"
     },
     {
       "id": "drought-alert.01",

@@ -253,11 +253,12 @@ namespace Homecoming
             if (page == Page.Film) FilmGUI();
             else
             {
-                Backdrop(page == Page.Chapters || page == Page.Credits || page == Page.Reset || page == Page.Epilogue);
+                Backdrop(page == Page.Chapters || page == Page.Credits || page == Page.Reset || page == Page.Epilogue || page == Page.Report);
                 if (page == Page.Home) HomeGUI();
                 else if (page == Page.Recruit) RecruitGUI();
                 else if (page == Page.Ready) ReadyGUI();
                 else if (page == Page.Epilogue) EpilogueGUI();
+                else if (page == Page.Report) ReportGUI();
                 else if (page == Page.Chapters) ChaptersGUI();
                 else if (page == Page.Credits) CreditsGUI();
                 else ResetGUI();
@@ -310,13 +311,9 @@ namespace Homecoming
                 Badge(63, 88, shotTime < 3.2f ? "ARTEMIS II  /  CREWED LUNAR FLYBY" : "ARTEMIS II  /  CREW RETURNED TO EARTH", mint);
             if (shot.id == "lab")
                 Badge(63, 88, shotTime < 4.2f ? "EARTH SIMULATION" : "EARTH SIMULATION  /  ADJUST WEATHER, THEN PREVIEW", mint);
-            if (shot.id == "hearing" && shotTime >= 2.5f)
-            {
-                var kind = StorySession.HearingEvidence;
-                string label = kind == StoryEvidence.Scenario ? "SIMULATION" :
-                    kind == StoryEvidence.Historical ? "HISTORICAL RECORD" : "HISTORICAL RECORD  /  SIMULATION";
-                Badge(63, 88, label, orange);
-            }
+            if (shot.id == "hearing") Badge(63, 88, "GOVERNMENT HEARING", orange);
+            if (shot.id == "deflate" && shotTime >= 1.8f)
+                Fill(new Rect(0, 0, 1600, 900), new Color(0, 0, 0, Ease((shotTime - 1.8f) / 1.4f)));
             if (shot.id == "title")
             {
                 Fill(new Rect(0, 0, 1600, 794), Color.black);
@@ -440,7 +437,11 @@ namespace Homecoming
                 Text(70, 688, 625, 58, "The simulation scene will continue the operation here.", body);
                 Text(70, 752, 625, 22, "AWAITING LABORATORY CONNECTION", micro, mint);
             }
-            if (Action("preview-ending", new Rect(1044, 699, 488, 62), "Preview the final hearing")) Play("ending", true);
+            if (StorySession.EndingComplete && StorySession.FiledReport != null)
+            {
+                if (Action("open-report", new Rect(1044, 699, 488, 62), "Read my report")) ShowFiledReport();
+            }
+            else if (Action("preview-ending", new Rect(1044, 699, 488, 62), "Preview the final hearing")) Play("ending", true);
             uiOpacity = 1;
         }
         void EpilogueGUI()
@@ -449,13 +450,62 @@ namespace Homecoming
             uiOpacity = Enter();
             Insignia(800, 202, 45, orange);
             Text(200, 294, 1200, 40, "THE GREAT HOMECOMING", Style(monoFont, 16, mint, TextAnchor.MiddleCenter));
-            Text(150, 356, 1300, 120, "STILL WAITING FOR HUMANITY.", Style(displayFont, 94, paper, TextAnchor.MiddleCenter));
+            Text(150, 356, 1300, 120, "STILL WAITING FOR HUMANITY", Style(displayFont, 94, paper, TextAnchor.MiddleCenter));
             Text(200, 507, 1200, 60, "Better Together. Eventually.", Style(bodyFont, 31, paper, TextAnchor.MiddleCenter));
             Rule(745, 599, 110, orange, 3);
-            if (Action("replay", new Rect(363, 660, 410, 68), "REPLAY TRANSMISSION", true)) Play("prologue");
-            if (Action("return-lab", new Rect(825, 660, 410, 68), "Return to laboratory")) Show(Page.Ready);
-            if (preview) Text(480, 768, 640, 25, "ENDING PREVIEW / PROGRESS UNCHANGED", Style(monoFont, 12, muted, TextAnchor.MiddleCenter));
+            if (preview)
+            {
+                if (Action("back-chapters", new Rect(595, 659, 410, 68), "Back to chapters", true)) Show(Page.Chapters);
+            }
+            else
+            {
+                bool hasReport = StorySession.FiledReport != null;
+                if (hasReport && Action("filed-report", new Rect(172, 660, 378, 68), "Read my report", true)) ShowFiledReport();
+                if (Action("return-lab", new Rect(611, 660, 378, 68), "Continue experimenting", !hasReport) &&
+                    Application.CanStreamedLevelBeLoaded(simulationScene)) SceneManager.LoadSceneAsync(simulationScene);
+                if (Action("epilogue-reset", new Rect(1050, 660, 378, 68), "Start over")) Show(Page.Reset);
+            }
             uiOpacity = 1;
+        }
+        void ReportGUI()
+        {
+            var report = StorySession.FiledReport;
+            if (report == null) return;
+            Header("RELOCATION / FILED REPORT");
+            Text(57, 120, 1488, 82, "THE GREAT HOMECOMING REPORT", Style(displayFont, 69, paper));
+            Text(60, 204, 1450, 36, "An entirely objective assessment of humanity’s relocation prospects.", body);
+            Text(62, 245, 1400, 26, string.IsNullOrWhiteSpace(report.recruit) ? "FILED BY THE FIELD AGENT" : $"FILED BY AGENT {report.recruit.ToUpperInvariant()}", micro, mint);
+            DrawReportStat(62, $"{report.discoveries}/{report.totalDiscoveries}", "DISCOVERIES");
+            DrawReportStat(436, report.experiments.ToString(), "EXPERIMENTS");
+            DrawReportStat(810, report.investigations.ToString(), "EARTH INVESTIGATIONS");
+            DrawReportStat(1184, "0", "HUMANS RELOCATED");
+            Text(63, 415, 1420, 25, "COMMANDER’S ASSESSMENT", micro, orange);
+            Text(63, 443, 1450, 38, "“Outstanding progress. Human arrival is practically guaranteed.”", Style(bodyFont, 30, paper));
+            Text(63, 489, 1440, 31, "Scientific confidence in this assessment: nonexistent.", body, muted);
+            var link = report.link;
+            bool canLoad = Application.CanStreamedLevelBeLoaded(simulationScene);
+            if (!string.IsNullOrEmpty(link?.runId))
+            {
+                Badge(62, 552, link.site.ToUpperInvariant() + "  /  " + link.variable.ToUpperInvariant(), mint);
+                Text(63, 593, 720, 28, "MODELED EXPERIMENT", micro);
+                Text(63, 624, 720, 60, link.scenario, body);
+                Text(810, 593, 720, 28, "HISTORICAL EARTH RECORD", micro);
+                Text(810, 624, 720, 60, link.historical, body);
+                if (canLoad && Action("replay-linked", new Rect(62, 699, 338, 52), "Replay linked experiment"))
+                    StorySession.OpenSimulationHistory(simulationScene, SimulationHistory.LinkedRun);
+                if (canLoad && Action("open-earth-record", new Rect(810, 699, 338, 52), "Open linked Earth record"))
+                    StorySession.OpenSimulationHistory(simulationScene, SimulationHistory.EarthRecord);
+            }
+            else Text(63, 569, 1440, 36, "No filed Earth record matches a weather variable tested at the same site.", body, muted);
+            if (canLoad && Action("open-history", new Rect(62, 759, 338, 42), "Simulation history"))
+                StorySession.OpenSimulationHistory(simulationScene, SimulationHistory.Branches);
+            if (Action("back-epilogue", new Rect(1184, 759, 338, 42), "Back to final status")) Show(Page.Epilogue);
+        }
+        void DrawReportStat(float x, string value, string label)
+        {
+            Fill(new Rect(x, 295, 340, 94), panel);
+            Text(x + 17, 300, 300, 51, value, Style(displayFont, 48, paper));
+            Text(x + 18, 356, 300, 27, label, micro, mint);
         }
         bool Chapter(string id, int index, float y, string name, string detail)
         {
@@ -526,7 +576,7 @@ namespace Homecoming
             Header("PERSONNEL / NEW OPERATION");
             Insignia(800, 226, 44, orange);
             Text(260, 323, 1080, 115, "START A NEW OPERATION?", Style(displayFont, 83, paper, TextAnchor.MiddleCenter));
-            Text(380, 470, 840, 90, "This clears the recruit designation and story progress saved on this device.", Style(bodyFont, 26, paper, TextAnchor.MiddleCenter, true));
+            Text(380, 470, 840, 90, "This starts a fresh recruit, field campaign and set of investigations. Previously exported reports stay on this device.", Style(bodyFont, 26, paper, TextAnchor.MiddleCenter, true));
             if (Action("reset-confirm", new Rect(365, 633, 410, 68), "START OVER", true)) { StorySession.Reset(); designation = ""; Play("prologue"); }
             if (Action("reset-cancel", new Rect(825, 633, 410, 68), "Keep this operation")) Show(Page.Home);
         }

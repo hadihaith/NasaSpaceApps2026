@@ -45,7 +45,7 @@ namespace Homecoming
             var script = JsonUtility.FromJson<StoryScript>(director.script.text);
             void Frame(string id, float time)
             {
-                var chapter = id == "hearing" || id == "deflate" ? "ending" : id == "lab" ? "briefing" : "prologue";
+                var chapter = Array.Exists(script.ending, shot => shot.id == id) ? "ending" : id == "lab" ? "briefing" : "prologue";
                 var shots = chapter == "ending" ? script.ending : chapter == "briefing" ? script.briefing : script.prologue;
                 director.Play(chapter, true);
                 director.SetShot(Array.FindIndex(shots, shot => shot.id == id));
@@ -64,6 +64,12 @@ namespace Homecoming
             Show("Ready"); yield return Capture("05-handoff");
             Frame("hearing", 3.2f);
             yield return Capture("06-hearing");
+            Frame("hearing", 4.52f);
+            yield return Capture("06-victory-fireworks");
+            Frame("evidence", 7.3f);
+            yield return Capture("06b-evidence-reader");
+            Frame("reaction", 7.4f);
+            yield return Capture("06c-hearing-reaction");
             Show("Epilogue"); yield return Capture("07-epilogue");
             Show("Chapters"); yield return Capture("08-options");
             Show("Credits"); yield return Capture("09-credits");

@@ -9,6 +9,7 @@ const read = async (path) => JSON.parse(await readFile(pathFromRoot(path), "utf8
 const sha256 = (input) => createHash("sha256").update(input).digest("hex");
 const bounds = (box) => box ? [box.lonMin, box.latMin, box.lonMax, box.latMax] : null;
 const output = pathFromRoot("unity/Homecoming/Assets/FieldSimulation/Data/Climate.json");
+const variableOutput = pathFromRoot("unity/Homecoming/Assets/Homecoming/Resources/FieldArchiveVariables.json");
 
 const server = await createServer({
   root, configFile: false, server: { middlewareMode: true, ws: false }, appType: "custom",
@@ -18,9 +19,10 @@ try {
     { EARTH_REGIONS }, { CONTROLS, DISCOVERIES, REQUIRED_DISCOVERIES, toNormals }, { parseArchive },
     { HISTORICAL_SCHEMA_VERSION, analyzeHistoricalRecord, analyzeHistoricalComparison },
     { CHILE_RAIN_SOURCE, chileRainDataset, GUIDED_RAIN, PHOENIX_RAIN },
+    { THEMES, VARIABLES },
   ] = await Promise.all([
     "earth/regions.js", "homecoming/model.ts", "lib/earth/member3.ts",
-    "lib/earth/historical.ts", "lib/earth/curated-history.ts",
+    "lib/earth/historical.ts", "lib/earth/curated-history.ts", "lib/catalog.ts",
   ].map((path) => server.ssrLoadModule("/src/" + path)));
   const [climate, archiveFile, index, reviews, chileRaw] = await Promise.all([
     read("public/homecoming/regional-climate.json"), read("public/data/earth-archive.json"),
@@ -109,14 +111,25 @@ try {
     evidence,
     comparisons,
   };
-  const serialized = JSON.stringify(data) + "\n";
-  if (process.argv.includes("--check")) {
-    if (serialized !== await readFile(output, "utf8")) throw new Error("Climate.json is stale. Rerun the exporter.");
-  } else {
-    const temporary = new URL(`Climate.json.${process.pid}.tmp`, output);
+  const gameKeys = { PRECTOTCORR: "rain", GWETROOT: "soil", T2M: "temperature", RH2M: "humidity", WS10M: "wind" };
+  const variableCatalog = {
+    themes: THEMES,
+    variables: VARIABLES.map(({ id, name, theme, definition, origin, startYear, unit, unitNote }) => ({
+      id, key: gameKeys[id] ?? id, name, theme, definition, origin, startYear, unit: unit || unitNote,
+    })),
+  };
+  for (const [target, filename, serialized] of [
+    [output, "Climate.json", JSON.stringify(data) + "\n"],
+    [variableOutput, "FieldArchiveVariables.json", JSON.stringify(variableCatalog, null, 2) + "\n"],
+  ]) {
+    if (process.argv.includes("--check")) {
+      if (serialized !== await readFile(target, "utf8")) throw new Error(`${filename} is stale. Rerun the exporter.`);
+      continue;
+    }
+    const temporary = new URL(`${filename}.${process.pid}.tmp`, target);
     try {
       await writeFile(temporary, serialized);
-      await rename(temporary, output);
+      await rename(temporary, target);
     } finally {
       await rm(temporary, { force: true });
     }

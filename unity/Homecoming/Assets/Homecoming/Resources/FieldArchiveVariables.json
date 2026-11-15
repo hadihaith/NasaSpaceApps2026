@@ -1,0 +1,206 @@
+{
+  "themes": [
+    {
+      "id": "heat",
+      "label": "Heat",
+      "question": "Is it getting warmer or cooler?"
+    },
+    {
+      "id": "water",
+      "label": "Water",
+      "question": "Is it getting wetter or drier?"
+    },
+    {
+      "id": "air",
+      "label": "Air",
+      "question": "Is the air itself changing?"
+    },
+    {
+      "id": "sky",
+      "label": "Sun and sky",
+      "question": "Is more or less sunlight reaching the ground?"
+    }
+  ],
+  "variables": [
+    {
+      "id": "T2M",
+      "key": "temperature",
+      "name": "Air temperature",
+      "theme": "heat",
+      "definition": "The average temperature of the air two metres above the ground, the height of a weather station thermometer.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "°C"
+    },
+    {
+      "id": "T2M_MAX",
+      "key": "T2M_MAX",
+      "name": "Hottest air temperature",
+      "theme": "heat",
+      "definition": "The highest air temperature reached two metres above the ground during the period.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "°C"
+    },
+    {
+      "id": "T2M_MIN",
+      "key": "T2M_MIN",
+      "name": "Coldest air temperature",
+      "theme": "heat",
+      "definition": "The lowest air temperature reached two metres above the ground during the period.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "°C"
+    },
+    {
+      "id": "TS",
+      "key": "TS",
+      "name": "Surface temperature",
+      "theme": "heat",
+      "definition": "The temperature of the surface itself: soil, rooftops, ice or the top of the sea. Often called skin temperature.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "°C"
+    },
+    {
+      "id": "PRECTOTCORR",
+      "key": "rain",
+      "name": "Rain and snowfall",
+      "theme": "water",
+      "definition": "The average amount of water falling as rain or snow each day, corrected against rain gauges.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "mm/day"
+    },
+    {
+      "id": "GWETTOP",
+      "key": "GWETTOP",
+      "name": "Surface soil wetness",
+      "theme": "water",
+      "definition": "How wet the top 5 cm of soil is, from 0 (completely dry) to 1 (completely soaked).",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "0 is dry, 1 is soaked"
+    },
+    {
+      "id": "GWETROOT",
+      "key": "soil",
+      "name": "Root zone soil wetness",
+      "theme": "water",
+      "definition": "How wet the top metre of soil is, where plant roots drink, from 0 (dry) to 1 (soaked).",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "0 is dry, 1 is soaked"
+    },
+    {
+      "id": "EVLAND",
+      "key": "EVLAND",
+      "name": "Evaporation from land",
+      "theme": "water",
+      "definition": "Water returning from the land to the air each day, by evaporating from soil and passing through plants.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "mm/day"
+    },
+    {
+      "id": "SNODP",
+      "key": "SNODP",
+      "name": "Snow depth",
+      "theme": "water",
+      "definition": "The depth of snow lying on the ground.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "cm"
+    },
+    {
+      "id": "QV2M",
+      "key": "QV2M",
+      "name": "Moisture in the air",
+      "theme": "air",
+      "definition": "Grams of water vapour in each kilogram of air near the ground. Also called specific humidity.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "g/kg"
+    },
+    {
+      "id": "RH2M",
+      "key": "humidity",
+      "name": "Relative humidity",
+      "theme": "air",
+      "definition": "How full of water vapour the air is, as a percentage of the most it could hold at that temperature.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "%"
+    },
+    {
+      "id": "TQV",
+      "key": "TQV",
+      "name": "Water vapour overhead",
+      "theme": "air",
+      "definition": "All the water vapour in the column of air above one square metre of ground, from the surface to space.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "kg/m²"
+    },
+    {
+      "id": "WS10M",
+      "key": "wind",
+      "name": "Wind speed",
+      "theme": "air",
+      "definition": "The average speed of the wind ten metres above the ground.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "m/s"
+    },
+    {
+      "id": "PS",
+      "key": "PS",
+      "name": "Surface pressure",
+      "theme": "air",
+      "definition": "The weight of the air pressing down on the surface.",
+      "origin": "MERRA-2 reanalysis",
+      "startYear": 1981,
+      "unit": "kPa"
+    },
+    {
+      "id": "AOD_55",
+      "key": "AOD_55",
+      "name": "Haze and dust",
+      "theme": "air",
+      "definition": "How much tiny particles such as dust, smoke and pollution dim the view through the atmosphere. Higher means hazier. Called aerosol optical depth.",
+      "origin": "CERES SYN1deg",
+      "startYear": 2001,
+      "unit": "optical depth, higher is hazier"
+    },
+    {
+      "id": "ALLSKY_SFC_SW_DWN",
+      "key": "ALLSKY_SFC_SW_DWN",
+      "name": "Sunlight reaching the ground",
+      "theme": "sky",
+      "definition": "The solar energy landing on each square metre of ground per day, with clouds and haze included.",
+      "origin": "GEWEX SRB to 2000, CERES SYN1deg from 2001",
+      "startYear": 1984,
+      "unit": "MJ/m²/day"
+    },
+    {
+      "id": "ALLSKY_SFC_LW_DWN",
+      "key": "ALLSKY_SFC_LW_DWN",
+      "name": "Heat radiated down by the sky",
+      "theme": "sky",
+      "definition": "Infrared energy sent down to the ground by the atmosphere and clouds. This is the greenhouse effect seen from below.",
+      "origin": "GEWEX SRB to 2000, CERES SYN1deg from 2001",
+      "startYear": 1984,
+      "unit": "MJ/m²/day"
+    },
+    {
+      "id": "CLOUD_AMT",
+      "key": "CLOUD_AMT",
+      "name": "Cloud cover",
+      "theme": "sky",
+      "definition": "The share of the sky covered by cloud, averaged over day and night.",
+      "origin": "GEWEX SRB to 2000, CERES SYN1deg from 2001",
+      "startYear": 1984,
+      "unit": "%"
+    }
+  ]
+}

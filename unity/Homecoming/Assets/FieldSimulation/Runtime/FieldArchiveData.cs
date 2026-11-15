@@ -14,20 +14,43 @@ namespace Homecoming.Field
 
     [Serializable] sealed class ArchiveRecord
     {
-        public string id, regionLabel, sourceParameter, fingerprint, rawSha256, timeStandard;
+        public string id, regionLabel, sourceParameter, fingerprint, rawSha256, timeStandard, coverageStart, coverageEnd;
         public ArchiveFootprint footprint;
+        public ArchiveProvenance provenance;
+        public ArchiveQuality quality;
         public ArchiveTrend finding, anomalyFinding;
         public ArchiveTrend[] monthFindings;
+    }
+
+    [Serializable] sealed class ArchiveProvenance
+    {
+        public string product, sourceUrl, version, retrievedAt, license;
+        public string[] processing, limitations;
+        public ArchiveSource source;
+    }
+
+    [Serializable] sealed class ArchiveSource
+    {
+        public string parameter, version, nativeUnit;
+        public string[] citation;
+    }
+
+    [Serializable] sealed class ArchiveQuality
+    {
+        public int months, missingMonths, longestMissingRunMonths;
+        public int[] completeYears, excludedAnnualYears;
     }
 
     [Serializable] sealed class ArchiveFootprint
     {
         public string type, nativeResolution;
+        public int gridCells;
         public ArchivePoint point;
         public float[] bbox;
+        public ArchivePoint[] cells;
     }
 
-    [Serializable] sealed class ArchivePoint { public float latitude, longitude; }
+    [Serializable] sealed class ArchivePoint { public float latitude, longitude, weight; }
 
     [Serializable] sealed class ArchiveComparison
     {
@@ -37,18 +60,25 @@ namespace Homecoming.Field
 
     [Serializable] sealed class ArchiveTrend
     {
-        public string id, datasetId, unit, aggregation, mode, status, firstDate, lastDate;
+        public string id, datasetId, fingerprint, unit, aggregation, mode, status, firstDate, lastDate;
         public string[] reasons;
         public bool hasSlope;
-        public int n;
+        public int n, startYear, endYear, month;
         public float slopePerDecade, magnitude;
+        public ArchiveBaseline baseline;
         public ArchiveTrendPoint[] points;
         public ArchiveTest test;
         public ArchiveReview review;
     }
 
     [Serializable] struct ArchiveTrendPoint { public string date; public float t, value; }
-    [Serializable] sealed class ArchiveTest { public string method, hypothesis; public float p, alpha, slopePerDecade, lowerPerDecade, upperPerDecade; }
+    [Serializable] sealed class ArchiveBaseline { public string type; public int startYear, endYear; }
+    [Serializable] sealed class ArchiveTest
+    {
+        public string method, hypothesis;
+        public float p, alpha, slopePerDecade, lowerPerDecade, upperPerDecade, tStatistic;
+        public int degreesOfFreedom;
+    }
     [Serializable] sealed class ArchiveReview { public string id, reviewer, rationale; public bool accepted; }
 
     public sealed partial class FieldSimulation
@@ -69,11 +99,21 @@ namespace Homecoming.Field
             return historicalPack?.evidence?.FirstOrDefault(e => e.id == record.id);
         }
 
-        static string ArchivePlace(EvidenceSeries record) => record.region == "central-chile" ? "Central Chile" : null;
+        static string ArchivePlace(EvidenceSeries record) => record.region switch
+        {
+            "central-chile" => "Central Chile",
+            "custom" => "Custom Earth location",
+            _ => null
+        };
+
+        ConnectedArchiveEvidence ConnectedFor(EvidenceSeries record) => record == connectedSeries ? connectedArchive :
+            record == archiveOrigin?.record ? archiveOrigin?.connected : null;
+
+        ArchiveFootprint DataFootprint(EvidenceSeries record) => ConnectedFor(record)?.footprint ?? Exported(record)?.footprint;
 
         string FootprintType(EvidenceSeries record)
         {
-            var footprint = Exported(record)?.footprint;
+            var footprint = DataFootprint(record);
             if (!string.IsNullOrEmpty(footprint?.type)) return footprint.type;
             if (record.url?.Contains("/monthly/point?") == true) return "grid-point";
             if (record.url?.Contains("/monthly/regional?") == true || record.url?.Contains("bbox=") == true) return "area";
@@ -82,20 +122,21 @@ namespace Homecoming.Field
 
         string ArchiveFootprint(EvidenceSeries record)
         {
-            var footprint = Exported(record)?.footprint;
+            var footprint = DataFootprint(record);
             if (footprint?.type == "area-mean" && footprint.bbox is { Length: 4 } bounds)
-                return $"{PlaceName(record)} · area {Coordinate(bounds[1],bounds[0])} to {Coordinate(bounds[3],bounds[2])}";
+                return $"{PlaceName(record)} · area mean {Coordinate(bounds[1],bounds[0])} to {Coordinate(bounds[3],bounds[2])}";
             if (FootprintType(record) == "grid-point" && LocateFootprint(record,out var point))
-                return $"{PlaceName(record)} · grid point {Coordinate(point.x,point.y)}";
+                return $"{PlaceName(record)} · POWER point {Coordinate(point.x,point.y)}";
             return Exported(record)?.regionLabel ?? (record.region == "phoenix"
                 ? "Central Arizona · area 32.5–34.5°N, 111–113°W" : PlaceName(record) + " · see source for footprint");
         }
 
-        static string Coordinate(float lat, float lon) => $"{Mathf.Abs(lat):0.###}°{(lat < 0 ? "S" : "N")} {Mathf.Abs(lon):0.###}°{(lon < 0 ? "W" : "E")}";
+        static string Coordinate(float lat, float lon) => FormattableString.Invariant(
+            $"{Mathf.Abs(lat):0.#####}°{(lat < 0 ? "S" : "N")} {Mathf.Abs(lon):0.#####}°{(lon < 0 ? "W" : "E")}");
 
         bool LocateFootprint(EvidenceSeries record, out Vector2 location)
         {
-            var footprint = Exported(record)?.footprint;
+            var footprint = DataFootprint(record);
             if (footprint?.type == "grid-point" && footprint.point != null)
             {
                 location = new Vector2(footprint.point.latitude,footprint.point.longitude);
@@ -130,12 +171,15 @@ namespace Homecoming.Field
 
         void ApplyArchiveReview(EvidenceSeries record, FiledFinding target, ArchiveTrend overrideTrend = null)
         {
+            var connected = ConnectedFor(record);
             var exported = Exported(record);
+            target.connectedEvidence = connected;
             target.datasetId = record.id;
-            target.rawSha256 = exported?.rawSha256;
-            target.fingerprint = exported?.fingerprint;
-            var trend = overrideTrend ?? exported?.finding;
+            target.rawSha256 = connected?.dataset.rawSha256 ?? exported?.rawSha256;
+            target.fingerprint = connected?.finding.fingerprint ?? exported?.fingerprint;
+            var trend = overrideTrend ?? connected?.finding ?? exported?.finding;
             if (trend == null) return;
+            bool reviewed = HasReviewedTest(trend) && IsReviewedArchiveScope(record,trend);
             target.id = trend.id;
             target.window = $"{trend.firstDate}–{trend.lastDate}";
             target.aggregation = trend.aggregation;
@@ -144,24 +188,33 @@ namespace Homecoming.Field
             target.hasRate = trend.hasSlope;
             target.ratePerDecade = trend.slopePerDecade;
             target.fittedChange = trend.magnitude;
-            target.status = trend.status;
-            target.significance = trend.status switch
+            target.status = reviewed ? trend.status : "not-established";
+            target.significance = target.status switch
             {
                 "significant" => "Statistically significant", "not-significant" => "Not statistically significant",
                 _ => "Significance not established"
             };
-            target.reason = trend.reasons is { Length: > 0 } ? string.Join(" ",trend.reasons) : null;
+            target.reason = trend.reasons is { Length: > 0 } ? string.Join(" ",trend.reasons) :
+                reviewed ? null : "No matching statistical review is available for this view.";
+            if (connected != null)
+            {
+                var requested = connected.requested;
+                target.place = $"Requested {Coordinate(requested.latitude,requested.longitude)}";
+                target.footprint = ArchiveFootprint(record);
+                return;
+            }
             if (!string.IsNullOrEmpty(trend.review?.id))
             {
                 target.review = trend.review.id;
                 target.reviewer = trend.review.reviewer;
                 target.reviewRationale = trend.review.rationale;
             }
-            if (!HasReviewedTest(trend)) return;
+            if (!reviewed) return;
             target.test = trend.test.method;
             target.hypothesis = trend.test.hypothesis;
             target.hasPValue = target.hasInterval = true;
             target.pValue = trend.test.p;
+            CopyTestStatistic(trend.test,target);
             target.alpha = trend.test.alpha;
             target.hasOlsRate = true;
             target.olsRatePerDecade = trend.test.slopePerDecade;
@@ -169,8 +222,28 @@ namespace Homecoming.Field
             target.intervalHigh = trend.test.upperPerDecade;
         }
 
+        static void CopyTestStatistic(ArchiveTest test, FiledFinding target)
+        {
+            if (test?.degreesOfFreedom > 0 && float.IsFinite(test.tStatistic))
+            {
+                target.tStatistic = test.tStatistic;
+                target.degreesOfFreedom = test.degreesOfFreedom;
+            }
+        }
+
         static bool HasReviewedTest(ArchiveTrend trend) => trend?.review?.accepted == true &&
-            trend.status is ("significant" or "not-significant") && !string.IsNullOrEmpty(trend.test?.method);
+            trend.status is ("significant" or "not-significant") && !string.IsNullOrEmpty(trend.test?.method) &&
+            trend.test.alpha is > 0 and <= 1 && trend.test.p is >= 0 and <= 1 &&
+            (trend.test.p < trend.test.alpha) == (trend.status == "significant") &&
+            float.IsFinite(trend.test.slopePerDecade) && float.IsFinite(trend.test.lowerPerDecade) &&
+            float.IsFinite(trend.test.upperPerDecade) && trend.test.lowerPerDecade <= trend.test.upperPerDecade;
+
+        bool IsReviewedArchiveScope(EvidenceSeries record, ArchiveTrend trend)
+        {
+            CheckGuidedRecords();
+            return (record == guidedTemperature && trend == Exported(record)?.finding) ||
+                (record == guidedSahel && trend == guidedRain?.difference);
+        }
 
         static bool MatchesCompleteAnnual(EvidenceSeries record, ArchiveTrend trend, int start, int end)
         {
@@ -200,8 +273,11 @@ namespace Homecoming.Field
                 var metadata = Exported(temperature);
                 var finding = metadata?.finding;
                 if (metadata?.sourceParameter == "T2M" &&
-                    metadata.footprint?.bbox != null && metadata.footprint.bbox.SequenceEqual(new[] { -113f, 32.5f, -111f, 34.5f }) &&
+                    metadata.footprint?.type == "area-mean" && metadata.footprint.bbox != null &&
+                    metadata.footprint.bbox.SequenceEqual(new[] { -113f, 32.5f, -111f, 34.5f }) &&
                     MatchesCompleteAnnual(temperature,finding,1981,2025) && HasReviewedTest(finding) &&
+                    finding.datasetId == metadata.id && !string.IsNullOrEmpty(metadata.rawSha256) &&
+                    !string.IsNullOrEmpty(metadata.fingerprint) && finding.id == $"historical-v2:{metadata.fingerprint}:1981:2025:annual:-" &&
                     finding.review.id == "phoenix-temperature-review-v1")
                     guidedTemperature = temperature;
             }

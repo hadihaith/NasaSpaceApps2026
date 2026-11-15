@@ -19,6 +19,7 @@ namespace Homecoming
         Texture2D white, disc, gradient;
         bool interfaceReady, focusRecruit;
         string hoveredControl, operationResetError;
+        Page operationResetReturnPage;
         float lastPointerActivity, interfaceClock, uiOpacity = 1;
         Vector2 lastPointer;
 
@@ -289,7 +290,13 @@ namespace Homecoming
             if (StorySession.BriefingComplete)
             {
                 if (Action("continue", new Rect(60, 600, 470, 72), "Continue mission", true) || TakeSubmitKey("continue")) Show(Page.Ready);
-                if (Link("start", new Rect(62, 706, 390, 40), "REPLAY STORY  →")) Play("prologue");
+                if (Link("replay", new Rect(62, 706, 390, 40), "REPLAY FROM START  →")) ConfirmOperationReset();
+            }
+            else if (!string.IsNullOrWhiteSpace(designation))
+            {
+                if (Action("replay", new Rect(60, 600, 470, 72), "Replay from start", true) || TakeSubmitKey("replay"))
+                    ConfirmOperationReset();
+                if (Link("skip", new Rect(62, 706, 390, 40), "RETURN TO RECRUITMENT  →")) Show(Page.Recruit);
             }
             else
             {
@@ -453,7 +460,7 @@ namespace Homecoming
             if (available)
             {
                 bool submit = TakeSubmitKey("enter-broadcast");
-                if (Action("enter-broadcast", new Rect(70, 690, 630, 62), "TAKE OVER THE BROADCAST", true) || submit)
+                if (Action("enter-broadcast", new Rect(70, 690, 630, 62), "INVESTIGATE THE RAIN ALERT", true) || submit)
                     StorySession.OpenBroadcast(simulationScene);
                 if (Action("enter-lab", new Rect(1044, 699, 488, 62), "Open field station")) SceneManager.LoadSceneAsync(simulationScene);
             }
@@ -479,7 +486,8 @@ namespace Homecoming
             Rule(745, 599, 110, orange, 3);
             if (preview)
             {
-                if (Action("back-chapters", new Rect(595, 659, 410, 68), "Back to chapters", true)) Show(Page.Chapters);
+                if (Action("replay", new Rect(363, 659, 410, 68), "Replay prologue", true)) Play("prologue");
+                if (Action("back-chapters", new Rect(825, 659, 410, 68), "Back to chapters")) Show(Page.Chapters);
             }
             else
             {
@@ -490,7 +498,7 @@ namespace Homecoming
                     if (Application.CanStreamedLevelBeLoaded(simulationScene)) SceneManager.LoadSceneAsync(simulationScene);
                     else Show(Page.Ready);
                 }
-                if (Action("epilogue-reset", new Rect(1050, 660, 378, 68), "Start over")) Show(Page.Reset);
+                if (Action("epilogue-reset", new Rect(1050, 660, 378, 68), "Replay from start")) ConfirmOperationReset();
             }
             uiOpacity = 1;
         }
@@ -584,10 +592,7 @@ namespace Homecoming
             Text(904, 722, 624, 24, "DISCOVERY CUTSCENES / PREVIEW", micro, orange);
             if (Link("cutscene-drought", new Rect(904, 750, 624, 35), "01  THE WELCOME BASKETS  (SOIL DROUGHT)  →")) Play("drought", true);
             if (Link("reset", new Rect(62, 755, 580, 35), "START A NEW OPERATION", orange))
-            {
-                operationResetError = null;
-                Show(Page.Reset);
-            }
+                ConfirmOperationReset();
         }
         void CreditsGUI()
         {
@@ -602,15 +607,22 @@ namespace Homecoming
             Text(870, 619, 620, 82, "Original character clips are blended with authored acting. Dialogue is presented as subtitles.", body);
             if (Link("credits-back", new Rect(62, 760, 400, 35), "←  BACK TO TRANSMISSION", orange)) Show(Page.Home);
         }
+        void ConfirmOperationReset()
+        {
+            operationResetError = null;
+            operationResetReturnPage = page;
+            Show(Page.Reset);
+        }
+
         void ResetGUI()
         {
             Header("PERSONNEL / NEW OPERATION");
             Insignia(800, 226, 44, orange);
-            Text(260, 323, 1080, 115, "START A NEW OPERATION?", Style(displayFont, 83, paper, TextAnchor.MiddleCenter));
+            Text(260, 323, 1080, 115, "REPLAY FROM START?", Style(displayFont, 83, paper, TextAnchor.MiddleCenter));
             Text(300, 461, 1000, 138,
-                "This clears your designation, story and broadcast progress, saved experiments, and in-game casebook on this device. Your exported report files and settings stay available.",
+                "This clears mission progress, saved experiments, and your casebook.",
                 Style(bodyFont, 26, paper, TextAnchor.MiddleCenter, true));
-            if (Action("reset-confirm", new Rect(365, 633, 410, 68), "START NEW OPERATION", true))
+            if (Action("reset-confirm", new Rect(365, 633, 410, 68), "Clear progress and replay", true))
             {
                 try { StorySession.StartNewOperation(); }
                 catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
@@ -622,7 +634,7 @@ namespace Homecoming
                 Play("prologue");
                 return;
             }
-            if (Action("reset-cancel", new Rect(825, 633, 410, 68), "Keep this operation")) Show(Page.Home);
+            if (Action("reset-cancel", new Rect(825, 633, 410, 68), "Keep progress")) Show(operationResetReturnPage);
             if (operationResetError != null)
                 Text(300, 711, 1000, 85, operationResetError, Style(bodyFont, 22, orange, TextAnchor.MiddleCenter, true));
         }

@@ -166,6 +166,7 @@ namespace Homecoming.Field
 
         void ApplySelectedSite(int index)
         {
+            if (index != siteIndex) activeWeatherProxy = null;
             siteIndex = index;
             world.SelectRegion(index, Region);
             displayed = SavedSiteFrame(Region);
@@ -193,19 +194,21 @@ namespace Homecoming.Field
                 monthIndex = month, forcing = forcing };
         }
 
-        bool BeginSiteTransfer(int index)
+        bool BeginSiteTransfer(int index, WeatherProxySelection proxy = null)
         {
             if (view != View.Lab || index == siteIndex || index < 0 || index >= data.regions.Length) return false;
             showSites = branchesOpen = branchComparisonOpen = false;
             if (reduced)
             {
                 Select(index);
+                if (siteIndex == index) activeWeatherProxy = proxy;
                 return siteIndex == index;
             }
             var camera = world.fieldCamera;
             transferOrigin = new Pose(camera.transform.position,camera.transform.rotation);
             transferFov = camera.fieldOfView;
             transferTarget = index;
+            transferWeatherProxy = proxy;
             transferTime = transferVeil = 0;
             transferTerrainReady = false;
             Go(View.SiteTransfer);
@@ -244,6 +247,8 @@ namespace Homecoming.Field
         {
             if (view != View.SiteTransfer) return;
             int destination = transferTarget;
+            var proxy = transferWeatherProxy;
+            transferWeatherProxy = null;
             view = View.Lab;
             transferTarget = -1;
             transferVeil = 0;
@@ -251,6 +256,7 @@ namespace Homecoming.Field
             if (arrive && TrySelectSite(destination))
             {
                 ApplySelectedSite(destination);
+                activeWeatherProxy = proxy;
                 return;
             }
             if (transferTerrainReady) world.SelectRegion(siteIndex,Region);
@@ -278,6 +284,7 @@ namespace Homecoming.Field
                     if (site == null) throw new InvalidOperationException("This site is unavailable in the saved campaign.");
                     var inherited = site.ActiveAt(revision.nextMonth);
                     var preview = campaign.Preview(Region.id, FieldCampaign.Patch(inherited, settings, revision.nextMonth));
+                    BindWeatherProxy(preview);
                     var projection = preview.Site(Region.id);
                     pendingPreview = preview;
                     trial = projection.scenario;
@@ -423,6 +430,11 @@ namespace Homecoming.Field
         void Go(View next)
         {
             if (view == View.SiteTransfer) return;
+            if (view == View.Archive && next != View.Archive)
+            {
+                CancelArchiveRequest();
+                CancelArchivePair();
+            }
             if (view == View.Submission && submissionVoice != null) submissionVoice.Stop();
             CloseCascadeReport();
             ReleaseLook();
@@ -431,6 +443,7 @@ namespace Homecoming.Field
             focusIndex = 0;
             archiveFilter = ArchiveFilter.None;
             showSites = branchesOpen = branchComparisonOpen = labOptionsOpen = false;
+            requestedWeatherPoint = null;
             view = next;
             switch (next)
             {
@@ -451,8 +464,10 @@ namespace Homecoming.Field
 
         void OpenArchive(string key)
         {
-            evidenceKey = key;
+            if (view == View.SiteTransfer) return;
+            ResetArchiveView(key);
             Go(View.Archive);
+            if (!LegacyCapture && key == null && connectedArchive == null) archiveFilter = ArchiveFilter.Measurement;
         }
 
         void ReleaseLook()
@@ -469,6 +484,7 @@ namespace Homecoming.Field
             if (capture && Time.captureFramerate > 0) dt = 1f / Time.captureFramerate;
 #endif
             elapsed += dt;
+            TickArchiveRequest();
             if (Input.GetKeyDown(KeyCode.M)) ToggleMute();
             if (CascadeReportOpen)
             {
@@ -499,7 +515,11 @@ namespace Homecoming.Field
                 else if (view == View.Report && (reportDetails || temperatureOpen || (casePickerOpen && investigation != null))) OpenCase();
                 else if (view == View.Archive && archiveFilter != ArchiveFilter.None) archiveFilter = ArchiveFilter.None;
                 else if (view != View.Lab) OpenStation();
-                else if (showSites) showSites = false;
+                else if (showSites)
+                {
+                    showSites = false;
+                    requestedWeatherPoint = null;
+                }
                 else if (branchComparisonOpen) branchComparisonOpen = false;
                 else if (branchesOpen) branchesOpen = false;
                 else if (labOptionsOpen) labOptionsOpen = false;
@@ -586,7 +606,12 @@ namespace Homecoming.Field
             hotDial = -1;
             if (lookHeld) ReleaseLook();
         }
-        void OnDisable() { if (lookHeld) ReleaseLook(); }
+        void OnDisable()
+        {
+            CancelArchiveRequest();
+            CancelArchivePair();
+            if (lookHeld) ReleaseLook();
+        }
         void OnDestroy()
         {
             if (fade != null) Destroy(fade);

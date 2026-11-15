@@ -81,7 +81,7 @@ namespace Homecoming.Field
         public FieldTrial reference, scenario;
     }
 
-    [Serializable] public sealed class ScenarioRun
+    [Serializable] public sealed partial class ScenarioRun
     {
         public string id, branchId, sourceRevisionId, committedRevisionId, editedSiteId, modelVersion, dataFingerprint;
         public int startMonth, committedMonths;

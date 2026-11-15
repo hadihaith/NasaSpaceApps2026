@@ -3,8 +3,8 @@
 Open **`unity/Homecoming`** in Unity Hub with **6000.6.9f1**. Open
 `Assets/Scenes/Intro.unity` and press **Play**. The Unity macOS player is the Homecoming release.
 
-The game opens in a separate 2D scene with the full AUK Space Apps title film. The story scene
-loads in the background and activates after the video. The 14-shot story follows
+The game opens in a separate 2D scene with the first 17 seconds of the AUK Space Apps title film.
+The story scene loads in the background and activates at the cutoff. The 14-shot story follows
 Apollo 11, the crew's misunderstanding, the party,
 the 57-year wait, Artemis, recruitment, the laboratory introduction, the final
 hearing and the deflating balloon. Recruitment and the epilogue retain the

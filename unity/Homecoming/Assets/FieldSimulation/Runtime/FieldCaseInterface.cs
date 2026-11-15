@@ -1,11 +1,12 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 namespace Homecoming.Field
 {
     public sealed partial class FieldSimulation
     {
-        bool casePickerOpen;
+        bool casePickerOpen, reportEvidence, temperatureEvidenceDetails;
         static readonly (string Icon, string Label)[] HistoricalSteps =
             { ("Rise","Predict"), ("Chart","Check data"), ("Journal","Report") };
         static readonly (string Icon, string Label)[] WeatherSteps =
@@ -72,11 +73,14 @@ namespace Homecoming.Field
             }
             bool reportAvailable = investigation.origin != null &&
                 (investigation.kind != InvestigationKind.Soil || investigation.second != null);
-            if (reportAvailable && Button(Box(56,820,281,51),"Read mission report",true,size:23,icon:"Journal"))
+            bool reportNext = investigation.kind != InvestigationKind.Soil ||
+                (investigation.relationship != null && investigation.HasSoilInterpretation);
+            if (reportAvailable && Button(Box(56,820,281,51),"Read mission report",reportNext,size:23,icon:"Journal"))
             {
                 reportDetails = true;
+                reportEvidence = false;
             }
-            if (ReadyForFinale && Button(Box(360,820,248,51),"Meet Zorvax",true,icon:"Next")) OpenSubmission();
+            if (ReadyForFinale && Button(Box(1125,820,223,51),"Meet Zorvax",true,icon:"Next")) OpenSubmission();
             if (!demoActive && investigation.kind is (InvestigationKind.Rainfall or InvestigationKind.Soil) &&
                 Button(Box(1355,827,189,43),"Watch demo",icon:"Play"))
                 WatchCase(investigation.kind);
@@ -290,18 +294,37 @@ namespace Homecoming.Field
             Sheet("HISTORICAL RECORD","Phoenix temperature");
             DrawCaseProgress(Box(979,115,534,73),InvestigationKind.Temperature);
             if (Button(Box(56,212,205,42),"Back to case",icon:"Back")) OpenCase();
-            if (Button(Box(278,212,202,42),"Open data source",false,false,!string.IsNullOrEmpty(finding.url)))
-                Application.OpenURL(finding.url);
-            if (Button(Box(1320,212,224,42),showArchiveValues ? "Show chart" : "Inspect values")) showArchiveValues = !showArchiveValues;
+            if (Button(Box(1156,212,176,42),temperatureEvidenceDetails ? "Show chart" : "See the evidence",size:18))
+            {
+                temperatureEvidenceDetails = !temperatureEvidenceDetails;
+                showArchiveValues = false;
+            }
+            if (Button(Box(1343,212,201,42),showArchiveValues ? "Show chart" : "Inspect values",size:18))
+            {
+                showArchiveValues = !showArchiveValues;
+                temperatureEvidenceDetails = false;
+            }
             Card(Box(56,277,1488,530),Panel);
-            Text(Box(82,294,1420,33),$"{finding.footprint} · {finding.window} · {finding.count} complete years",23,White,strongFont);
-            Text(Box(82,333,1420,60),$"{finding.product} · 15 cosine-weighted grid cells\n{finding.aggregation} · {finding.unit}",21,Dim);
-            if (showArchiveValues) DrawArchiveTable(record,trend,424);
-            else DrawHistoricalChart(trend,Box(165,425,1319,128));
-            Text(Box(82,603,1420,34),$"Descriptive Theil–Sen · {FindingRate(finding)} · {Signed(finding.fittedChange,"0.###")} °C fitted over 44 years",23,White);
-            Text(Box(82,642,1420,33),$"{SignificanceLabel(finding,false)} · {finding.hypothesis}",22,Mint);
-            Text(Box(82,678,1420,32),TestSummary(finding),20,White);
-            Text(Box(82,721,1420,62),finding.reviewRationale,20,Dim,bodyFont,TextAnchor.UpperLeft,true);
+            Text(Box(82,291,1420,51),ArchiveVerdict(finding),35,White,headingFont);
+            Text(Box(82,344,1420,42),ArchiveRate(finding),25,Mint,strongFont);
+            Text(Box(82,391,1420,31),$"{finding.footprint} · {finding.window} · {finding.count} complete years",22,White);
+            Text(Box(82,426,1420,31),finding.product,20,Dim);
+            if (temperatureEvidenceDetails)
+            {
+                Text(Box(82,481,1420,52),TestSummary(finding),20,White,bodyFont,TextAnchor.MiddleLeft,true);
+                Text(Box(82,535,1420,32),finding.hypothesis,20,Dim);
+                Text(Box(82,574,1420,80),finding.reviewRationale,19,Dim,bodyFont,TextAnchor.UpperLeft,true);
+                Text(Box(82,657,1420,35),$"Theil–Sen descriptive rate · {finding.aggregation}",19,Dim);
+                if (Button(Box(82,710,224,40),"Open data source",enabled:!string.IsNullOrEmpty(finding.url)))
+                    Application.OpenURL(finding.url);
+            }
+            else if (showArchiveValues) DrawArchiveTable(record,trend,486);
+            else
+            {
+                Text(Box(82,471,1420,29),$"Annual mean air temperature ({finding.unit})",19,Dim,strongFont);
+                DrawHistoricalChart(trend,Box(165,515,1319,168));
+                Text(Box(82,728,1420,35),"Each point is one year. Temperatures rose across the record, with year-to-year variation.",19,Dim);
+            }
             if (Button(Box(56,829,221,43),showPredictionEdits ? "Hide prediction" : "Change prediction",size:19))
                 showPredictionEdits = !showPredictionEdits;
             if (showPredictionEdits) DrawCall(303,831,ref investigation.revisedOriginCall,false,investigation.originCall);
@@ -339,7 +362,7 @@ namespace Homecoming.Field
                 DrawSoilInterpretation();
                 if (Button(Box(352,820,239,51),"Inspect first test",icon:"Chart")) OpenSoilRunReport(investigation.first);
                 if (Button(Box(604,820,245,51),"Inspect follow-up",icon:"Chart")) OpenSoilRunReport(investigation.second);
-                if (Button(Box(862,820,255,51),"Revisit weather lab",icon:"Weather")) OpenWeatherLab();
+                if (Button(Box(862,820,255,51),"Revisit weather lab",icon:"Weather")) OpenWeatherLab(guided:false);
                 return;
             }
             if (investigation.scenarioCall != Direction.Unset &&
@@ -347,7 +370,7 @@ namespace Homecoming.Field
                     "Open weather lab",accent:true,icon:"Weather"))
             {
                 SelectArizona();
-                OpenWeatherLab();
+                OpenWeatherLab(guided:true);
             }
         }
 
@@ -361,7 +384,9 @@ namespace Homecoming.Field
         {
             Step(324,investigation.origin != null,"Find an Earth record",investigation.origin == null ?
                 "Choose a place and a measurement, then save a finding for your report." : investigation.origin.place + " · " + FindingRate(investigation.origin));
-            if (Button(Box(1203,344,321,40),"Browse Earth archive",investigation.origin == null,icon:"Archive")) OpenArchive(null);
+            bool filedConnected = investigation.origin?.connectedEvidence?.requested != null;
+            if (Button(Box(1203,344,321,40),filedConnected ? "Open filed record" : "Browse Earth archive",
+                investigation.origin == null,enabled:investigation.origin == null || filedConnected,icon:"Archive")) OpenArchive(null);
             if (investigation.origin != null) DrawSecondPlace(424);
         }
 
@@ -384,19 +409,24 @@ namespace Homecoming.Field
             else if (hasOrigin && investigation.relationship == null)
             {
                 transientGap ??= "The archive has no second site with a matching footprint type, product and years for this view.";
-                if (Button(Box(1084,y+80,440,38),"File coverage gap",false,false,!string.IsNullOrWhiteSpace(transientGap),18))
+                bool guided = investigation.kind == InvestigationKind.Soil;
+                if (guided) Text(Box(56,y+82,1013,35),"No other archived area has matching rainfall data for these years.",19,Dim);
+                if (Button(Box(1084,y+80,440,38),guided ? "Record missing match" : "File coverage gap",
+                    guided,false,!string.IsNullOrWhiteSpace(transientGap),19))
                 {
                     FileGap(transientGap);
                 }
-                transientGap = CaseText(Box(56,y+82,1013,35),transientGap,240);
+                if (!guided) transientGap = CaseText(Box(56,y+82,1013,35),transientGap,240);
             }
         }
 
-        string CaseText(Rect rect, string value, int maxLength)
+        string CaseText(Rect rect, string value, int maxLength, bool focusOnRepaint = false)
         {
             int index = controlIndex++;
             availableControls.Add(index);
             string control = "case-text-" + index;
+            bool clicked = Event.current.type == EventType.MouseDown && Event.current.button == 0 &&
+                rect.Contains(Event.current.mousePosition);
             GUI.SetNextControlName(control);
             if (caseInputStyle == null)
             {
@@ -411,8 +441,10 @@ namespace Homecoming.Field
             Fill(rect,ButtonFace);
             DrawButtonEdge(rect,keyboardFocus && focusIndex == index ? Yellow : Line);
             string result = GUI.TextField(rect,value ?? "",maxLength,caseInputStyle);
-            if (tabMoved && focusIndex == index) GUI.FocusControl(control);
-            if (GUI.GetNameOfFocusedControl() == control)
+            if (focusIndex == index && (tabMoved ||
+                (focusOnRepaint && keyboardFocus && Event.current.type == EventType.Repaint)))
+                GUI.FocusControl(control);
+            if (clicked)
             {
                 keyboardFocus = true;
                 focusIndex = index;
@@ -426,63 +458,125 @@ namespace Homecoming.Field
         {
             var origin = investigation.origin;
             var other = investigation.other;
-            string DirectionText(FiledFinding finding) => !finding.hasRate ? "Undetermined" :
-                CallName(Sign(finding.ratePerDecade, 0));
-            CaseCard(56,214,728,192,"What changed?",$"{origin.variable} · {DirectionText(origin)}" + (other == null ? "" : $" at {origin.place}, {DirectionText(other).ToLowerInvariant()} at {other.place}"));
-            CaseCard(816,214,728,192,"Where?",$"{origin.footprint} · {origin.window}" + (other == null ? "" : $"\n{other.footprint} · {other.window}"));
-            string Magnitude(FiledFinding f) => $"{FindingRate(f)} · {Signed(f.fittedChange,"0.###")} {f.unit} fitted";
-            CaseCard(56,419,728,185,"How much? · Theil–Sen",Magnitude(origin) + (other == null ? "" : "\n" + Magnitude(other)));
-            string SignificanceLine(FiledFinding finding) => (other == null ? "" : finding.place+" · ") + SignificanceLabel(finding,other == null);
-            CaseCard(816,419,728,185,"Is it significant?",SignificanceLine(origin) + (other == null ? "" : "\n" + SignificanceLine(other)) +
-                (investigation.difference == null ? "" : "\nPaired difference · " + SignificanceLabel(investigation.difference,false)));
+            var difference = investigation.difference;
+            var finding = difference ?? origin;
+            var followUp = investigation.second;
+            bool scenario = investigation.kind == InvestigationKind.Soil && followUp != null;
+            string verdict = ArchiveVerdict(finding);
+            if (difference != null && finding.hasPValue && finding.status == "significant")
+                verdict = $"The {finding.place} difference had a statistically significant trend.";
+            string rate = difference?.hasOlsRate == true
+                ? TrendRate("The difference",difference.olsRatePerDecade,difference.unit)
+                : ArchiveRate(finding);
+            Text(Box(56,212,1488,51),scenario ? ScenarioResult(followUp) + "." : verdict,
+                34,White,headingFont,TextAnchor.MiddleLeft,true);
+            Text(Box(56,266,1488,40),scenario
+                ? $"{DescribeEdit(followUp)} · {Signed(followUp.delta,"0.##")} {followUp.unit} at year-end versus the same-start baseline."
+                : rate,23,Mint,strongFont,TextAnchor.MiddleLeft,true);
+            string scope = difference == null
+                ? $"{finding.variable} · {finding.footprint} · {finding.window}"
+                : $"{difference.footprint} · {difference.window}";
+            Text(Box(56,307,1488,37),scope,19,Dim,bodyFont,TextAnchor.MiddleLeft,true);
+
+            var trend = ReportTrend(finding);
+            bool chart = trend?.points is { Length: > 1 };
+            Card(Box(56,352,1488,218),Panel);
+            if (chart && Button(Box(1257,362,263,35),reportEvidence ? "Show time series" : "See the evidence",size:18))
+                reportEvidence = !reportEvidence;
+            if (chart && !reportEvidence)
+            {
+                string chartLabel = difference == null ? finding.variable : $"{finding.place} · {finding.variable} difference";
+                Text(Box(81,363,1164,32),$"{(scenario ? "Historical context · " : "")}{chartLabel} ({finding.unit})",
+                    20,White,strongFont,TextAnchor.MiddleLeft,true);
+                DrawHistoricalChart(trend,Box(165,414,1346,104),includeZero:difference != null);
+                if (scenario) Text(Box(81,542,1424,24),verdict,16,Dim);
+            }
+            else
+            {
+                Text(Box(81,367,1150,35),scenario ? verdict : finding.product,21,White,strongFont);
+                string evidence = finding.hasPValue ? TestSummary(finding) : finding.reason;
+                Text(Box(81,410,1424,56),evidence ?? "A reviewed test is unavailable for this scope.",
+                    20,Dim,bodyFont,TextAnchor.UpperLeft,true);
+                Text(Box(81,470,1424,36),scenario ? $"{finding.product} · {rate}" : finding.aggregation,
+                    18,Dim,bodyFont,TextAnchor.MiddleLeft,true);
+                if (Button(Box(81,512,244,36),difference == null ? "Open data source" : "Open source A",
+                    enabled:!string.IsNullOrEmpty(origin.url),size:18))
+                    Application.OpenURL(origin.url);
+                if (difference != null && Button(Box(340,512,244,36),"Open source B",
+                    enabled:!string.IsNullOrEmpty(other?.url),size:18))
+                    Application.OpenURL(other.url);
+            }
+
             string Calls(Direction original, Direction revision) => revision == Direction.Unset ?
                 CallName(original) : $"{CallName(original)} → {CallName(revision)}";
-            string extra = investigation.kind == InvestigationKind.Soil && investigation.first != null
-                ? $"Prediction: {CallName(investigation.scenarioCall)}. {ScenarioResult(investigation.first)}." +
-                    (investigation.second == null ? "" : $" Follow-up: {DescribeEdit(investigation.second)} · {Signed(investigation.second.delta,"0.##")} {investigation.second.unit}.")
-                : investigation.kind == InvestigationKind.Rainfall && investigation.other != null
-                ? $"Your calls: {Calls(investigation.originCall,investigation.revisedOriginCall)} / " +
-                    $"{Calls(investigation.otherCall,investigation.revisedOtherCall)}. " +
-                    $"Estimated directions: {CallName(Sign(origin.ratePerDecade,.1f))} / {CallName(Sign(other.ratePerDecade,.1f))}."
-                : investigation.kind == InvestigationKind.Temperature
-                ? $"Your call: {Calls(investigation.originCall,investigation.revisedOriginCall)}. " +
-                    $"Estimated direction: {CallName(Sign(origin.ratePerDecade,.1f))}."
-                : investigation.gap ?? investigation.relationship ?? "Check a second place from the investigation desk.";
-            Text(Box(56,604,1488,32),extra,20,White,bodyFont,TextAnchor.MiddleLeft,true);
-            if (investigation.kind == InvestigationKind.Soil && investigation.relationship != null)
-                Text(Box(56,634,1488,49),investigation.HasSoilInterpretation ? investigation.soilInterpretation :
-                    investigation.gap ?? investigation.relationship,19,Mint,bodyFont,TextAnchor.MiddleLeft,true);
-            if (investigation.difference != null)
+            string extra;
+            if (scenario)
+                extra = $"Rain test · {ScenarioResult(investigation.first)}. " +
+                    $"{Signed(investigation.first.delta,"0.##")} {investigation.first.unit} versus the same-start baseline.";
+            else if (other != null)
+                extra = $"{origin.place} · {FindingRate(origin)}    /    {other.place} · {FindingRate(other)}";
+            else if (investigation.kind == InvestigationKind.Temperature)
+                extra = $"Your prediction · {Calls(investigation.originCall,investigation.revisedOriginCall)}";
+            else
+                extra = investigation.gap ?? investigation.relationship;
+            Text(Box(56,580,1488,47),extra,20,White,bodyFont,TextAnchor.MiddleLeft,true);
+            if (difference != null)
             {
-                Text(Box(56,636,1488,25),$"Sahel minus Chile · Theil–Sen {Magnitude(investigation.difference)}",19,Mint);
-                Text(Box(56,660,1488,25),TestSummary(investigation.difference),18,White);
+                string local = origin.hasPValue || other?.hasPValue == true
+                    ? $"{origin.place} · {ArchiveVerdict(origin)}  {other?.place} · {ArchiveVerdict(other)}"
+                    : "Both local rates are descriptive. Statistical significance has not been established for either local record.";
+                Text(Box(56,621,1488,37),local,18,Dim,bodyFont,TextAnchor.MiddleLeft,true);
+                if (investigation.kind == InvestigationKind.Rainfall)
+                    Text(Box(56,657,1488,20),$"Your predictions · {Calls(investigation.originCall,investigation.revisedOriginCall)} / " +
+                        Calls(investigation.otherCall,investigation.revisedOtherCall),17,Dim);
             }
-            else if (origin.hasPValue)
-                Text(Box(56,652,1488,27),TestSummary(origin),19,Mint);
+            else if (other != null)
+                Text(Box(56,630,1488,34),$"{other.place} · {ArchiveVerdict(other)}",19,Dim);
+            else if (scenario)
+                Text(Box(56,626,1488,47),investigation.soilInterpretation ?? investigation.gap ?? investigation.relationship,
+                    17,Dim,bodyFont,TextAnchor.MiddleLeft,true);
+
             bool missedCall = investigation.first != null && investigation.first.result != investigation.scenarioCall;
             string prompt = missedCall
                 ? "Explain why the result differed from your prediction" : "Your conclusion (optional)";
-            Text(Box(56,687,1488,29),prompt,22,Dim,strongFont);
-            string conclusion = CaseText(Box(56,723,1488,40),investigation.conclusion,300);
+            Text(Box(56,681,1488,29),prompt,22,Dim,strongFont);
+            string conclusion = CaseText(Box(56,718,1488,40),investigation.conclusion,300);
             if (conclusion != (investigation.conclusion ?? ""))
             {
                 investigation.conclusion = conclusion;
                 SaveInvestigation();
             }
             Text(Box(56,775,1488,35),reportStatus ?? (investigation.IsReady
-                ? (ReadyForFinale ? "Zorvax is ready to speak with you." : $"Discover {data.requiredDiscoveries} phenomena in the field to unlock the hearing.")
-                : investigation.kind == InvestigationKind.Soil && !investigation.HasSoilInterpretation
+                ? (ReadyForFinale ? "Zorvax is ready to speak with you." : $"Discover {data.requiredDiscoveries} phenomena in the field to unlock the hearing.") :
+                investigation.kind == InvestigationKind.Soil && !investigation.HasSoilInterpretation
                     ? "Interpret the follow-up in your case before sending the report."
                     : missedCall && string.IsNullOrWhiteSpace(investigation.conclusion)
                         ? "Add a first-test explanation before sending the report."
                         : "Finish the steps in your case to send the report."),22,White);
             if (Button(Box(56,830,233,43),"Back to case",icon:"Back")) reportDetails = false;
-            if (ReadyForFinale && Button(Box(1214,830,330,43),"Meet Zorvax  →",true)) OpenSubmission();
+            if (ReadyForFinale && Button(Box(1214,830,330,43),"Meet Zorvax",true,icon:"Next")) OpenSubmission();
+        }
+
+        ArchiveTrend ReportTrend(FiledFinding finding)
+        {
+            var connected = finding.connectedEvidence?.finding;
+            if (connected != null && connected.id == finding.id) return connected;
+            CheckGuidedRecords();
+            if (finding == investigation.difference && finding.id == guidedRain?.difference.id)
+                return guidedRain.difference;
+            var record = data.evidence.FirstOrDefault(item => item.id == (finding.datasetId ?? finding.id));
+            var archive = record == null ? null : Exported(record);
+            if (archive == null) return null;
+            return new[] { archive.finding, archive.anomalyFinding }.Concat(archive.monthFindings ?? Array.Empty<ArchiveTrend>())
+                .FirstOrDefault(candidate => candidate?.id == finding.id);
         }
 
         static string SignificanceLabel(FiledFinding finding, bool includeReason = true) => finding.significance + (finding.hasPValue
             ? $" (p = {finding.pValue.ToString("G3",Invariant)})"
             : !includeReason || string.IsNullOrEmpty(finding.reason) ? "" : " · " + finding.reason);
+
+        static string HistoricalTestStatistic(int degreesOfFreedom, float value) =>
+            degreesOfFreedom > 0 && float.IsFinite(value) ? $"t({degreesOfFreedom}) = {value.ToString("0.###",Invariant)} · " : "";
 
         static string TestSummary(FiledFinding finding)
         {
@@ -491,7 +585,8 @@ namespace Homecoming.Field
             string interval = finding.hasInterval
                 ? $"95% CI {Signed(finding.intervalLow,"0.###")} to {Signed(finding.intervalHigh,"0.###")} {finding.unit} per decade · "
                 : "";
-            return $"Two-sided OLS · {slope}{interval}p = {finding.pValue.ToString("G3",Invariant)} · α = {finding.alpha.ToString("0.##",Invariant)}";
+            string statistic = HistoricalTestStatistic(finding.degreesOfFreedom,finding.tStatistic);
+            return $"{finding.test ?? "Two-sided OLS"} · {statistic}p = {finding.pValue.ToString("G3",Invariant)} · {interval}{slope}α = {finding.alpha.ToString("0.##",Invariant)}";
         }
     }
 }

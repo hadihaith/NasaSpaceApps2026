@@ -83,13 +83,22 @@ namespace Homecoming.Field
 
         void RestoreFiledTest()
         {
+            if (investigation?.origin?.hasPValue == true || investigation?.difference?.hasPValue == true)
+                CheckGuidedRecords();
+
+            var origin = investigation?.origin;
+            var temperature = guidedTemperature == null ? null : Exported(guidedTemperature)?.finding;
+            if (origin?.hasPValue == true && temperature != null && origin.id == temperature.id &&
+                origin.pValue == temperature.test.p)
+                CopyTestStatistic(temperature.test,origin);
+
             var difference = investigation?.difference;
-            if (investigation?.kind != InvestigationKind.Rainfall || difference?.hasPValue != true || difference.hasOlsRate)
-                return;
-            CheckGuidedRecords();
-            if (guidedRain == null || difference.id != guidedRain.difference.id ||
-                investigation.origin?.id != guidedRain.left.id || investigation.other?.id != guidedRain.right.id) return;
+            if (investigation?.kind != InvestigationKind.Rainfall || difference?.hasPValue != true || guidedRain == null ||
+                difference.id != guidedRain.difference.id ||
+                origin?.id != guidedRain.left.id || investigation.other?.id != guidedRain.right.id) return;
             var test = guidedRain.difference.test;
+            if (difference.pValue == test.p) CopyTestStatistic(test,difference);
+            if (difference.hasOlsRate) return;
             difference.hasOlsRate = true;
             difference.olsRatePerDecade = test.slopePerDecade;
             difference.hypothesis = test.hypothesis;
@@ -240,7 +249,7 @@ namespace Homecoming.Field
             Go(View.Report);
             temperatureOpen = investigation.callsRevealed = true;
             archiveValuePage = 0;
-            showArchiveValues = showPredictionEdits = false;
+            showArchiveValues = showPredictionEdits = temperatureEvidenceDetails = false;
             SaveInvestigation();
             return true;
         }

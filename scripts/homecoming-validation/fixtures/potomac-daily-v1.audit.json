@@ -1,0 +1,506 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Research diagnostic of daily runoff and lag-reservoir routing",
+  "modelTimeStep": "day",
+  "screenMetric": "MAE of calendar-month mean discharge, m3/s",
+  "warmup": [
+    "2000-01",
+    "2001-12"
+  ],
+  "training": [
+    "2002-01",
+    "2014-12"
+  ],
+  "withheld": [
+    "2015-01",
+    "2024-12"
+  ],
+  "withheldMonths": 120,
+  "withheldDays": 3653,
+  "minimumMAESkill": 0.05,
+  "minimumMonthlyDisplayChangeM3s": 0.01,
+  "landParameterOrder": [
+    "capacityMm",
+    "rechargeExponent",
+    "referenceETMultiplier",
+    "fastRechargeShare",
+    "fastDailyReleaseFraction"
+  ],
+  "inputSha256": {
+    "rivers.zip": "47c2e30041b1a6e07ba3c1d82f07c70f2bfdd376a263153699902cf96ea006ea",
+    "basins.zip": "687c3e54f59b5d8d4548af6d8f72f762bf86e3c4ceadf6cb56302d8142ed3911",
+    "gauges.rdb": "a59bf5f1a9feafebebf1315866ec7628c2594e5e2d4cdc88c5a929aa7c41444e",
+    "streamflow.rdb": "2821c7b4bcdb2a13195c0367143f8f68d34cb768677bdbe52604db90e68f36b3",
+    "power.json": "a82b20b239d7fb3f7e3a7f9929e54b9eb01e759260bf6fd0826811a3291c138e",
+    "daily/-76.875,38.0.json": "991aed332697497bf874a22339a34d7597a8dd45d758b90ccd528652b44ab811",
+    "daily/-76.875,38.5.json": "06062572346ae72b695b083421d1eef5eff634caa3976b5159ca942a7eee44ce",
+    "daily/-76.875,39.0.json": "4dd3ed1c885828aa555ef500b7024556e77cdf554584f5a5bfb0ee61e0c31d9f",
+    "daily/-76.875,39.5.json": "d81492d88926e9892ffb5d075a5d8f6f1098bb3c38269ff086b7d6ac825b1860",
+    "daily/-76.875,40.0.json": "d66d6e5f211018856ff81778c0782e85aa0f9323e091f128e6f756a148aa3e66",
+    "daily/-77.5,38.0.json": "35d48954384a8a509bea2fc35d3c96477bd8a292b01cc724e25c601b4adfcd51",
+    "daily/-77.5,38.5.json": "ec19189e1742bbcc57028525600b52e9bd505d3a537e79d250239f945f45c1a2",
+    "daily/-77.5,39.0.json": "137ff9fceba35a5f82d839b8704cc38c9d0de5f4fc4fbc8bb27437ffd122769b",
+    "daily/-77.5,39.5.json": "d98b0f180b4db1ad2c76db007a254a5112fe542e8e7a479712adbf64499cc98c",
+    "daily/-77.5,40.0.json": "9b2b397863bb26383e65662c441a2d4bc050fc518f4680074a53efc93b3f91ce",
+    "daily/-78.125,38.0.json": "396570d09098fd1fda2cf632bcd745b818e09a4edc98edac6bcee7a9e3c82ad0",
+    "daily/-78.125,38.5.json": "5a3b6178483ab1d920f8c43c40d6a6aa799ab957124e36309afeae1a66f42a4a",
+    "daily/-78.125,39.0.json": "b6bab3ae55db66af8303359349698dea389b78011c0791a3a0d3ec1c714072b4",
+    "daily/-78.125,39.5.json": "4aaa7f021295a595e2510bab8941a77966921834509d5ad5e602be0685b2c405",
+    "daily/-78.125,40.0.json": "c6dc0141527ea9d0bc9e668838d69eea133906d3b2591a5bf6dfa97856b3f9dc",
+    "daily/-78.75,38.0.json": "8a5be4bb6756f49f2571e2a9d7e0a14874231d819e75dee82c155264b97ae683",
+    "daily/-78.75,38.5.json": "f26527244e84f59e65ca1632f24ee937cfbfb23ff613e26ca025f103db51793b",
+    "daily/-78.75,39.0.json": "06eed6fa5c6b7aa58ebafe03a432a7dbc6238f1984e8411c247d11910c002aa4",
+    "daily/-78.75,39.5.json": "8af668943f977e4d4071d2b7b091d04b8c01f5a36217559b74ab72458f0b99d8",
+    "daily/-78.75,40.0.json": "07d0d1db3a7d598d1732d56b03fc87db151e39eb413c3d380e1966e0d5b081c8",
+    "daily/-79.375,38.0.json": "a0a11648c4e2a7544d8fd9877fa0e498d95c4eb218fb967f7b416502d7a2e9bd",
+    "daily/-79.375,38.5.json": "2c0e69da144e6dcdf832f79638182ddccba4beedf210cd2e79a956f1b5d2e9e5",
+    "daily/-79.375,39.0.json": "3a63d263d7711bd374bbf8313d216172f60655318833390efdfc6f8f95008000",
+    "daily/-79.375,39.5.json": "e7a71572a6d4c281f3a4d48ae0743aa7ccc21d583ca056195dede2b086895a06",
+    "daily/-79.375,40.0.json": "1e79fd5f077dd8cff896b221d72481ff3a13d17a4ef3f8f5bef783f6d7641c20",
+    "daily/-80.0,38.0.json": "d77d19e7b64504e76f0f8c23f0da8527cb8ee80ef535b5a2c282a8d99a77f25b",
+    "daily/-80.0,38.5.json": "036da4dba2c9a5d0424c74fec15f2ec3274e6e3348b3ece8aa36bb61e646d0ef",
+    "daily/-80.0,39.0.json": "87cd64159671831ca5e9115096c16073941981810b2159c3352c120ee311c648",
+    "daily/-80.0,39.5.json": "c14a930f007ce254e030b00bb6d3624561702159be9bf42de615b84b1bdb6521",
+    "daily/-80.0,40.0.json": "547f6a2f4f9c4901739e495228de52e68928f0c3893c38e161f8f977311b8320"
+  },
+  "catchments": [
+    {
+      "station": "01610000",
+      "reachId": 70581123,
+      "basinId": 7120550220,
+      "snapDistanceM": 92.3,
+      "incrementalAreaKm2": 8222.54154596646,
+      "totalAreaKm2": 8222.54154596646,
+      "gaugeAreaKm2": 8104.072797241343,
+      "incrementalBasinCount": 64,
+      "name": "Paw Paw",
+      "estimatedApprovedDischargeDays": 283,
+      "landParameters": [
+        200,
+        4,
+        1,
+        0.5,
+        0.25
+      ],
+      "sameMonthInflowLandParameters": null,
+      "reachLagDays": 0,
+      "reachDailyRetentionFraction": 0,
+      "fittingDailyMAE_m3s": 43.89273109349268,
+      "withheldDailyMAE_m3s": 42.38443703447047,
+      "withheldSameDayMAE_m3s": null,
+      "verificationMAE_m3s": 33.56771694233057,
+      "climatologyMAE_m3s": 48.7365101167928,
+      "sameMonthInflowMAE_m3s": null,
+      "skillVsClimatology": 0.3112408569696833,
+      "skillVsSameMonthInflow": null,
+      "dailyTimingCriterionMet": null,
+      "passesScreen": true
+    },
+    {
+      "station": "01613000",
+      "reachId": 70576833,
+      "basinId": 7120548490,
+      "snapDistanceM": 426.5,
+      "incrementalAreaKm2": 2399.6804515913104,
+      "totalAreaKm2": 10622.22199755777,
+      "gaugeAreaKm2": 10525.711680405504,
+      "incrementalBasinCount": 18,
+      "riverPathFromPreviousGauge": [
+        70581123,
+        70580902,
+        70578567,
+        70578470,
+        70578569,
+        70578818,
+        70578819,
+        70578031,
+        70576833
+      ],
+      "basinPathFromPreviousGauge": [
+        7120550220,
+        7120549730,
+        7120550230,
+        7120548490
+      ],
+      "name": "Hancock",
+      "estimatedApprovedDischargeDays": 322,
+      "landParameters": [
+        350,
+        2,
+        1,
+        0.75,
+        0.25
+      ],
+      "sameMonthInflowLandParameters": [
+        200,
+        2,
+        1,
+        0.5,
+        0.25
+      ],
+      "reachLagDays": 1,
+      "reachDailyRetentionFraction": 0.25,
+      "fittingDailyMAE_m3s": 45.37690680193064,
+      "withheldDailyMAE_m3s": 46.25750204548397,
+      "withheldSameDayMAE_m3s": 50.501297278216235,
+      "verificationMAE_m3s": 35.9878957867309,
+      "climatologyMAE_m3s": 60.0884817240971,
+      "sameMonthInflowMAE_m3s": 35.50333747320883,
+      "skillVsClimatology": 0.4010849541518905,
+      "skillVsSameMonthInflow": -0.013648246841236444,
+      "dailyTimingCriterionMet": true,
+      "passesScreen": false
+    },
+    {
+      "station": "01638500",
+      "reachId": 70587709,
+      "basinId": 7120559650,
+      "snapDistanceM": 74.7,
+      "incrementalAreaKm2": 14548.733903030623,
+      "totalAreaKm2": 25170.955900588393,
+      "gaugeAreaKm2": 24995.975252852735,
+      "incrementalBasinCount": 109,
+      "riverPathFromPreviousGauge": [
+        70576833,
+        70576834,
+        70576835,
+        70576837,
+        70577345,
+        70577882,
+        70578032,
+        70578471,
+        70578693,
+        70579291,
+        70579585,
+        70579714,
+        70579162,
+        70579404,
+        70580014,
+        70580338,
+        70581442,
+        70581545,
+        70582088,
+        70582202,
+        70582298,
+        70583902,
+        70583983,
+        70584622,
+        70586028,
+        70586343,
+        70586344,
+        70586460,
+        70586645,
+        70586851,
+        70586751,
+        70587390,
+        70587709
+      ],
+      "basinPathFromPreviousGauge": [
+        7120548490,
+        7120548750,
+        7120549280,
+        7120550700,
+        7120550550,
+        7120552790,
+        7120555300,
+        7120557610,
+        7120558000,
+        7120558540,
+        7120559650
+      ],
+      "name": "Point of Rocks",
+      "estimatedApprovedDischargeDays": 371,
+      "landParameters": [
+        350,
+        4,
+        0.75,
+        0.5,
+        0.25
+      ],
+      "sameMonthInflowLandParameters": [
+        200,
+        2,
+        1.25,
+        0.25,
+        0.25
+      ],
+      "reachLagDays": 2,
+      "reachDailyRetentionFraction": 0,
+      "fittingDailyMAE_m3s": 100.80593315207757,
+      "withheldDailyMAE_m3s": 95.17453855936495,
+      "withheldSameDayMAE_m3s": 99.79721051772162,
+      "verificationMAE_m3s": 64.38338102649406,
+      "climatologyMAE_m3s": 138.59729887660978,
+      "sameMonthInflowMAE_m3s": 75.89456172751422,
+      "skillVsClimatology": 0.5354643882070659,
+      "skillVsSameMonthInflow": 0.15167332729779737,
+      "dailyTimingCriterionMet": true,
+      "passesScreen": true
+    }
+  ],
+  "networkLedger": {
+    "precipitationInputM3": 658031261645.7487,
+    "evapotranspirationM3": 465644810124.3364,
+    "terminalStorageM3": 5828898972.437391,
+    "outletExportM3": 186557552548.97485,
+    "residualM3": -1.33514404296875e-05
+  },
+  "pulse": {
+    "name": "Paw Paw low-flow augmentation pulse",
+    "injectOn": "2019-08-31",
+    "dailyMeanIncreaseM3s": 10.0,
+    "injectedM3": 864000.0,
+    "absoluteCheckToleranceM3": 1e-05,
+    "analyticResponseMatches": true,
+    "terminalAdditionalReachStorageM3": {
+      "01610000": 0.0,
+      "01613000": 0.0,
+      "01638500": 0.0
+    },
+    "networkResidualM3": 2.3283064365386963e-10,
+    "stations": {
+      "01610000": {
+        "firstResponseDay": "2019-08-31",
+        "peakResponseDay": "2019-08-31",
+        "peakIncreaseM3s": 10.0,
+        "increasePastGaugeByYearEndM3": 864000.0,
+        "months": [
+          {
+            "month": "2019-01",
+            "baselineM3s": 160.83188952100218,
+            "interventionM3s": 160.83188952100218,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-02",
+            "baselineM3s": 263.0850928688614,
+            "interventionM3s": 263.0850928688614,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-03",
+            "baselineM3s": 218.06710880409847,
+            "interventionM3s": 218.06710880409847,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-04",
+            "baselineM3s": 122.12114061782408,
+            "interventionM3s": 122.12114061782408,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-05",
+            "baselineM3s": 99.88523469412975,
+            "interventionM3s": 99.88523469412975,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-06",
+            "baselineM3s": 51.38658574983117,
+            "interventionM3s": 51.38658574983117,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-07",
+            "baselineM3s": 38.4636053993864,
+            "interventionM3s": 38.4636053993864,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-08",
+            "baselineM3s": 17.261228828906546,
+            "interventionM3s": 17.583809474067838,
+            "deltaM3s": 0.3225806451612903
+          },
+          {
+            "month": "2019-09",
+            "baselineM3s": 6.897477261874233,
+            "interventionM3s": 6.897477261874233,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-10",
+            "baselineM3s": 3.401664255496371,
+            "interventionM3s": 3.401664255496371,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-11",
+            "baselineM3s": 5.129486863675702,
+            "interventionM3s": 5.129486863675702,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-12",
+            "baselineM3s": 24.891246590857918,
+            "interventionM3s": 24.891246590857918,
+            "deltaM3s": 0.0
+          }
+        ]
+      },
+      "01613000": {
+        "firstResponseDay": "2019-09-01",
+        "peakResponseDay": "2019-09-01",
+        "peakIncreaseM3s": 7.5,
+        "increasePastGaugeByYearEndM3": 863999.9999999997,
+        "months": [
+          {
+            "month": "2019-01",
+            "baselineM3s": 210.81831115809393,
+            "interventionM3s": 210.81831115809393,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-02",
+            "baselineM3s": 323.05952598170666,
+            "interventionM3s": 323.05952598170666,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-03",
+            "baselineM3s": 298.573337454585,
+            "interventionM3s": 298.573337454585,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-04",
+            "baselineM3s": 169.84619252666556,
+            "interventionM3s": 169.84619252666556,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-05",
+            "baselineM3s": 151.76586419770857,
+            "interventionM3s": 151.76586419770857,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-06",
+            "baselineM3s": 79.00983033320101,
+            "interventionM3s": 79.00983033320101,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-07",
+            "baselineM3s": 62.53162165851635,
+            "interventionM3s": 62.53162165851635,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-08",
+            "baselineM3s": 30.947442342127342,
+            "interventionM3s": 30.947442342127342,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-09",
+            "baselineM3s": 11.314926630935053,
+            "interventionM3s": 11.648259964268386,
+            "deltaM3s": 0.3333333333333332
+          },
+          {
+            "month": "2019-10",
+            "baselineM3s": 6.424203142659553,
+            "interventionM3s": 6.424203142659553,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-11",
+            "baselineM3s": 10.71938346010903,
+            "interventionM3s": 10.71938346010903,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-12",
+            "baselineM3s": 34.42217362613037,
+            "interventionM3s": 34.42217362613037,
+            "deltaM3s": 0.0
+          }
+        ]
+      },
+      "01638500": {
+        "firstResponseDay": "2019-09-03",
+        "peakResponseDay": "2019-09-03",
+        "peakIncreaseM3s": 7.5,
+        "increasePastGaugeByYearEndM3": 863999.9999999998,
+        "months": [
+          {
+            "month": "2019-01",
+            "baselineM3s": 585.0407818157167,
+            "interventionM3s": 585.0407818157167,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-02",
+            "baselineM3s": 773.3144103595821,
+            "interventionM3s": 773.3144103595821,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-03",
+            "baselineM3s": 792.3525180365225,
+            "interventionM3s": 792.3525180365225,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-04",
+            "baselineM3s": 499.53579077674027,
+            "interventionM3s": 499.53579077674027,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-05",
+            "baselineM3s": 478.70241035176764,
+            "interventionM3s": 478.70241035176764,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-06",
+            "baselineM3s": 267.3238830745545,
+            "interventionM3s": 267.3238830745545,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-07",
+            "baselineM3s": 202.39799379031913,
+            "interventionM3s": 202.39799379031913,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-08",
+            "baselineM3s": 102.32546469775961,
+            "interventionM3s": 102.32546469775961,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-09",
+            "baselineM3s": 40.92186736946121,
+            "interventionM3s": 41.255200702794546,
+            "deltaM3s": 0.33333333333333326
+          },
+          {
+            "month": "2019-10",
+            "baselineM3s": 20.44695744066227,
+            "interventionM3s": 20.44695744066227,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-11",
+            "baselineM3s": 31.092905959977966,
+            "interventionM3s": 31.092905959977966,
+            "deltaM3s": 0.0
+          },
+          {
+            "month": "2019-12",
+            "baselineM3s": 73.75742799625078,
+            "interventionM3s": 73.75742799625078,
+            "deltaM3s": 0.0
+          }
+        ]
+      }
+    }
+  },
+  "pulseMeetsMonthlyDisplayThreshold": true,
+  "routePassesScreen": false
+}

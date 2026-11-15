@@ -52,7 +52,7 @@ namespace Homecoming.Field
             investigation.scenarioCall = Direction.Rise;
             int index = Array.FindIndex(data.regions, region => region.id == GuidedSoilOrigin);
             Select(index);
-            OpenWeatherLab();
+            OpenWeatherLab(guided:true);
             for (demoStage = 0; demoStage < 2; demoStage++)
             {
                 if (demoStage == 0) settings.rain = 100;
@@ -222,7 +222,7 @@ namespace Homecoming.Field
             CheckInvestigation(investigation.origin?.hasRate == true && investigation.origin.footprint.Contains("32.5°N") &&
                 investigation.origin.footprint.Contains("111°W") && !investigation.IsReady,"Missing historical record, area footprint or initial report gate");
             investigation.scenarioCall = Direction.Fall;
-            OpenWeatherLab();
+            OpenWeatherLab(guided:true);
             var beforeId = Campaign.Current.id;
             settings.rain = 100;
             yield return CaptureInvestigation(output,"00-weather-console-draft");

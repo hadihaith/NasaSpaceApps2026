@@ -171,7 +171,8 @@ namespace Homecoming
             else
             {
                 pageTime += Time.unscaledDeltaTime;
-                if (Input.GetKeyDown(KeyCode.Escape) && page != Page.Home) Show(Page.Home);
+                if (Input.GetKeyDown(KeyCode.Escape) && page != Page.Home)
+                    Show(page == Page.Reset ? operationResetReturnPage : Page.Home);
             }
             UpdateInterface();
             float time = page == Page.Film ? shotTime : pageTime;

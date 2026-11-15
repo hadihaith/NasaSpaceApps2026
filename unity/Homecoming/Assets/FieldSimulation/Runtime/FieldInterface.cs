@@ -8,12 +8,12 @@ namespace Homecoming.Field
 {
     public sealed partial class FieldSimulation
     {
-        static readonly Color Ink = Rgb("#09171c"), Panel = Rgb("#10252b"), Line = Rgb("#36555b"),
-            White = Rgb("#f2f4e5"), Dim = Rgb("#b3c8c8"), Mint = Rgb("#a6e9c7"),
+        static readonly Color Ink = Rgb("#091821"), Panel = Rgb("#102632"), Line = Rgb("#426176"),
+            White = Rgb("#F4E9CF"), Dim = Rgb("#b3c8d2"), Mint = Rgb("#99CEBD"),
             Yellow = Rgb("#ffcf79"), Aqua = Rgb("#75d8e2");
-        static readonly Color ButtonFace = Rgb("#142d35"), ButtonHover = Rgb("#244751"),
-            ButtonPressed = Rgb("#0e2229"), ChoiceFace = Rgb("#285354"), ChoiceHover = Rgb("#356366"),
-            AccentHover = Rgb("#c1f5d8"), AccentPressed = Rgb("#82cba7"), DisabledFace = Rgb("#18282d");
+        static readonly Color ButtonFace = Rgb("#173342"), ButtonHover = Rgb("#24495d"),
+            ButtonPressed = Rgb("#102632"), ChoiceFace = Rgb("#335061"), ChoiceHover = Rgb("#406278"),
+            AccentHover = Rgb("#ffb779"), AccentPressed = Rgb("#da7f45"), DisabledFace = Rgb("#20333e");
         static readonly string[] Sites = { "Sonoran Desert", "Semi-arid savanna", "Tropical rainforest", "Coastal scrub", "Monsoon floodplain", "Eastern woodlands" };
         static readonly string[] Durations = { "1 month", "3 months", "12 months" };
         static readonly int[] Months = { 1, 3, 12 };
@@ -57,7 +57,7 @@ namespace Homecoming.Field
                 int delta = Event.current.shift ? -1 : 1;
                 focusIndex = availableControls[(position + delta + availableControls.Count) % availableControls.Count];
                 keyboardFocus = true;
-                GUI.FocusControl("");
+                GUIUtility.keyboardControl = 0;
                 Event.current.Use();
             }
             availableControls.Clear();
@@ -170,7 +170,7 @@ namespace Homecoming.Field
             if (!enabled) return DisabledFace;
             bool hover = rect.Contains(Event.current.mousePosition);
             if (hover && Input.GetMouseButton(0)) return accent ? AccentPressed : ButtonPressed;
-            if (accent) return hover ? AccentHover : Mint;
+            if (accent) return hover ? AccentHover : Rgb("#FF9D52");
             if (active) return hover ? ChoiceHover : ChoiceFace;
             return hover ? ButtonHover : ButtonFace;
         }
@@ -243,6 +243,12 @@ namespace Homecoming.Field
             Go(View.Lab);
         }
 
+        void OpenWeatherLab(bool guided)
+        {
+            guidedWeatherLab = guided;
+            OpenWeatherLab();
+        }
+
         void OpenWeatherLab()
         {
             weatherLabOpen = true;
@@ -271,7 +277,7 @@ namespace Homecoming.Field
             }
             if (Button(Box(87,570,216,37),"Browse all cases",icon:"Search")) OpenCasePicker();
 
-            if (ControlTile(Box(54,648,157,114),"Weather","Weather lab")) OpenWeatherLab();
+            if (ControlTile(Box(54,648,157,114),"Weather","Weather lab")) OpenWeatherLab(guided:false);
             if (ControlTile(Box(224,648,157,114),"Archive","Earth archive")) OpenArchive(null);
             if (ControlTile(Box(394,648,157,114),"Journal","Field journal")) Go(View.Journal);
             if (ControlTile(Box(564,648,157,114),"Signal","Return to Sender")) OpenBroadcast();
@@ -406,23 +412,38 @@ namespace Homecoming.Field
             }
             Top(LegacyCapture ? "FIELD SIMULATION" : "WEATHER LAB");
             Fade(Box(0,70,1020,428),Alpha(Ink,.69f),90);
-            Tag(54,147,LegacyCapture ? "LANDING SITE  /  " + (siteIndex + 1).ToString("00") : "LANDING SITE",Mint);
-            Text(Box(49,171,1040,109),Region.name,93,White,headingFont);
-            Tag(55,291,Coordinates(Region) + "   /   " + Sites[siteIndex].ToUpperInvariant(),White);
-            if (Button(Box(54,336,192,41),showSites ? "Close map" : "Change site",icon:"Location"))
+            bool guided = !LegacyCapture && IsGuidedScenario;
+            if (guided)
+            {
+                Text(Box(53,162,820,53),Region.name,42,White,headingFont);
+                Tag(55,219,Coordinates(Region),White);
+            }
+            else
+            {
+                Tag(54,147,LegacyCapture ? "LANDING SITE  /  " + (siteIndex + 1).ToString("00") : "LANDING SITE",LegacyCapture ? Mint : Yellow);
+                Text(Box(49,171,1040,109),Region.name,93,White,headingFont);
+                Tag(55,291,Coordinates(Region) + "   /   " + Sites[siteIndex].ToUpperInvariant(),White);
+            }
+            if (!guided && Button(Box(54,336,192,41),showSites ? "Close map" : "Change site",icon:"Location"))
             {
                 showSites = !showSites;
+                if (!showSites) requestedWeatherPoint = null;
                 branchesOpen = branchComparisonOpen = false;
             }
             if (!LegacyCapture)
             {
-                DrawBranches();
-                if (!demoActive && IsGuidedScenario && Button(Box(523,336,193,41),"Back to case",icon:"Back")) OpenCase();
+                if (!guided || NeedsGuidedStartingPoint) DrawBranches();
+                if (!demoActive && guided && !GuidedNeedsCaseSetup && Button(Box(54,256,193,41),"Back to case",icon:"Back"))
+                {
+                    OpenCase();
+                    return;
+                }
             }
-            if (showSites)
+            if (!guided && showSites)
             {
                 DrawSitePicker(392,!LegacyCapture);
             }
+            else if (!guided && !LegacyCapture && !branchesOpen && !branchComparisonOpen) DrawLabWeatherProxy();
 
             if (LegacyCapture)
             {
@@ -441,8 +462,11 @@ namespace Homecoming.Field
             }
             else DrawWeatherConsole();
 
-            Fade(Box(0,772,1600,128),Alpha(Ink,.96f),180);
-            Tag(54,836,"1991–2020 NASA POWER NORMALS   /   CONDITIONAL SCENARIOS",White);
+            if (!guided)
+            {
+                Fade(Box(0,772,1600,128),Alpha(Ink,.96f),180);
+                Tag(54,836,"1991–2020 NASA POWER NORMALS   /   CONDITIONAL SCENARIOS",White);
+            }
             if (LegacyCapture)
             {
                 if (Button(Box(1134,828,210,34),reduced ? "Motion reduced" : "Motion full",false,false,true,16)) ToggleMotion();
@@ -469,6 +493,7 @@ namespace Homecoming.Field
             Fade(Box(0,682,1600,218),Alpha(Ink,.98f),180);
             Tag(53,34,"HOMECOMING  /  SITE TRANSFER",Mint);
             Text(Box(51,59,1225,56),Region.name+" → "+destination.name,44,White,headingFont);
+            DrawTransferWeatherProxy();
             Text(Box(54,114,930,32),Coordinates(Region)+"     →     "+Coordinates(destination),19,Dim,dataFont);
 
             string phase = transferTime < PullbackEnd ? "Climbing from the survey site" :
@@ -496,46 +521,91 @@ namespace Homecoming.Field
 
         void DrawWeatherConsole()
         {
-            Rect console = Box(1089,118,475,684);
-            Card(console,Rgb("#203338"));
-            Fill(Box(console.x+3,console.y+3,console.width-6,console.height-6),Rgb("#15272a"));
-            PanelScrews(console);
-            Tag(1114,136,"WEATHER LAB",Mint);
-            Text(Box(1113,159,432,47),"Change the weather",39,White,headingFont);
-            Text(Box(1115,205,430,27),"Drag a dial or use Tab and the arrow keys.",19,Dim);
+            bool guided = IsGuidedScenario;
+            bool resume = NeedsGuidedStartingPoint && !GuidedNeedsCaseSetup;
+            Rect console = Box(1089,118,475,resume || GuidedNeedsCaseSetup ? 352 : guided ? 580 : 684);
+            Card(console,Panel);
+            Fill(Box(console.x,console.y,76,3),Yellow);
+            bool first = investigation?.first == null;
+            Tag(1114,136,guided ? first ? "ARIZONA SOIL TEST 1 OF 2" : "ARIZONA SOIL TEST 2 OF 2" : "WEATHER LAB",Yellow);
+            string title = guided ? first ? "Change the rain" : "Change the temperature" : "Change the weather";
+            Text(Box(1113,159,432,54),title,38,White,headingFont);
+            string blocker = GuidedLaunchBlocker();
+            if (GuidedNeedsCaseSetup)
+            {
+                Text(Box(1116,227,419,106),blocker,24,White,bodyFont,TextAnchor.UpperLeft,true);
+                if (Button(Box(1116,352,419,51),"Return to case",accent:true,size:24,icon:"Back")) OpenCase();
+                return;
+            }
+            if (resume)
+            {
+                Text(Box(1116,227,419,108),blocker,24,White,bodyFont,TextAnchor.UpperLeft,true);
+                if (scenarioError != null)
+                    Text(Box(1116,412,419,46),scenarioError,18,Dim,bodyFont,TextAnchor.UpperLeft,true);
+                if (Button(Box(1116,352,419,51),"Resume from rain test",true,false,CanRestoreGuidedStartingPoint,24,icon:"Next"))
+                    RestoreGuidedStartingPoint();
+                return;
+            }
+
+            Text(Box(1115,211,430,26),guided ? "Compare how much water the soil holds." : "Drag a dial or press Tab and use the arrow keys.",18,White);
             if (dialFace == null) dialFace = MakeDialFace();
 
-            for (int i = 0; i < data.controls.Length; i++)
-                DrawWeatherDial(i,1116+(i%2)*219,239+(i/2)*183);
+            if (guided)
+            {
+                int dial = (int)(first ? ForcingControl.Rain : ForcingControl.Heat);
+                DrawWeatherDial(dial,1116,248,419);
+                int example = first ? 100 : 4;
+                if (settings[dial] != example && displayed.forcing[dial] != example)
+                    Text(Box(1405,300,118,36),first ? "Try +100%" : "Try +4 °C",18,White,strongFont,TextAnchor.MiddleCenter);
+                Text(Box(1116,435,419,27),"Drag the dial or press Tab and use the arrow keys.",17,Dim);
+                DrawWeatherMonitor();
+            }
+            else
+                for (int i = 0; i < data.controls.Length; i++)
+                    DrawWeatherDial(i,1116+(i%2)*219,239+(i/2)*183);
 
-            string blocker = GuidedLaunchBlocker();
-            Text(Box(1117,605,417,62),blocker ?? $"Preview a year starting {Campaign.Current.NextDate:MMM yyyy}. Save the result after it plays.",
-                18,Dim,bodyFont,TextAnchor.MiddleLeft,true);
-            if (Button(Box(1116,678,419,51),"Preview 12 months",true,false,blocker == null,25)) LaunchScenario();
-            if (Button(Box(1116,743,419,36),"Reset weather to saved values",false,false,Campaign != null,18)) Select(siteIndex);
-            if (!showSites && !branchesOpen && !branchComparisonOpen) DrawWeatherMonitor();
+            float actionTop = guided ? 585 : 678;
+            string hint = guided ? first ? "" : "Starts with the rain and soil water from test 1." :
+                $"Forecast starts {FieldCalendar.Date(displayed.monthIndex).ToString("MMM yyyy",Invariant)}.";
+            Text(Box(1117,actionTop-63,417,53),blocker ?? SimulationStatus ?? hint,18,White,bodyFont,TextAnchor.MiddleLeft,true);
+            if (Button(Box(1116,actionTop,419,51),"Preview 12 months",true,false,blocker == null,25,icon:"Next")) LaunchScenario();
+            bool changed = Campaign != null && Enumerable.Range(0,data.controls.Length).Any(i => settings[i] != displayed.forcing[i]);
+            if (Button(Box(1116,actionTop+60,419,36),"Reset to saved weather",enabled:changed,size:18)) Select(siteIndex);
+            if (!guided && !showSites && !branchesOpen && !branchComparisonOpen) DrawWeatherMonitor();
         }
 
         void DrawWeatherMonitor()
         {
-            Rect bezel = Box(54,462,852,288);
-            Card(bezel,Rgb("#172a2b"));
-            PanelScrews(bezel);
-            Rect screen = Box(75,482,809,246);
-            BeginWeatherScreen(screen);
+            bool guided = IsGuidedScenario;
             // The lab loads the source revision's next month into displayed.
             int month = displayed.monthIndex;
             var inheritedSettings = displayed.forcing;
             var normal = ClimateModel.Normal(Region,month);
             var inherited = ClimateModel.ApplyForcing(normal,inheritedSettings);
             var draft = ClimateModel.ApplyForcing(normal,settings);
-            Tag(95,492,"LOCAL WEATHER MONITOR  /  "+FieldCalendar.Date(month).ToString("MMM yyyy",Invariant).ToUpperInvariant(),Mint);
-            Text(Box(96,526,753,34),"Inherited weather → Draft weather",26,White,headingFont);
+            string date = FieldCalendar.Date(month).ToString("MMM yyyy",Invariant);
+            if (guided)
+            {
+                Fill(Box(1116,470,419,1),Line);
+                Text(Box(1117,474,418,24),$"{date}  ·  Saved weather → Draft weather",16,Dim,strongFont);
+                int index = (int)(investigation.first == null ? ForcingControl.Rain : ForcingControl.Heat);
+                string readings = index == (int)ForcingControl.Rain
+                    ? FormattableString.Invariant($"{inherited.rain:0.#} → {draft.rain:0.#} mm precipitation")
+                    : FormattableString.Invariant($"{inherited.temperature:0.#} → {draft.temperature:0.#} °C");
+                Text(Box(1117,497,418,28),readings,20,settings[index] == inheritedSettings[index] ? White : Yellow,dataFont);
+                return;
+            }
+
+            Rect bezel = Box(54,462,852,288);
+            Card(bezel,Panel);
+            Fill(Box(bezel.x,bezel.y,76,3),Yellow);
+            Tag(77,481,date.ToUpperInvariant()+"  /  FIRST FORECAST MONTH",Yellow);
+            Text(Box(76,509,790,40),"Saved weather → Draft weather",29,White,headingFont);
 
             for (int i = 0; i < data.controls.Length; i++)
             {
                 var control = data.controls[i];
-                float x = 96+(i%2)*389, y = 574+(i/2)*62;
+                float x = 77+(i%2)*401, y = 556+(i/2)*71;
                 string unit = i switch { 0 => "°C", 1 => "mm/month", 2 => "% RH", _ => "m/s" };
                 float WeatherValue(Weather weather) => i switch
                 {
@@ -550,44 +620,20 @@ namespace Homecoming.Field
                     $"{beforeValue:0.##} → {afterValue:0.##}"),17,White,dataFont);
                 string change = "Δ " + delta.ToString("+0.##;-0.##;0",Invariant);
                 if (i == 2) change += " percentage points";
-                Text(Box(x+184,y+21,179,34),change,17,delta == 0 ? Dim : Mint,
+                Text(Box(x+184,y+21,190,34),change,17,delta == 0 ? Dim : Yellow,
                     i == 2 ? strongFont : dataFont,TextAnchor.MiddleRight);
             }
-            DrawWeatherBeam(Box(861,505,20,192));
         }
 
-        void BeginWeatherScreen(Rect rect)
-        {
-            Fill(rect,Rgb("#081819"));
-            for (float y = rect.y+5; y < rect.yMax; y+=6)
-                Fill(Box(rect.x,y,rect.width,1),Alpha(Mint,.065f));
-            Fill(Box(rect.x,rect.y,rect.width,2),Alpha(Mint,.3f));
-            Fill(Box(rect.x,rect.yMax-2,rect.width,2),Alpha(Mint,.3f));
-        }
-
-        void DrawWeatherBeam(Rect tube)
-        {
-            if (Event.current.type != EventType.Repaint) return;
-            Fill(tube,Ink);
-            Fill(Box(tube.center.x-3,tube.y+17,6,tube.height-34),Alpha(Aqua,.18f));
-            Fill(Box(tube.center.x-1,tube.y+17,2,tube.height-34),Aqua);
-            float phase = reduced ? .44f : Mathf.Repeat(elapsed*.48f,1);
-            float y = Mathf.Lerp(tube.y+18,tube.yMax-18,phase);
-            Fill(Box(tube.center.x-5,y-4,10,8),Alpha(Aqua,.42f));
-            Fill(Box(tube.center.x-2,y-2,4,4),White);
-            Fill(Box(tube.x+2,tube.y+3,tube.width-4,12),Line);
-            Fill(Box(tube.x+2,tube.yMax-15,tube.width-4,12),Line);
-            Fill(Box(tube.x+5,tube.y+10,tube.width-10,3),Mint);
-            Fill(Box(tube.x+5,tube.yMax-13,tube.width-10,3),Mint);
-        }
-
-        void DrawWeatherDial(int control, float x, float y)
+        void DrawWeatherDial(int control, float x, float y, float width = 202)
         {
             var definition = data.controls[control];
-            Color tint = Rgb(definition.color);
-            Rect cell = Box(x,y,202,174);
-            Vector2 center = new Vector2(x+101,y+103);
-            Rect target = Box(center.x-57,center.y-57,114,114);
+            Color tint = Yellow;
+            bool wide = width > 202;
+            Rect cell = Box(x,y,width,wide ? 183 : 174);
+            Vector2 center = new Vector2(cell.center.x,y+(wide ? 111 : 103));
+            float radius = wide ? 69 : 57;
+            Rect target = Box(center.x-radius,center.y-radius,radius*2,radius*2);
             int index = controlIndex++;
             availableControls.Add(index);
             bool focused = focusIndex == index && keyboardFocus;
@@ -597,7 +643,7 @@ namespace Homecoming.Field
                 Vector2 pointer = evt.mousePosition - center;
                 focusIndex = index;
                 keyboardFocus = true;
-                if (pointer.magnitude > 33)
+                if (pointer.magnitude > radius*.58f)
                 {
                     float angle = Mathf.Atan2(pointer.x,-pointer.y)*Mathf.Rad2Deg;
                     float value = Mathf.Lerp(definition.min,definition.max,Mathf.InverseLerp(-135,135,angle));
@@ -623,21 +669,24 @@ namespace Homecoming.Field
                 evt.Use();
             }
 
-            Card(cell,Rgb("#102024"));
+            Card(cell,Ink);
             if (focused)
             {
                 Fill(Box(x,y,cell.width,2),Yellow);
                 Fill(Box(x,y,2,cell.height),Yellow);
             }
             DrawIcon(WeatherIcons[control],new Vector2(x+27,y+17),tint);
-            Text(Box(x+48,y+4,146,26),definition.label,19,White,strongFont);
-            Text(Box(x+6,y+27,190,23),Signed(settings[control])+" "+definition.unit.TrimStart(),19,tint,dataFont,TextAnchor.MiddleCenter);
+            Text(Box(x+48,y+4,width-56,26),definition.label,19,White,strongFont);
+            Rect setting = wide ? Box(x+12,y+59,118,40) : Box(x+6,y+27,width-12,23);
+            Text(setting,Signed(settings[control])+" "+definition.unit.TrimStart(),wide ? 23 : 19,tint,dataFont,TextAnchor.MiddleCenter);
+            if (wide)
+                Text(Box(x+12,y+95,118,25),"vs. normal",16,Dim,bodyFont,TextAnchor.MiddleCenter);
             GUI.DrawTexture(target,dialFace);
             float fraction = Mathf.InverseLerp(definition.min,definition.max,settings[control]);
             Vector2 needle = DialDirection(Mathf.Lerp(-135,135,fraction));
-            DrawChartSegment(center+needle*17,center+needle*33,focused ? Yellow : tint);
+            DrawChartSegment(center+needle*(radius*.3f),center+needle*(radius*.58f),tint);
             Text(Box(x+8,y+144,57,25),Signed(definition.min),14,Dim,dataFont);
-            Text(Box(x+137,y+144,57,25),Signed(definition.max),14,Dim,dataFont,TextAnchor.MiddleRight);
+            Text(Box(cell.xMax-65,y+144,57,25),Signed(definition.max),14,Dim,dataFont,TextAnchor.MiddleRight);
         }
 
         static int DialValue(ClimateControl definition, float value) =>
@@ -683,16 +732,6 @@ namespace Homecoming.Field
             return face;
         }
 
-        void PanelScrews(Rect panel)
-        {
-            for (int corner = 0; corner < 4; corner++)
-            {
-                float x = (corner & 1) == 0 ? panel.x+9 : panel.xMax-16;
-                float y = corner < 2 ? panel.y+9 : panel.yMax-16;
-                Fill(Box(x,y,7,7),Rgb("#61716b"));
-                Fill(Box(x+1,y+3,5,1),Ink);
-            }
-        }
 
         void Slider(int i,float x,float y,float width)
         {
@@ -929,6 +968,12 @@ namespace Homecoming.Field
         void DrawArchive()
         {
             Sheet("HISTORICAL EARTH DATA","Earth archive");
+            if (!LegacyCapture) DrawArchiveProgress();
+            if (archiveOrigin != null)
+            {
+                DrawArchiveComparison();
+                return;
+            }
             if (LegacyCapture)
             {
                 Tag(56,206,"ANNUAL VALUES  /  DESCRIPTIVE EVIDENCE",Mint);
@@ -944,7 +989,12 @@ namespace Homecoming.Field
                     }
             }
             else if (DrawArchiveFilters()) return;
-            var records = data.evidence.Where(e => e.region == Region.id && (evidenceKey == null || e.key == evidenceKey)).ToArray();
+            if (!LegacyCapture && archiveRequestedPoint.HasValue)
+            {
+                DrawConnectedArchive();
+                return;
+            }
+            var records = ArchiveRecordsFor(ArchivePlaceId);
             if (!LegacyCapture)
             {
                 DrawArchiveRecord(records);

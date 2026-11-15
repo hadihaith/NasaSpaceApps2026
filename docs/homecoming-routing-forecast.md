@@ -41,6 +41,70 @@ python scripts/homecoming-validation/routing.py /path/to/downloads
 
 NASA and USGS may revise their responses. The routing screen used downloads from 2026-11-14. The SHA-256 digests were `47c2e30041b1a6e07ba3c1d82f07c70f2bfdd376a263153699902cf96ea006ea` for HydroRIVERS, `687c3e54f59b5d8d4548af6d8f72f762bf86e3c4ceadf6cb56302d8142ed3911` for HydroBASINS, `23fcb25fc8c4b5fc32e0164e7495605977ad72d257d6384313b1246ebdc857c2` for sites, `69dc3bc1f6353c99d65a216b15f686fc2f8ef5b610598a3837249bcb242f2849` for discharge and `292f1e842e51f836e458834ded5db1ddd66441e94f3c37287c3f5d4a763623f7` for precipitation. The RDB payloads can include changing retrieval metadata.
 
+## Potomac daily routing candidate
+
+**Release decision · Fail.** The daily model improved monthly flow estimates against climatology at Paw Paw, Hancock and Point of Rocks. At Hancock, the delayed model's monthly error was 1.36% higher than the independently fitted same-month inflow alternative's error. The release demo keeps the historical comparison flight. The [versioned research audit](../scripts/homecoming-validation/fixtures/potomac-daily-v1.audit.json) records the failed gate and paired scenario values.
+
+### Evaluation design
+
+Replaying the original screen with the 2026-11-15 downloads reproduced every published MAE to two decimals, both zero-retention reach fits, the approved and estimated gauge day counts, and a zero network balance residual. The HydroSHEDS archive hashes matched the original screen. The three API payload hashes differed. The versioned audit pins the raw bytes of the new downloads.
+
+The candidate uses the same incremental catchments, gauge observations and calendar windows. January 2000–December 2001 initializes empty stores, January 2002–December 2014 sets parameters and climatology, and January 2015–December 2024 verifies the frozen fits over 120 months and 3,653 days per gauge. The accepted metric remains the mean absolute error (MAE) of calendar-month mean discharge in m³/s. Skill is `1 - model MAE / reference MAE`. Every gauge needs at least 5% skill against its training-period calendar-month mean, and every downstream gauge needs at least 5% against the same-month inflow alternative. A daily reach also needs a nonzero delay or retention and lower withheld daily MAE than the bypass. The pulse must match the analytic checks and increase at least one monthly mean at each gauge by 0.01 m³/s or more, the chosen display resolution.
+
+The candidate replaces the constant runoff fraction with a daily snow and soil-water model. It follows the snowmelt and wetness-dependent recharge structure of HBV, with two parallel linear stores for fast runoff and slower baseflow. Area overlap on the baseline grid gives each catchment separate precipitation, temperature and Hargreaves reference evapotranspiration (ET). The model uses the midpoint of daily minimum and maximum temperature for rain/snow partitioning at 0 °C and melts stored snow at up to 3 mm per °C per day. Actual ET decreases as the soil store drops below 70% of capacity. The slow store releases 3% of its contents per day. A channel link delays upstream volume by a whole number of days and then retains a fixed fraction. Daily routing is justified by Potomac field studies that found travel on the scale of days. Those tracer studies give context for the time step. The candidate's fitted discharge response can differ from tracer travel time. [HBV snow and soil equations](https://hess.copernicus.org/articles/16/3315/2012/hess-16-3315-2012.pdf) · [FAO-56 reference ET equations](https://www.fao.org/4/x0490e/x0490e07.htm) · [USACE lag routing](https://www.hec.usace.army.mil/confluence/hmsdocs/hmstrm/channel-flow/lag-model) · [USACE linear storage](https://www.hec.usace.army.mil/confluence/hmsdocs/hmstrm/transform/clark-unit-hydrograph-model) · [USGS Potomac travel-time study](https://doi.org/10.3133/wsp2257)
+
+One grid search per gauge minimizes daily training MAE, working from Paw Paw downstream. It considers 324 local parameter sets, with storage capacities of 100–500 mm, recharge exponents of 1, 2 or 4, reference ET multipliers of 0.75, 1 or 1.25, and three settings each for the fraction of recharge that enters the fast store and the fraction that store releases each day. The two downstream searches use delays of 0–3 days and retentions of 0%, 25%, 50% or 75% per day. The same-month alternative uses the same simulated upstream series, passes it through on the same day so the incoming volume stays in its original month, and independently refits the local runoff parameters on the same training window. Withheld gauge flows score the runs after fitting.
+
+### Withheld gauge results
+
+| Gauge | Monthly model MAE (m³/s) | Climatology | Same-month inflow | Skill vs. climatology | Skill vs. same-month | Daily model / bypass MAE (m³/s) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Paw Paw | 33.57 | 48.74 | | +31.12% | | 42.38 / — | Pass |
+| Hancock | 35.99 | 60.09 | 35.50 | +40.11% | −1.36% | 46.26 / 50.50 | Fail |
+| Point of Rocks | 64.38 | 138.60 | 75.89 | +53.55% | +15.17% | 95.17 / 99.80 | Pass |
+
+Hancock's link selected a one-day delay and 25% daily retention. The link to Point of Rocks selected a two-day delay and zero retention. The daily improvement at both links supports evaluating timing on the daily grid. Hancock's weaker monthly result controls the release decision. The baseline network accounted for 658.03 billion m³ of input as 465.64 billion m³ of ET, 5.83 billion m³ of terminal storage and 186.56 billion m³ of outlet export. The unrounded residual was −0.0000134 m³, within the relative tolerance of 10⁻¹².
+
+### Paw Paw low-flow augmentation pulse
+
+In a same-start simulation, adding water at Paw Paw raises the modeled flow there in August and at both downstream gauges in September. The intervention adds 10 m³/s to the August 31, 2019 daily mean at the Paw Paw model boundary, equivalent to 864,000 m³. The date puts the pulse on a month boundary so the display can distinguish the two months. Catchment weather, local runoff and initial stores are identical in both runs. Potomac operators use upstream reservoir releases to augment low flow. This scenario represents the amount already arriving at Paw Paw, with no model of the reservoir or the river above that gauge. [ICPRB Potomac drought operations report](https://www.potomacriver.org/wp-content/uploads/2014/12/ICPRB03-6.pdf)
+
+| Gauge | First and peak response day | Peak daily mean increase (m³/s) | August mean increase (m³/s) | September mean increase (m³/s) |
+| --- | --- | ---: | ---: | ---: |
+| Paw Paw | 2019-08-31 | 10.00 | 0.323 | 0 |
+| Hancock | 2019-09-01 | 7.50 | 0 | 0.333 |
+| Point of Rocks | 2019-09-03 | 7.50 | 0 | 0.333 |
+
+The Hancock store spreads the extra water over several days and lowers the peak. The fitted Point of Rocks link shifts that response two more days. All 864,000 m³ passes each gauge by year-end within numerical tolerance. A separate geometric impulse calculation matches the paired runs to 10⁻⁵ m³ per day, including the zero response ahead of the pulse and the positive downstream change. The additional network ledger closes to 2.33 × 10⁻¹⁰ m³. These values describe a model edit and its numerical checks. The test uses a synthetic input boundary and supplies no observed release-response estimate, weather forecast, intraday arrival time or historical trend verdict.
+
+### Player path
+
+In a fresh, isolated macOS player, **Investigate the rain alert** opened **Return to Sender**. An incorrect measurement choice showed an inline correction. The correct choices revealed each local trend, marked its map pin and advanced from Chile to the Sahel. **Compare records** opened the matched time series, with test details under **See the evidence**. The supported claim enabled **Send to Earth**, and the receipt's primary action opened **Weather and soil**. The playthrough used the keyboard. The missing paired-archive branch was checked in source and offers **Field station** to return to the other cases.
+
+A future downstream entry can offer **Follow the modeled change** after a qualifying route and its effect data both load. The first result should give the same-start flow change and use the shared month to open the next gauge, with numeric values and methods under **See the evidence**. If the audit fails, or if the route or effect data is missing, the default action is **Investigate the rain alert**. In a flow the player has already opened, show “The downstream comparison is unavailable” with that same action. The research audit records `routePassesScreen: false`. The verifier named the missing files in an empty-folder test and the missing grid center in a partial-data test, with no audit output in either case. The release uses the bundled historical entry directly.
+
+### Next test
+
+Isolate the Hancock link using the Cacapon River gauge (01611500). First compare observed Paw Paw inflow plus separately measured Cacapon flow with the observed Hancock hydrograph. Subtract the Cacapon contributing area from the ungauged lateral catchment before modeling the remainder. Compare the fitted daily reach with a same-day reach on untouched dated release events, using operator release logs and USGS Barnum discharge (01595800) to identify upstream release changes. Score onset day, peak daily increment and event volume against a pre-event flow baseline on dry periods selected before fitting. Keep the measured-boundary diagnostic separate from an end-to-end rerun with simulated inflows and the existing monthly MAE gate. The historic 2015–2024 scores remain a comparison window, so reserve new events or years before any model selection. [USGS Cacapon gauge](https://waterdata.usgs.gov/monitoring-location/USGS-01611500/) · [USGS Barnum gauge](https://waterdata.usgs.gov/monitoring-location/USGS-01595800/)
+
+### Reproduce the daily candidate
+
+Start with the five monthly screen inputs. Fetch one daily NASA POWER point per native-grid center, without elevation correction. The 30 daily responses were retrieved on 2026-11-15 using POWER Daily API v2.10.3. The records cover 2000-01-01–2024-12-31 in POWER local solar time. USGS observations are approved daily means (parameter 00060, statistic 00003), including estimated values as in the original screen. The daily comparison aligns by reported date. POWER and gauge day windows can differ by hours, limiting interpretation of short travel times. Both land stores and reach parameters are lumped, so regulation, ice, terrain-dependent snow, flow-dependent travel and withdrawals are unresolved. The audit records the SHA-256 digest of each downloaded payload. The replay used Python 3.13.9. [NASA POWER Daily API](https://power.larc.nasa.gov/docs/services/api/temporal/daily/) · [USGS daily values](https://waterservices.usgs.gov/docs/dv-service/)
+
+```sh
+sources=/path/to/downloads
+mkdir -p "$sources/daily"
+jq -r '.features[].geometry.coordinates[:2] | @tsv' "$sources/power.json" |
+while IFS="$(printf '\t')" read -r lon lat; do
+    curl -fsSL --retry 2 "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR,T2M_MIN,T2M_MAX&community=AG&longitude=$lon&latitude=$lat&start=20000101&end=20241231&format=JSON&time-standard=LST" \
+        -o "$sources/daily/$lon,$lat.json" || exit 1
+done
+python -m pip install numpy==2.5.4 pyproj==3.8.0 pyshp==3.1.8 shapely==2.2.0
+python -B scripts/homecoming-validation/routing.py "$sources"
+python -B scripts/homecoming-validation/potomac_daily.py "$sources" > /tmp/potomac-daily-audit.json
+python -B -m unittest discover -s scripts/homecoming-validation -v
+```
+
 ## Phoenix temperature benchmark replay
 
 At 00:00 UTC on the first of each month from January 2015 through December 2024, replay picks the last archived NWS `CLMPHX` report version available for each completed month. Each issue has 12 target months beginning with the issue month. Persistence reuses the last reported temperature. Climatology uses the mean of all published reports for the target calendar month, with at least eight years per calendar month. Damped persistence adds the last observed anomaly to climatology and decays it with a fixed two-month e-folding time. No fit to the verification targets was used. The later NOAA GSOM station record supplies the 1,440 withheld site-month outcomes across all leads. Each individual lead has 120 matched outcomes. Months flagged for missing days are skipped. The same target month can appear in scores for different leads. [NWS archive format and timestamps](https://mesonet.agron.iastate.edu/nws/text.php) · [NOAA GSOM format](https://www.ncei.noaa.gov/pub/data/cdo/documentation/GSOM_documentation.pdf)

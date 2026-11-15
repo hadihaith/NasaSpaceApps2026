@@ -35,15 +35,37 @@ namespace Homecoming.Field
             world.SurveyOrbit(orbitStart,orbitEnd,orbitProgress);
         }
 
+        static string PairedVerdict(ArchiveTrend trend) => trend.status == "significant"
+            ? "The Sahel-minus-Chile rainfall difference had a statistically significant trend."
+            : "The test did not find a statistically significant trend in the Sahel-minus-Chile rainfall difference.";
+
+        static string TrendRate(string subject, float rate, string unit, string period = null)
+        {
+            string span = period == null ? "" : $" over {period}";
+            if (rate == 0) return $"{subject} was flat{span} (0 {unit} per decade).";
+            string amount = Mathf.Abs(rate).ToString(Mathf.Abs(rate) < .01f ? "G3" : "0.00",Invariant);
+            return $"{subject} {(rate > 0 ? "rose" : "fell")} by {amount} {unit} per decade{span}.";
+        }
+
+        static string PairedTestDetails(ArchiveTrend trend)
+        {
+            var test = trend.test;
+            string statistic = HistoricalTestStatistic(test.degreesOfFreedom,test.tStatistic);
+            return $"{test.method} · {statistic}p = {test.p.ToString("G3",Invariant)} · α = {test.alpha.ToString("0.##",Invariant)}\n"+
+                $"95% confidence interval: {Signed(test.lowerPerDecade,"0.00")} to {Signed(test.upperPerDecade,"0.00")} {trend.unit} per decade";
+        }
+
         void DrawComparison()
         {
             if (comparisonHasOrbit) DrawGroundTrack();
             else Fill(Box(-2200,-2200,6000,5000),Ink);
             Fade(Box(0,0,1600,190),Alpha(Ink,.95f),0);
-            Tag(56,31,"HISTORICAL COMPARISON",Mint);
-            Text(Box(53,61,1400,59),$"{PlaceName(pairedOrigin)}  /  {PlaceName(pairedTarget)}",47,White,headingFont);
+            Tag(56,25,"HISTORICAL COMPARISON",Mint);
+            Text(Box(53,47,900,49),$"{PlaceName(pairedOrigin)}  /  {PlaceName(pairedTarget)}",43,White,headingFont);
             DrawCaseProgress(Box(979,33,534,73),investigation.kind);
-            Text(Box(56,125,1468,46),$"{pairedOrigin.product} · {Period(pairedOrigin)} · {pairedOrigin.years.Length} matched years\n{pairedOrigin.aggregation} · {pairedOrigin.unit}",20,Dim);
+            string measure = pairedDifference != null ? "Precipitation (rain and snow)" : pairedOrigin.variable;
+            Text(Box(56,comparisonHasOrbit && demoActive ? 137 : 114,1468,44),$"{measure} · {pairedOrigin.product} · {Period(pairedOrigin)} · {pairedOrigin.years.Length} matched years\n"+
+                $"{ArchiveFootprint(pairedOrigin)}   /   {ArchiveFootprint(pairedTarget)}",20,Dim);
             if (Button(Box(56,179,194,42),"Back to case",icon:"Back")) CloseComparison();
             if (comparisonHasOrbit && orbitProgress < 1)
             {
@@ -57,7 +79,15 @@ namespace Homecoming.Field
                 orbitProgress = 0;
                 orbitPaused = false;
             }
-            Fill(Box(0,463,1600,437),Alpha(Ink,.93f));
+            Card(Box(56,242,1488,137),Alpha(Ink,.95f));
+            string verdict = pairedDifference == null
+                ? "Statistical significance has not been established for this comparison."
+                : PairedVerdict(pairedTrend);
+            Text(Box(78,252,1440,69),verdict,32,White,headingFont,TextAnchor.MiddleLeft,true);
+            string interpretation = pairedDifference == null ? $"Both records cover {Period(pairedOrigin)}."
+                : TrendRate("The difference",pairedTrend.test.slopePerDecade,pairedTrend.unit,Period(pairedOrigin));
+            Text(Box(80,321,1424,42),interpretation,24,Mint,strongFont);
+            Fill(Box(0,395,1600,505),Alpha(Ink,.95f));
             var a = MakeFinding(pairedOrigin);
             var b = MakeFinding(pairedTarget);
             float min = Mathf.Min(pairedOrigin.years.Min(v => v.value),pairedTarget.years.Min(v => v.value));
@@ -65,30 +95,41 @@ namespace Homecoming.Field
             if (max == min) max += 1;
             if (comparisonMethods)
             {
-                Card(Box(56,482,1488,200),Panel);
-                Text(Box(80,488,1440,44),"Sources and limits",26,White,headingFont);
-                Text(Box(80,531,1440,51),comparisonScope,20,Dim,bodyFont,TextAnchor.UpperLeft,true);
+                Card(Box(56,413,1488,296),Panel);
+                Text(Box(80,425,1440,37),"See the evidence",26,White,headingFont);
                 if (pairedDifference != null)
                 {
-                    Text(Box(80,582,1440,26),$"Sahel · {a.reviewRationale}",17,Dim);
-                    Text(Box(80,607,1440,26),$"Chile · {b.reviewRationale}",17,Dim);
+                    Text(Box(80,466,1440,40),PairedTestDetails(pairedTrend).Replace("\n"," · "),19,White,bodyFont,TextAnchor.MiddleLeft,true);
+                    Text(Box(80,510,1440,32),$"{PairSource} · {pairedDifference.hypothesis}",18,Dim);
+                    Text(Box(80,545,1440,45),comparisonScope,18,Dim,bodyFont,TextAnchor.UpperLeft,true);
+                    Text(Box(80,589,1440,23),$"{a.place} · {a.reviewRationale}",17,Dim);
+                    Text(Box(80,613,1440,23),$"{b.place} · {b.reviewRationale}",17,Dim);
+                    Text(Box(80,637,1440,23),$"Descriptive paired rate (Theil–Sen) {FindingRate(pairedDifference)}",17,Dim);
                 }
-                if (Button(Box(80,635,280,38),"Open source for "+a.place,false,false,!string.IsNullOrEmpty(a.url),17))
+                else
+                {
+                    Text(Box(80,466,1440,44),$"{a.product} · {a.aggregation}",19,Dim,bodyFont,TextAnchor.MiddleLeft,true);
+                }
+                if (Button(Box(80,667,280,34),"Open source for "+a.place,enabled:!string.IsNullOrEmpty(a.url),size:17))
                     Application.OpenURL(a.url);
-                if (Button(Box(373,635,280,38),"Open source for "+b.place,false,false,!string.IsNullOrEmpty(b.url),17))
+                if (Button(Box(373,667,280,34),"Open source for "+b.place,enabled:!string.IsNullOrEmpty(b.url),size:17))
                     Application.OpenURL(b.url);
             }
             else if (differenceOpen)
             {
-                Card(Box(56,482,1488,200),Panel);
-                Text(Box(80,488,1410,34),$"{a.place} minus {b.place} · {pairedTrend.unit}",26,White,headingFont);
-                DrawHistoricalChart(pairedTrend,Box(170,543,1346,98),includeZero: true,selectedIndex: comparisonYear);
+                Card(Box(56,413,1488,263),Panel);
+                Text(Box(80,425,1410,35),$"{a.place} minus {b.place} · {pairedTrend.unit}",26,White,headingFont);
+                Text(Box(80,463,1410,30),"Each point subtracts Chile from the Sahel for the same year.",20,Dim);
+                DrawHistoricalChart(pairedTrend,Box(170,511,1346,124),includeZero: true,selectedIndex: comparisonYear);
+                Text(Box(687,641,312,27),"Year",15,Dim,dataFont,TextAnchor.MiddleCenter);
             }
             else if (comparisonTable) DrawPairTable(pairedOrigin,pairedTarget);
             else
             {
-                DrawComparisonCard(56,482,a,pairedOrigin,min,max,Mint);
-                DrawComparisonCard(816,482,b,pairedTarget,min,max,Aqua);
+                string chartMeasure = pairedDifference != null ? "Yearly average of monthly precipitation totals" : pairedOrigin.aggregation;
+                Text(Box(81,400,1437,29),$"{chartMeasure} ({a.unit}) · {Period(pairedOrigin)}",18,Dim);
+                DrawComparisonCard(56,435,a,pairedOrigin,min,max,Mint);
+                DrawComparisonCard(816,435,b,pairedTarget,min,max,Aqua);
             }
             if (!comparisonMethods && !comparisonTable)
             {
@@ -101,21 +142,16 @@ namespace Homecoming.Field
                     19,White,dataFont,TextAnchor.MiddleCenter);
                 if (Button(Box(1498,685,46,38),"",enabled:comparisonYear+1 < pairedOrigin.years.Length,icon:"Next",tooltip:"Next year")) comparisonYear++;
             }
-            if (pairedDifference != null)
+            if (pairedDifference != null && investigation.kind == InvestigationKind.Rainfall)
             {
-                Text(Box(56,724,1488,29),$"Paired Theil–Sen rate {FindingRate(pairedDifference)} · {pairedDifference.significance}",20,White);
-                Text(Box(56,752,1488,29),TestSummary(pairedDifference),18,Dim);
-                if (investigation.kind == InvestigationKind.Rainfall)
+                if (Button(Box(56,783,213,39),showPredictionEdits ? "Hide predictions" : "Change predictions",size:18))
+                    showPredictionEdits = !showPredictionEdits;
+                if (showPredictionEdits)
                 {
-                    if (Button(Box(56,783,213,39),showPredictionEdits ? "Hide predictions" : "Change predictions",size:18))
-                        showPredictionEdits = !showPredictionEdits;
-                    if (showPredictionEdits)
-                    {
-                        Text(Box(285,788,123,30),"Sahel",18,Mint,strongFont);
-                        Text(Box(916,788,116,30),"Chile",18,Aqua,strongFont);
-                        DrawCall(414,783,ref investigation.revisedOriginCall,false,investigation.originCall);
-                        DrawCall(1038,783,ref investigation.revisedOtherCall,false,investigation.otherCall);
-                    }
+                    Text(Box(285,788,123,30),"Sahel",18,Mint,strongFont);
+                    Text(Box(916,788,116,30),"Chile",18,Aqua,strongFont);
+                    DrawCall(414,783,ref investigation.revisedOriginCall,false,investigation.originCall);
+                    DrawCall(1038,783,ref investigation.revisedOtherCall,false,investigation.otherCall);
                 }
             }
             if (Button(Box(56,829,196,43),comparisonTable ? "Show charts" : "Inspect values",false,false,true,19))
@@ -130,7 +166,7 @@ namespace Homecoming.Field
                 differenceOpen = !differenceOpen;
                 comparisonTable = comparisonMethods = false;
             }
-            if (Button(Box(532,829,217,43),comparisonMethods ? "Show site charts" : "Sources and limits",false,comparisonMethods,true,19))
+            if (Button(Box(532,829,217,43),comparisonMethods ? "Show site charts" : "See the evidence",false,comparisonMethods,true,19))
             {
                 comparisonMethods = !comparisonMethods;
                 comparisonTable = differenceOpen = false;
@@ -172,18 +208,24 @@ namespace Homecoming.Field
 
         void DrawComparisonCard(float x, float y, FiledFinding finding, EvidenceSeries record, float min, float max, Color tint)
         {
-            Card(Box(x,y,728,200),Panel);
-            Text(Box(x+18,y+4,692,32),finding.place,28,tint,headingFont);
-            Text(Box(x+18,y+31,692,23),finding.footprint,17,Dim);
-            DrawChart(record,Box(x+88,y+62,613,65),min,max,tint,68,comparisonYear);
-            Text(Box(x+18,y+156,692,23),"Descriptive Theil–Sen · "+FindingRate(finding),19,White,strongFont);
-            Text(Box(x+18,y+178,692,21),SignificanceLabel(finding,false),17,Dim);
+            Card(Box(x,y,728,241),Panel);
+            Text(Box(x+18,y+7,692,33),finding.place,28,tint,headingFont);
+            string verdict = finding.status switch
+            {
+                "significant" => "This record had a statistically significant trend.",
+                "not-significant" => "The test did not find a statistically significant trend.",
+                _ => LocalSignificance
+            };
+            Text(Box(x+18,y+41,692,27),verdict,19,White,strongFont);
+            Text(Box(x+18,y+70,692,28),TrendRate("The descriptive trend",finding.ratePerDecade,finding.unit),19,Dim);
+            DrawChart(record,Box(x+88,y+116,613,86),min,max,tint,68,comparisonYear);
+            Text(Box(x+260,y+208,208,25),"Year",15,Dim,dataFont,TextAnchor.MiddleCenter);
         }
 
         void DrawPairTable(EvidenceSeries a,EvidenceSeries b)
         {
-            Card(Box(56,482,1488,237),Panel);
-            Text(Box(80,491,1410,30),$"Year            {PlaceName(a)}                 {PlaceName(b)}" +
+            Card(Box(56,413,1488,263),Panel);
+            Text(Box(80,425,1410,30),$"Year            {PlaceName(a)}                 {PlaceName(b)}" +
                 (pairedTrend == null ? "" : "                Difference") + $"     ·     {a.unit}",20,White,dataFont);
             int count = Mathf.Min(5,a.years.Length-comparisonRow);
             for (int i = 0; i < count; i++)
@@ -192,11 +234,11 @@ namespace Homecoming.Field
                 var right = b.years[comparisonRow+i];
                 string delta = pairedTrend == null ? "" :
                     FormattableString.Invariant($"                    {pairedTrend.points[comparisonRow+i].value,9:0.###}");
-                Text(Box(82,523+i*29,1400,26),FormattableString.Invariant(
+                Text(Box(82,468+i*29,1400,26),FormattableString.Invariant(
                     $"{left.year}            {left.value,9:0.###}                        {right.value,9:0.###}{delta}"),19,White,dataFont);
             }
-            if (Button(Box(1150,675,160,34),"Previous years",false,false,comparisonRow > 0,17)) comparisonRow -= 5;
-            if (Button(Box(1328,675,170,34),"Next years",false,false,comparisonRow+5 < a.years.Length,17)) comparisonRow += 5;
+            if (Button(Box(1150,632,160,34),"Previous years",false,false,comparisonRow > 0,17)) comparisonRow -= 5;
+            if (Button(Box(1328,632,170,34),"Next years",false,false,comparisonRow+5 < a.years.Length,17)) comparisonRow += 5;
         }
     }
 }

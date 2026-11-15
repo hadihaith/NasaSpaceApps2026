@@ -8,7 +8,7 @@ namespace Homecoming.Field
     {
         CascadeResult scenarioCascadeResult;
         FieldTrial scenarioCascadeTrial;
-        bool scenarioWaterChart, cascadeTextView;
+        bool scenarioCascadeOpen, cascadeTextView;
         int cascadeSelection = -1;
 
         // The displayed trial identifies the current playback, even while the active experiment changes.
@@ -16,7 +16,8 @@ namespace Homecoming.Field
         {
             scenarioCascadeTrial = trial;
             scenarioCascadeResult = result;
-            scenarioWaterChart = scenarioTable = scenarioMethods = false;
+            scenarioCascadeOpen = cascadeTextView = false;
+            scenarioTable = scenarioMethods = false;
             cascadeSelection = -1;
         }
 
@@ -39,7 +40,7 @@ namespace Homecoming.Field
             const int x = 946, width = 591;
             var panel = Box(928,176,627,512);
             Card(panel,Panel);
-            PanelScrews(panel);
+            Fill(Box(panel.x,panel.y,76,3),Yellow);
             Fill(Box(x,233,width,1),Line);
             Text(Box(x,187,367,47),"Weather cascade",35,White,headingFont);
             if (Button(Box(1381,190,156,38),cascadeTextView ? "Show diagram" : "Text view",active:cascadeTextView,size:18))
@@ -82,9 +83,9 @@ namespace Homecoming.Field
                 Text(Box(x,365,width,78),hint,22,Dim,bodyFont,TextAnchor.UpperLeft,true);
             }
 
-            if (Button(Box(x,637,136,40),"Water chart",size:17)) scenarioWaterChart = true;
-            if (Button(Box(1090,637,219,40),comparing ? "View edited weather" : "View inherited weather",
-                active:comparing,size:18)) CompareBaseline();
+            if (Button(Box(x,637,148,40),"Soil water",size:18,icon:"Back")) scenarioCascadeOpen = false;
+            if (Button(Box(1101,637,208,40),comparing ? "View edited weather" : "View saved weather",
+                active:comparing,size:17)) CompareBaseline();
             if (Button(Box(1317,637,220,40),"Open intelligence report",size:18)) OpenCascadeReport(result);
         }
 
@@ -93,7 +94,7 @@ namespace Homecoming.Field
             if (result.status == CascadeStatus.Unavailable) return "Cascade comparison unavailable.";
             string month = CascadePlaybackDate(cursor);
             string status = modeledResponseVisible ? $"Modeled response revealed through {month}." :
-                $"Modeled outcomes stayed within display thresholds through {month}.";
+                $"No modeled effects exceeded their display thresholds through {month}.";
             if (!result.hasPhysicalLedger) return status + " Physical water ledger unavailable.";
             if (result.series.Any(series => !series.available && series.metric != CascadeMetric.RootZoneWetnessIndex))
                 return status + " Some outputs are unavailable.";
@@ -118,8 +119,7 @@ namespace Homecoming.Field
         {
             var series = result.Series(effect.metric);
             var sample = effect.sample;
-            Color tint = sample.direction == CascadeDirection.Decrease ? Yellow :
-                sample.direction == CascadeDirection.Increase ? Aqua : Dim;
+            Color tint = sample.direction == CascadeDirection.LittleChange ? Dim : Yellow;
             string category = series.kind switch
             {
                 CascadeKind.Direct => "Direct weather",

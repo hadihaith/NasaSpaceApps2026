@@ -7,11 +7,12 @@ namespace Homecoming.Field
     enum InvestigationKind { Free, Rainfall, Soil, Temperature }
     enum Direction { Unset, Rise, Fall, LittleChange }
 
-    [Serializable] sealed class FiledFinding
+    [Serializable] sealed partial class FiledFinding
     {
         public string id, datasetId, rawSha256, fingerprint, mode, reviewer, reviewRationale, variable, place, footprint, product, version, provider, url, unit, aggregation;
         public string window, significance, status, test, hypothesis, review, reason;
-        public int count;
+        public int count, degreesOfFreedom;
+        public float tStatistic;
         public bool hasRate, hasPValue, hasInterval, hasOlsRate;
         public float ratePerDecade, fittedChange, pValue, alpha, intervalLow, intervalHigh, olsRatePerDecade;
     }

@@ -38,6 +38,7 @@ namespace Homecoming.Field
             ReleaseLook();
             if (view == View.Field && running) paused = true;
             cascadeReport = result;
+            BindReportWeatherProxy(result);
             cascadeReportTrial = view == View.Field ? trial : null;
             cascadeReportCampaignId = Campaign?.Id;
             cascadeReportPage = CascadeReportPage.Summary;
@@ -78,7 +79,7 @@ namespace Homecoming.Field
             var source = Campaign.Current;
             if (source.id != result.sourceRevisionId || Campaign.ActiveBranchId != result.branchId) return;
             CommitScenario();
-            if (PendingPreview != null) return;
+            if (PendingPreview != null || view != View.Field) return;
             var run = Campaign.GetRun(result.runId);
             if (run?.committedRevisionId != null && run.committedRevisionId == LastCommittedRevisionId)
                 OpenCascadeReport(FieldCascade.Analyze(run,result.siteId));
@@ -92,6 +93,7 @@ namespace Homecoming.Field
             var place = data.regions.FirstOrDefault(site => site.id == result.siteId)?.name ?? result.siteId;
             Tag(56,34,"FIELD STATION  /  " + place, Mint);
             Text(Box(52,62,1470,77),"Earth Intelligence Report",63,White,headingFont);
+            DrawReportWeatherProxy();
 
             var preview = result.provenance == CascadeProvenance.Preview;
             var state = preview ? "PREVIEW · UNSAVED" : "COMMITTED";
@@ -122,7 +124,8 @@ namespace Homecoming.Field
             {
                 bool live = IsCurrentReportPreview(result);
                 string status = live ? scenarioError ?? SimulationStatus ??
-                    (HasPendingAdvance ? "Saving advances this experiment." : "Reach the final month in playback to save.") :
+                    (HasPendingAdvance ? HasGuidedPreview() ? "Saving returns you to the case." : "Saving advances this experiment."
+                        : "Reach the final month in playback to save.") :
                     "This preview is no longer active.";
                 Text(Box(315,815,639,45),status,18,Dim,bodyFont,TextAnchor.MiddleLeft,true);
                 if (Button(Box(969,815,232,45),"Discard preview",enabled:live,size:20))
@@ -131,14 +134,14 @@ namespace Homecoming.Field
                     OpenWeatherLab();
                     return;
                 }
-                if (Button(Box(1214,815,313,45),"Save and advance one year",accent:true,
-                    enabled:live && HasPendingAdvance,size:20,icon:"Next"))
+                if (Button(Box(1214,815,313,45),HasGuidedPreview() ? "Save test and return to case" : "Save and advance one year",
+                    accent:true,enabled:live && HasPendingAdvance,size:19,icon:"Next"))
                     AdvanceCascadeReport(result);
             }
             else if (IsReportCaseRun(result))
             {
                 Text(Box(315,815,686,45),reportStatus ??
-                    (investigation.IsReady ? "The case can be filed with the crew." : "Continue the case to file your report."),
+                    (ReadyForFinale ? "Zorvax is ready to speak with you." : "Continue your investigation at the field station."),
                     19,Dim,bodyFont,TextAnchor.MiddleLeft,true);
                 if (view == View.Field && Button(Box(990,815,206,45),"Continue case"))
                 {
@@ -146,9 +149,8 @@ namespace Homecoming.Field
                     OpenCase();
                     return;
                 }
-                if (Button(Box(1214,815,313,45),"Submit case to hearing",true,false,
-                    investigation.IsReady && !hearingRequested && !demoActive,20))
-                    SubmitInvestigation();
+                if (ReadyForFinale && Button(Box(1214,815,313,45),"Meet Zorvax",true,icon:"Next"))
+                    OpenSubmission();
             }
         }
 
@@ -185,13 +187,16 @@ namespace Homecoming.Field
 
         void DrawCascadeSummary(CascadeResult result)
         {
-            string status = result.status switch
+            var water = result.Series(result.hasPhysicalLedger
+                ? CascadeMetric.RootZoneStorage : CascadeMetric.RootZoneWetnessIndex);
+            string status = "Comparison unavailable";
+            if (water?.available == true && result.frames.Length > 0)
             {
-                CascadeStatus.Response => "The model responded",
-                CascadeStatus.Quiet => "Quiet response",
-                _ => "Comparison unavailable"
-            };
-            Text(Box(82,261,1434,53),status,41,White,headingFont);
+                var end = result.frames[^1];
+                float delta = (float)water.samples[^1].delta * (result.hasPhysicalLedger ? 1 : 100);
+                status = DescribeScenarioOutcome(end.edited,end.inherited,delta,result.hasPhysicalLedger);
+            }
+            Text(Box(82,261,1434,53),status,34,White,headingFont,TextAnchor.MiddleLeft,true);
             string qualification = result.status switch
             {
                 CascadeStatus.Quiet => "The available modeled outcomes stayed within their display tolerances.",
@@ -311,7 +316,7 @@ namespace Homecoming.Field
                     sample.direction == CascadeDirection.LittleChange ? Dim : Aqua);
                 Text(Box(columns[4],y,252,36),$"±{ReportNumber(series.tolerance)} {series.deltaUnit}",17,Dim);
             }
-            if (PageCascadeRows(716,cascadeMetricPage,result.series.Length,CascadeMetricsPerPage,"Measurement pages",out int page))
+            if (PageCascadeRows(716,cascadeMetricPage,result.series.Length,CascadeMetricsPerPage,"Measurements",out int page))
                 cascadeMetricPage = page;
             bool samePlayback = view == View.Field && cascadeReportTrial != null &&
                 ReferenceEquals(trial,cascadeReportTrial) && Region.id == result.siteId;
@@ -442,6 +447,8 @@ namespace Homecoming.Field
             finding.significance = "Significance not established";
             finding.reason = reason;
             finding.hasPValue = finding.hasInterval = finding.hasOlsRate = false;
+            finding.degreesOfFreedom = 0;
+            finding.tStatistic = 0;
             finding.test = finding.hypothesis = finding.review = finding.reviewer = finding.reviewRationale = null;
         }
 
@@ -466,10 +473,11 @@ namespace Homecoming.Field
             }
             var entry = cascadeHistorical[cascadeHistoricalIndex];
             var finding = entry.finding;
-            Text(Box(82,310,1010,46),finding.variable,33,White,headingFont);
-            Text(Box(82,359,1436,31),finding.footprint + "  ·  " + finding.window + "  ·  " + CascadeCoverage(entry),20,Dim);
-            Text(Box(82,394,1436,43),$"{finding.product}\n{finding.aggregation}",18,Dim,
-                bodyFont,TextAnchor.MiddleLeft,true);
+            Text(Box(82,307,1436,48),ArchiveVerdict(finding),29,White,headingFont);
+            Text(Box(82,353,1436,32),ArchiveRate(finding),21,Mint,strongFont);
+            Text(Box(82,389,1436,29),$"{finding.variable} · {finding.footprint} · {finding.window} · {CascadeCoverage(entry)}",
+                18,Dim);
+            Text(Box(82,421,1436,29),finding.product,18,Dim);
 
             if (cascadeArchiveValues) DrawExactCascadeArchiveValues(entry);
             else if (cascadeArchivePins) DrawCascadeArchivePins(finding);
@@ -499,23 +507,13 @@ namespace Homecoming.Field
         void DrawCascadeArchiveFinding(CascadeArchiveFinding entry)
         {
             var finding = entry.finding;
-            string description = finding.hasRate
-                ? $"Descriptive Theil–Sen  ·  {FindingRate(finding)}  ·  {Signed(finding.fittedChange,"0.###")} {finding.unit} fitted change"
-                : "Descriptive rate unavailable";
-            Text(Box(82,444,1436,39),description,23,White,strongFont);
-            Text(Box(82,493,1436,34),finding.significance,23,finding.hasPValue ? Mint : White,strongFont);
-            if (finding.hasPValue)
+            if (entry.trend?.points is { Length: > 1 })
             {
-                Text(Box(82,534,1436,34),TestSummary(finding),21,White);
-                Text(Box(82,575,1436,36),finding.hypothesis + "  ·  Review " + finding.review,18,Dim);
-                Text(Box(82,615,1436,66),finding.reviewRationale,18,Dim,bodyFont,TextAnchor.UpperLeft,true);
+                Text(Box(82,453,1436,26),$"Value ({finding.unit}) · {finding.aggregation}",17,Dim);
+                DrawHistoricalChart(entry.trend,Box(165,493,1346,112));
             }
-            else
-                Text(Box(82,536,1436,71),finding.reason,20,Dim,bodyFont,TextAnchor.UpperLeft,true);
-            string context = entry.record.key == "soil"
-                ? "This reanalysis wetness fraction has its own scale. The simulation reports bucket storage in millimeters where available."
-                : "This finding describes archived values in the area and period shown above.";
-            Text(Box(82,672,1436,34),context,18,Dim);
+            string evidence = finding.hasPValue ? TestSummary(finding) : finding.reason;
+            Text(Box(82,645,1436,63),evidence,18,Dim,bodyFont,TextAnchor.UpperLeft,true);
         }
 
         void DrawExactCascadeArchiveValues(CascadeArchiveFinding entry)
@@ -534,6 +532,7 @@ namespace Homecoming.Field
             string provenance = $"{finding.product}\nVersion  {finding.version}\nDataset  {finding.datasetId ?? finding.id}\n" +
                 $"Finding  {finding.id}\nEvidence fingerprint  {finding.fingerprint ?? "Unavailable"}\nRaw SHA-256  {finding.rawSha256 ?? "Unavailable"}";
             if (!string.IsNullOrEmpty(finding.reviewer)) provenance += "\nReviewer  " + finding.reviewer;
+            if (finding.hasPValue) provenance += "\n" + finding.hypothesis + "\n" + finding.reviewRationale;
             Text(Box(82,444,1436,240),provenance,19,White,bodyFont,TextAnchor.UpperLeft,true);
         }
 

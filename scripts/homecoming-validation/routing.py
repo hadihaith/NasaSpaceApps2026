@@ -154,7 +154,8 @@ def precipitation(path, catchment, area):
     return weighted
 
 
-def discharge(path, station):
+def daily_discharge(path, station):
+    """Read complete approved daily mean discharge in calendar order, in m³/s."""
     months = defaultdict(dict)
     estimates = 0
     for line in path.read_text().splitlines():
@@ -166,13 +167,25 @@ def discharge(path, station):
             raise ValueError(f"{station} {day} has unapproved discharge")
         year, month, dom = map(int, day.split("-"))
         position = (year - FIRST_YEAR) * 12 + month - 1
-        if dom in months[position] or not math.isfinite(float(value)) or float(value) < 0:
+        if (
+            not FIRST_YEAR <= year <= LAST_YEAR
+            or not 1 <= month <= 12
+            or not 1 <= dom <= DAYS[position]
+            or dom in months[position]
+            or not math.isfinite(float(value))
+            or float(value) < 0
+        ):
             raise ValueError(f"Duplicate or invalid discharge at {station} {day}")
         months[position][dom] = float(value) * CFS_TO_CMS
         estimates += flag == "A:e"
     if any(sorted(months[m]) != list(range(1, day_count + 1)) for m, day_count in enumerate(DAYS)):
         raise ValueError(f"{station} has incomplete months")
-    return [math.fsum(months[m].values()) * SECONDS_PER_DAY for m in range(len(DAYS))], estimates
+    return [[months[m][d] for d in range(1, n + 1)] for m, n in enumerate(DAYS)], estimates
+
+
+def discharge(path, station):
+    months, estimates = daily_discharge(path, station)
+    return [math.fsum(month) * SECONDS_PER_DAY for month in months], estimates
 
 
 def release(inputs, fraction_retained):

@@ -13,6 +13,7 @@ namespace Homecoming
     {
         public const string ScenePath = "Assets/Scenes/Intro.unity";
         public const string VideoFile = "auk-intro.mp4";
+        const double PlaybackLimitSeconds = 17;
         const float FallbackDuration = 3.2f;
         const float StallTimeout = 4.5f;
         const string MuteKey = "homecoming.unity.mute";
@@ -178,6 +179,11 @@ namespace Homecoming
 #if UNITY_STANDALONE_OSX && !UNITY_EDITOR
             UpdateNative();
 #else
+            if (video.time >= PlaybackLimitSeconds)
+            {
+                Complete();
+                return;
+            }
             long frame = video.frame;
             if (frame >= 0 && frame != lastFrame)
             {
@@ -214,6 +220,7 @@ namespace Homecoming
             if (state == 2) { Complete(); return; }
             if (state < 0) { ShowStill(); return; }
             double time = HomecomingIntroTime();
+            if (time >= PlaybackLimitSeconds) { Complete(); return; }
             if (state == 1 && time > previousTime)
             {
                 previousTime = time;

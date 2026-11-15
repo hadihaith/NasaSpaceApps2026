@@ -12,40 +12,75 @@ namespace Homecoming.Field
         string scenarioError;
         string guidedPreviewId;
 
-        bool IsGuidedScenario => investigation?.kind == InvestigationKind.Soil && investigation.second == null;
+        bool guidedWeatherLab;
+        bool SoilScenarioPending => investigation?.kind == InvestigationKind.Soil && investigation.second == null;
+        bool IsGuidedScenario => guidedWeatherLab && SoilScenarioPending;
+        bool GuidedNeedsCaseSetup => IsGuidedScenario && (Region.id != GuidedSoilOrigin ||
+            investigation.origin == null || investigation.scenarioCall == Direction.Unset);
         bool HasGuidedPreview() => PendingPreview?.Id != null && PendingPreview.Id == guidedPreviewId;
 
         string PredictionToleranceLabel()
         {
             var site = Campaign?.Current.Site(GuidedSoilOrigin);
-            return site?.current.hasStorage == true ? "Little change means within ±1 mm." : "Little change means within ±1 percentage point.";
+            return ScenarioToleranceLabel(site?.current.hasStorage == true);
         }
 
-        static string ScenarioResult(InvestigationRun run) =>
-            $"The model shows {Signed(run.delta,"0.##")} {run.unit} in {run.endMonth} versus inherited weather";
+        static string ScenarioToleranceLabel(bool physical) =>
+            physical ? "Little modeled change means within ±1 mm." : "Little modeled change means within ±1 percentage point.";
+
+        static string SoilOutcome(Direction direction) => direction switch
+        {
+            Direction.Rise => "wetter",
+            Direction.Fall => "drier",
+            _ => "little modeled change in soil wetness"
+        };
+
+        static string ScenarioResult(InvestigationRun run) => run.result == Direction.LittleChange
+            ? $"The model showed {SoilOutcome(run.result)} by the end of {run.endMonth}"
+            : $"The model soil was {SoilOutcome(run.result)} by the end of {run.endMonth}";
 
         string DescribeEdit(InvestigationRun run) => string.Join(", ",Enumerable.Range(0,4)
             .Where(i => run.inherited[i] != run.edited[i]).Select(i =>
                 $"{data.controls[i].label} {Signed(run.inherited[i])}{data.controls[i].unit} → {Signed(run.edited[i])}{data.controls[i].unit}"));
 
+        bool NeedsGuidedStartingPoint => IsGuidedScenario && investigation.first != null &&
+            Campaign?.Current.id != investigation.first.id;
+
+        bool CanRestoreGuidedStartingPoint => NeedsGuidedStartingPoint && Campaign?.CanProject == true &&
+            investigation.campaignId == Campaign.Id && Campaign.GetRevision(investigation.first.id) != null;
+
+        void RestoreGuidedStartingPoint()
+        {
+            if (!CanRestoreGuidedStartingPoint) return;
+            var first = investigation.first;
+            ChangeBranch(() =>
+            {
+                var branch = Campaign.Branches.FirstOrDefault(candidate => candidate.headRevisionId == first.id);
+                if (branch == null) Campaign.Fork(first.id,"Arizona follow-up");
+                else Campaign.SwitchBranch(branch.id);
+            });
+            scenarioError = branchStatus;
+        }
+
         string GuidedLaunchBlocker()
         {
             if (Campaign?.CanProject != true) return SimulationStatus ?? "The saved campaign is unavailable.";
             if (!IsGuidedScenario) return null;
-            if (Region.id != GuidedSoilOrigin) return "Open the Central Arizona lab from this case.";
+            if (Region.id != GuidedSoilOrigin) return "Return to the case to open the lab in Central Arizona.";
             if (investigation.origin == null || investigation.scenarioCall == Direction.Unset)
                 return "Go back to your case to save the rainfall finding and make a prediction.";
             var revision = Campaign.Current;
+            var first = investigation.first;
+            if (first != null && revision.id != first.id) return CanRestoreGuidedStartingPoint
+                ? "Resume from the saved end of the rain test."
+                : "The saved rain test is unavailable in this campaign.";
             var inherited = revision.Site(Region.id).ActiveAt(revision.nextMonth);
             var edits = FieldCampaign.Patch(inherited, settings, revision.nextMonth);
-            var first = investigation.first;
             if (first == null)
                 return edits.Length == 1 && edits[0].control == ForcingControl.Rain
-                    ? null : "Change the precipitation dial. Leave the other dials at their saved values.";
-            if (revision.id != first.id || Campaign.ActiveBranchId != first.branchId)
-                return "Choose the experiment used for your first test.";
+                    ? null : "Set precipitation to a different value to preview the test.";
             return edits.Length == 1 && edits[0].control == ForcingControl.Heat
-                ? null : "Change only temperature. Keep the precipitation from your first test.";
+                ? null : "Set temperature to a different value to preview the test.";
         }
 
         void LaunchScenario()
@@ -55,6 +90,7 @@ namespace Homecoming.Field
             scenarioTable = scenarioMethods = false;
             scenarioError = null;
             Launch();
+            if (view == View.Descent) focusIndex = 0;
             if (IsGuidedScenario && PendingPreview != null)
                 guidedPreviewId = PendingPreview.Id;
         }
@@ -73,12 +109,15 @@ namespace Homecoming.Field
                 investigation.committingRunId = preview.Id;
                 SaveInvestigation();
             }
-            if (AdvancePreview()) RecoverScenarioCommit();
+            bool guided = IsGuidedScenario;
+            if (!AdvancePreview()) return;
+            RecoverScenarioCommit();
+            if (guided && !demoActive && !investigationTest) OpenCase();
         }
 
         void RecoverScenarioCommit()
         {
-            if (!IsGuidedScenario || string.IsNullOrEmpty(investigation.committingRunId) ||
+            if (!SoilScenarioPending || string.IsNullOrEmpty(investigation.committingRunId) ||
                 investigation.campaignId != Campaign?.Id) return;
             var run = Campaign?.GetRun(investigation.committingRunId);
             if (string.IsNullOrEmpty(run?.committedRevisionId) || run.editedSiteId != GuidedSoilOrigin ||
@@ -105,7 +144,7 @@ namespace Homecoming.Field
             };
             result.result = Sign(result.delta,result.tolerance);
             if (investigation.first == null) investigation.first = result;
-            else if (result.parentId == investigation.first.id && result.branchId == investigation.first.branchId) investigation.second = result;
+            else if (result.parentId == investigation.first.id) investigation.second = result;
             investigation.committingRunId = guidedPreviewId = null;
             SaveInvestigation();
         }
@@ -122,14 +161,15 @@ namespace Homecoming.Field
             if (trial == null || referenceTrial == null) return;
             var current = ScenarioMonth(DisplayedMonth);
             var reference = ReferenceMonth(DisplayedMonth);
-            bool physical = current.water.available;
+            bool physical = current.water.available && reference.water.available;
             float Value(FieldMonth month) => physical ? (float)month.water.storageMm : month.land.soil * 100;
             string unit = physical ? "mm" : "% index";
-            string label = physical ? "Root-zone storage" : "Root-zone wetness index";
+            string label = physical ? "Root-zone water storage" : "Root-zone wetness index";
+            bool atEnd = DisplayedMonth == duration - 1;
             Fade(Box(0,0,1600,218),Alpha(Ink,.93f),0);
-            Tag(44,28,physical ? "CONDITIONAL SCENARIO" : "ILLUSTRATIVE SCENARIO",Mint);
-            Text(Box(41,55,900,66),Region.name,50,White,headingFont);
-            Text(Box(45,128,980,34),$"{MonthName(current)} · {(comparing ? "Inherited weather" : "Edited weather")} view · Illustrative landscape",23,White);
+            Tag(44,28,physical ? "MODELED SCENARIO" : "ILLUSTRATIVE SCENARIO",Yellow);
+            Text(Box(41,55,960,56),Region.name,47,White,headingFont);
+            DrawScenarioOutcome(current,reference,Value(current)-Value(reference),physical,atEnd);
             if (openedFromFiledReport && Button(Box(956,33,230,42),"← Homecoming report",false,false,!running && PendingPreview == null))
                 StorySession.ReturnToFiledReport();
             var cascade = CurrentScenarioCascade();
@@ -146,69 +186,115 @@ namespace Homecoming.Field
                 Button(Box(1046,94,246,44),"Watch crew reaction",true))
                 StorySession.PlayCutscene("drought");
 
-            if (cascade != null && !scenarioWaterChart) DrawScenarioCascade(cascade);
-            else DrawScenarioWaterMonitor(current,reference,Value,unit,label,physical,cascade != null);
-
             Card(Box(44,695,1511,175),Ink);
             Text(Box(61,701,1099,32),$"{MonthName(current)} · Month {DisplayedMonth+1} of {duration}",23,White,strongFont);
+            if (PendingPreview != null || !atEnd)
+            {
+                if (atEnd)
+                {
+                    if (Button(Box(1184,739,353,55),HasGuidedPreview() ? "Save test and return to case" : "Save and advance one year",
+                        accent:true,size:21,icon:"Next"))
+                    {
+                        if (running) Finish();
+                        CommitScenario();
+                        return;
+                    }
+                }
+                else if (Button(Box(1184,739,353,55),duration == 12 ? "Go to year-end result" : "Go to end result",
+                    accent:true,size:23,icon:"Last month"))
+                {
+                    if (running) Finish();
+                    SeekPreview(duration-1);
+                }
+            }
             if (Button(Box(61,743,53,47),"",icon:running && !paused ? "Pause" : "Play")) ToggleScenarioPlayback();
-            DrawScenarioTimeline(Box(130,742,944,49));
-            if (Button(Box(1091,743,53,47),"",icon:"Last month"))
+            DrawScenarioTimeline(Box(130,742,1014,49));
+            if (Button(Box(1184,809,353,43),PendingPreview != null ? "Discard preview" : "Back to weather lab",icon:"Back"))
             {
-                if (running) Finish();
-                SeekPreview(duration-1);
+                OpenWeatherLab();
+                return;
             }
-            if (HasPendingAdvance)
-            {
-                if (Button(Box(1184,739,353,55),"Save and advance one year",accent:true,size:23,icon:"Next")) CommitScenario();
-            }
-            if (Button(Box(1184,809,353,43),PendingPreview != null ? "Back without saving" : "Back to weather lab",icon:"Back")) OpenWeatherLab();
-            string status = scenarioError ?? SimulationStatus ?? (HasPendingAdvance
-                ? HasGuidedPreview() && investigation.first != null
-                    ? "Save the test, then decide what the monthly soil readings support."
-                    : "Saving starts your next test where this one ends."
-                : PendingPreview != null ? "Play to the end or skip to the last month to save."
-                : savedSoilRun && MatchesReportRun(investigation.first,cascade) ? FirstSoilCrewReaction()
-                : "WASD to move · Hold right mouse to look · M for sound");
+            string status = scenarioError ?? SimulationStatus ?? (PendingPreview != null
+                ? atEnd
+                    ? HasGuidedPreview() && investigation.first == null
+                        ? "Saving carries this rain and soil water into your temperature test."
+                        : "Saving advances the experiment to the next year."
+                    : "Select a month to compare the two forecasts."
+                : "Saved experiment · Select a month to replay the comparison.");
             Text(Box(61,813,1091,34),status,19,Dim);
+
+            if (cascade != null && scenarioCascadeOpen) DrawScenarioCascade(cascade);
+            else DrawScenarioWaterMonitor(current,reference,Value,unit,label,physical,cascade != null);
+        }
+
+        void DrawScenarioOutcome(FieldMonth current, FieldMonth reference, float delta, bool physical, bool atEnd)
+        {
+            Rect panel = Box(44,156,850,221);
+            Card(panel,Ink);
+            Fill(Box(panel.x,panel.y,76,3),Yellow);
+            string period = atEnd ? duration == 12 ? "YEAR-END RESULT" : "END RESULT" : "MONTHLY RESULT";
+            Tag(67,170,period + "  /  " + MonthName(current).ToUpperInvariant(),Yellow);
+            Text(Box(65,200,803,101),DescribeScenarioOutcome(current,reference,delta,physical),
+                37,White,headingFont,TextAnchor.UpperLeft,true);
+            Text(Box(67,309,803,51),comparing ? "Both forecasts start from the same ground conditions.\nLandscape shows saved weather." :
+                "Both forecasts start from the same ground conditions.",
+                19,Dim,bodyFont,TextAnchor.MiddleLeft,true);
+        }
+
+        static string DescribeScenarioOutcome(FieldMonth current, FieldMonth reference, float delta, bool physical)
+        {
+            var direction = Sign(delta,physical ? StorageTolerance : IndexTolerance * 100);
+            if (direction == Direction.LittleChange) return $"The comparison shows {SoilOutcome(direction)}.";
+            var patch = FieldCampaign.Patch(reference.forcing,current.forcing,current.monthIndex);
+            string edit = patch.Length == 1 ? patch[0].control switch
+            {
+                ForcingControl.Rain => "rain change",
+                ForcingControl.Heat => "temperature change",
+                ForcingControl.Humidity => "humidity change",
+                ForcingControl.Wind => "wind change",
+                _ => "weather edit"
+            } : "weather edit";
+            return patch.Length == 0 ? $"The model soil was {SoilOutcome(direction)} under the edited forecast."
+                : $"Your {edit} left the model soil {SoilOutcome(direction)}.";
         }
 
         void DrawScenarioWaterMonitor(FieldMonth current, FieldMonth reference, Func<FieldMonth,float> value,
             string unit, string label, bool physical, bool showCascadeSwitch)
         {
-            Rect monitor = Box(1026,176,529,showCascadeSwitch ? 438 : 388);
-            Card(monitor,Rgb("#172a2b"));
-            PanelScrews(monitor);
-            BeginWeatherScreen(Box(1040,184,501,315));
-            Text(Box(1044,184,493,38),label,29,White,headingFont);
-            Text(Box(1044,228,493,25),$"Edited {value(current):0.#} {unit}   /   Inherited {value(reference):0.#} {unit}",19,White,strongFont);
+            Rect monitor = Box(928,176,627,390);
+            Card(monitor,Panel);
+            Fill(Box(monitor.x,monitor.y,76,3),Yellow);
+            Text(Box(946,184,591,38),label,30,White,headingFont);
+            Text(Box(946,228,591,25),
+                $"Edited {value(current).ToString("0.##",Invariant)} {unit}    /    Saved {value(reference).ToString("0.##",Invariant)} {unit}",
+                19,White,strongFont);
             if (scenarioMethods)
             {
                 string methods = physical ? LocalWaterBalance.Assumptions :
-                    "This teaching model uses NASA POWER monthly normals and unitless indices for wetness, vegetation and drought. The landscape illustrates local responses. Both lines start from the same saved state.";
-                Text(Box(1044,265,493,228),methods,17,Dim,bodyFont,TextAnchor.UpperLeft,true);
+                    "This teaching model uses NASA POWER monthly normals and unitless indices for wetness, vegetation and drought. The landscape illustrates local responses.";
+                Text(Box(946,267,591,173),ScenarioToleranceLabel(physical)+" "+methods,
+                    18,White,bodyFont,TextAnchor.UpperLeft,true);
             }
             else if (scenarioTable) DrawScenarioValues(current,reference,value,unit);
             else
             {
-                var chart = Box(1100,292,426,124);
                 float max = physical ? (float)current.water.capacityMm : 100;
-                DrawScenarioChart(chart,max,value);
-                Text(Box(1044,456,493,36),$"Precipitation {current.weather.rain:0.#} / {reference.weather.rain:0.#} mm",17,Dim,dataFont);
+                DrawScenarioChart(Box(1005,288,521,114),max,value,unit);
             }
-            if (Button(Box(1044,507,133,41),scenarioTable && !scenarioMethods ? "Show chart" : "Inspect values",false,false,true,17))
+            if (Button(Box(946,466,141,39),scenarioTable ? "Show chart" : "Inspect values",active:scenarioTable,size:17))
             {
-                scenarioTable = !scenarioTable || scenarioMethods;
+                scenarioTable = !scenarioTable;
                 scenarioMethods = false;
             }
-            if (Button(Box(1184,507,97,41),scenarioMethods ? "Chart" : "Methods",false,scenarioMethods,true,17))
+            if (Button(Box(1094,466,108,39),scenarioMethods ? "Show chart" : "Methods",active:scenarioMethods,size:17))
             {
                 scenarioMethods = !scenarioMethods;
                 scenarioTable = false;
             }
-            if (Button(Box(1288,507,249,41),comparing ? "View edited weather" : "View inherited weather",false,comparing,true,18)) CompareBaseline();
-            if (showCascadeSwitch && Button(Box(1044,558,493,39),"Back to weather cascade",icon:"Back"))
-                scenarioWaterChart = false;
+            if (Button(Box(1209,466,328,39),comparing ? "View edited landscape" : "View saved-weather landscape",
+                active:comparing,size:18)) CompareBaseline();
+            if (showCascadeSwitch && Button(Box(946,513,591,39),"See weather cascade",icon:"Next"))
+                scenarioCascadeOpen = true;
         }
 
         int timelineControlIndex = -1;
@@ -246,7 +332,7 @@ namespace Homecoming.Field
             {
                 var cell = Box(rect.x+i*width+2,rect.y+3,width-4,rect.height-6);
                 bool active = i == DisplayedMonth;
-                if (active) Fill(cell,Mint);
+                if (active) Fill(cell,Yellow);
                 else if (i != 0) Fill(Box(cell.x-2,cell.y+7,1,cell.height-14),Line);
                 Text(cell,ScenarioMonth(i).Date.ToString("MMM",Invariant),18,active ? Ink : White,
                     strongFont,TextAnchor.MiddleCenter);
@@ -263,7 +349,7 @@ namespace Homecoming.Field
             paused = false;
         }
 
-        void DrawScenarioChart(Rect rect, float max, Func<FieldMonth,float> value)
+        void DrawScenarioChart(Rect rect, float max, Func<FieldMonth,float> value, string unit)
         {
             for (int i=0;i<3;i++)
             {
@@ -273,33 +359,40 @@ namespace Homecoming.Field
             }
             Vector2 At(int index, float amount) => new(rect.x+rect.width*index/Mathf.Max(1,duration-1),
                 Mathf.Lerp(rect.yMax,rect.y,Mathf.Clamp01(amount/max)));
+            Text(Box(rect.x-52,rect.y-31,200,22),unit,15,Dim,dataFont);
             var a = At(0,value(ReferenceMonth(0)));
             var b = At(0,value(ScenarioMonth(0)));
-            for (int i=1;i<duration;i++)
+            for (int i=1;i<=DisplayedMonth;i++)
             {
                 var nextA = At(i,value(ReferenceMonth(i)));
                 var nextB = At(i,value(ScenarioMonth(i)));
                 DrawChartSegment(a,nextA,Dim);
-                DrawChartSegment(b,nextB,Aqua);
+                DrawChartSegment(b,nextB,Yellow);
                 a = nextA;
                 b = nextB;
             }
             float cursor = At(DisplayedMonth,0).x;
-            Fill(Box(cursor,rect.y,1,rect.height),Yellow);
-            Text(Box(rect.x,rect.yMax+9,rect.width,22),"Inherited weather / Edited weather",15,White,dataFont);
+            Fill(Box(cursor,rect.y,1,rect.height),White);
+            Fill(Box(a.x-3,a.y-3,6,6),Dim);
+            Fill(Box(b.x-2,b.y-2,4,4),Yellow);
+            Text(Box(rect.x,rect.yMax+3,170,22),MonthName(ScenarioMonth(0)),15,Dim,dataFont);
+            if (duration > 1)
+                Text(Box(rect.xMax-170,rect.yMax+3,170,22),MonthName(ScenarioMonth(duration-1)),15,Dim,dataFont,TextAnchor.MiddleRight);
+            Text(Box(rect.x,rect.yMax+28,215,22),"●  Saved weather",15,Dim,dataFont);
+            Text(Box(rect.x+221,rect.yMax+28,230,22),"●  Edited weather",15,Yellow,dataFont);
         }
 
         void DrawScenarioValues(FieldMonth a, FieldMonth b, Func<FieldMonth,float> value, string unit)
         {
             void Row(int i, string title, string values)
             {
-                Text(Box(1044,274+i*32,245,30),title,17,White);
-                Text(Box(1279,274+i*32,258,30),values,16,Aqua,dataFont,TextAnchor.MiddleRight);
+                Text(Box(946,259+i*32,270,30),title,17,White);
+                Text(Box(1216,259+i*32,321,30),values,16,White,dataFont,TextAnchor.MiddleRight);
             }
             Row(0, "End-of-month soil water", Values(value(a),value(b),unit));
             Row(1,"Precipitation",Values(a.weather.rain,b.weather.rain,"mm"));
             Row(2,"Air temperature",Values(a.weather.temperature,b.weather.temperature,"°C"));
-            if (a.water.available)
+            if (a.water.available && b.water.available)
             {
                 Row(3,"Actual evapotranspiration",Values(a.water.actualEtMm,b.water.actualEtMm,"mm"));
                 Row(4,"Drainage",Values(a.water.drainageMm,b.water.drainageMm,"mm"));
@@ -312,6 +405,6 @@ namespace Homecoming.Field
             }
         }
 
-        static string Values(double edited, double inherited, string unit) => $"{edited:0.#} / {inherited:0.#} {unit}";
+        static string Values(double edited, double inherited, string unit) => FormattableString.Invariant($"{edited:0.##} / {inherited:0.##} {unit}");
     }
 }

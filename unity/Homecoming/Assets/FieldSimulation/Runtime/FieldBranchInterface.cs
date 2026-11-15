@@ -6,7 +6,7 @@ namespace Homecoming.Field
 {
     public sealed partial class FieldSimulation
     {
-        bool branchesOpen, branchComparisonOpen;
+        bool branchesOpen, branchComparisonOpen, resetEarthOpen;
         int branchPage, branchMonth;
         ScenarioRun firstBranchRun, secondBranchRun;
         SiteProjection firstProjection, secondProjection;
@@ -15,7 +15,19 @@ namespace Homecoming.Field
 
         void DrawBranches()
         {
-            if (Campaign == null || showSites) return;
+            if (Campaign == null || showSites || demoActive) return;
+            if (Button(Box(260,336,248,41),"Saved experiments",active:branchesOpen,icon:"Archive"))
+            {
+                branchesOpen = !branchesOpen;
+                branchComparisonOpen = resetEarthOpen = false;
+                branchStatus = null;
+            }
+            if (!branchesOpen) return;
+            if (resetEarthOpen)
+            {
+                DrawEarthReset();
+                return;
+            }
             if (branchComparisonOpen)
             {
                 DrawBranchComparison();
@@ -24,41 +36,85 @@ namespace Homecoming.Field
             var revision = Campaign.Current;
             var branches = Campaign.Branches;
             var active = branches.FirstOrDefault(branch => branch.id == Campaign.ActiveBranchId);
-            if (Button(Box(497,336,222,41),active == null ? "Branches" : $"Branch · {active.name}",false,branchesOpen, true,18))
+            Card(Box(54,399,1017,381),Ink);
+            Text(Box(75,412,728,48),$"{ExperimentName(active.name)} · Next month {revision.NextDate:MMM yyyy}",31,White,headingFont);
+            if (Button(Box(822,419,227,40),"Reset Earth",icon:"Weather"))
             {
-                branchesOpen = !branchesOpen;
+                resetEarthOpen = true;
                 branchStatus = null;
+                return;
             }
-            if (!branchesOpen) return;
-            Card(Box(54,399,1032,381),Alpha(Ink,.95f));
-            Text(Box(75,412,693,48),$"{active?.name} · Next month {revision.NextDate:MMM yyyy}",31,White,headingFont);
-            Text(Box(75,461,968,36),"Fork a saved revision, replay a year, or compare two tests that start on the same month.",21,Dim);
+            Text(Box(75,461,968,36),"Each experiment keeps its own weather and starting ground conditions.",21,Dim);
             int count = Mathf.Min(3,branches.Length-branchPage);
-            for (int i=0;i<count;i++)
+            for (int i=0;i<count && branches.Length > 1;i++)
             {
                 var branch = branches[branchPage+i];
-                if (Button(Box(75+i*211,511,198,42),branch.name,false,branch.id == active?.id,true,19))
+                if (Button(Box(75+i*223,511,211,42),ExperimentName(branch.name),active:branch.id == active.id,
+                    size:19,icon:branch.id == active.id ? "Check" : "Archive"))
                     ChangeBranch(() => Campaign.SwitchBranch(branch.id));
             }
-            if (Button(Box(726,511,136,42),"Previous",false,false,branchPage > 0,17)) branchPage = Mathf.Max(0,branchPage-3);
-            if (Button(Box(874,511,145,42),"More branches",false,false,branchPage+3 < branches.Length,17)) branchPage += 3;
+            if (branchPage > 0 && Button(Box(768,511,46,42),"",icon:"Back",tooltip:"Previous experiments")) branchPage -= 3;
+            if (branchPage+3 < branches.Length && Button(Box(826,511,46,42),"",icon:"Next",tooltip:"More experiments")) branchPage += 3;
             var previousRun = Campaign.RunForRevision(revision.id);
-            bool modelReady = Campaign.CanProject;
             bool guidedFollowup = IsGuidedScenario && investigation.first != null;
-            if (Button(Box(75,577,222,42),"Fork current state",false,false,modelReady && !guidedFollowup,19))
-                ChangeBranch(() => Campaign.Fork(revision.id,$"Branch {branches.Length+1}"));
-            if (Button(Box(310,577,209,42),"Fork before last run",false,false,modelReady && !guidedFollowup && previousRun != null,19))
-                ChangeBranch(() => Campaign.Fork(previousRun.sourceRevisionId,$"Branch {branches.Length+1}"));
-            if (Button(Box(531,577,227,42),"Replay branch result",false,false,previousRun != null,19))
+            float x = 75, y = branches.Length > 1 ? 576 : 518;
+            Rect Slot()
             {
-                scenarioTable = scenarioMethods = false;
-                ReplayRun(previousRun.id,Region.id);
+                Rect rect = Box(x,y,219,114);
+                x += 234;
+                return rect;
             }
-            if (Button(Box(771,577,248,42),"Compare branch years",false,false,previousRun != null && branches.Length > 1,19))
-                OpenBranchComparison(active,branches,previousRun);
-            Text(Box(75,643,964,52),branchStatus ?? (guidedFollowup
-                ? "Finish the guided follow-up from its committed revision to unlock case completion."
-                : "The branch you select supplies the field lab’s starting land state and weather."),20,Dim,bodyFont,TextAnchor.UpperLeft,true);
+            if (Campaign.CanProject && !guidedFollowup)
+            {
+                if (ControlTile(Slot(),"Copy","Copy setup",tooltip:"Copy current experiment"))
+                    ChangeBranch(() => Campaign.Fork(revision.id,$"Experiment {branches.Length+1}"));
+                if (previousRun != null && ControlTile(Slot(),"Back","Copy before last run"))
+                    ChangeBranch(() => Campaign.Fork(previousRun.sourceRevisionId,$"Experiment {branches.Length+1}"));
+            }
+            if (previousRun != null)
+            {
+                if (ControlTile(Slot(),"Play","Replay last run"))
+                {
+                    scenarioTable = scenarioMethods = false;
+                    ReplayRun(previousRun.id,Region.id);
+                }
+                if (branches.Length > 1 && ControlTile(Slot(),"Chart","Compare runs"))
+                    OpenBranchComparison(active,branches,previousRun);
+            }
+            Text(Box(75,y+131,964,52),branchStatus ?? (guidedFollowup
+                ? "Use the experiment from your first test to finish this case."
+                : "Copy a setup to try different weather from the same starting point."),20,Dim,bodyFont,TextAnchor.UpperLeft,true);
+        }
+
+        void DrawEarthReset()
+        {
+            Card(Box(54,399,1017,381),Ink);
+            Text(Box(75,420,960,52),"Reset Earth?",38,White,headingFont);
+            string date = FieldCalendar.Date(FieldCalendar.StartMonth).ToString("MMMM yyyy",Invariant);
+            Text(Box(75,482,925,100),$"Start a fresh experiment in {date} with baseline weather and ground conditions at every site. Your saved experiments, discoveries and reports stay available.",
+                25,White,bodyFont,TextAnchor.UpperLeft,true);
+            if (Button(Box(324,608,245,48),"Keep this experiment",icon:"Back"))
+            {
+                resetEarthOpen = false;
+                branchStatus = null;
+                return;
+            }
+            if (Button(Box(75,608,233,48),"Reset Earth",true,icon:"Weather"))
+                ChangeBranch(() =>
+                {
+                    Campaign.ResetEarth();
+                    LastCommittedRevisionId = null;
+                    RestoreJournal();
+                    resetEarthOpen = false;
+                });
+            if (branchStatus != null) Text(Box(75,676,925,74),branchStatus,20,Dim,bodyFont,TextAnchor.UpperLeft,true);
+        }
+
+        static string ExperimentName(string name)
+        {
+            if (name == "Main") return "Main experiment";
+            return name.StartsWith("Branch ",StringComparison.Ordinal) && int.TryParse(name.Substring(7),out _)
+                ? "Experiment " + name.Substring(7) : name;
         }
 
         void ChangeBranch(Action action)
@@ -66,7 +122,11 @@ namespace Homecoming.Field
             try
             {
                 action();
-                Select(siteIndex);
+                int active = Array.FindIndex(Campaign.Branches, branch => branch.id == Campaign.ActiveBranchId);
+                if (active >= 0) branchPage = active / 3 * 3;
+                int selected = Array.FindIndex(data.regions, region => region.id == Campaign.SelectedSiteId);
+                Select(selected >= 0 ? selected : siteIndex);
+                SimulationStatus = Campaign.CanProject ? null : IncompatibleWorld;
                 branchStatus = null;
             }
             catch (Exception error) when (IsCampaignError(error)) { branchStatus = error.Message; }
@@ -87,8 +147,8 @@ namespace Homecoming.Field
                         firstProjection = run.Site(Region.id);
                         secondProjection = candidate.Site(Region.id);
                         if (firstProjection == null || secondProjection == null) break;
-                        firstBranchName = active.name;
-                        secondBranchName = branch.name;
+                        firstBranchName = ExperimentName(active.name);
+                        secondBranchName = ExperimentName(branch.name);
                         branchMonth = 0;
                         branchComparisonOpen = true;
                         return;
@@ -97,14 +157,14 @@ namespace Homecoming.Field
                     revisionId = Campaign.GetRevision(revisionId)?.parentId;
                 }
             }
-            branchStatus = "Commit runs with a common starting month on two branches to compare them here.";
+            branchStatus = "Save a run in each experiment starting in the same month to compare them here.";
         }
 
         void DrawBranchComparison()
         {
-            Card(Box(54,399,1032,398),Alpha(Ink,.96f));
-            if (Button(Box(821,419,244,40),"Back to branches")) branchComparisonOpen = false;
-            Text(Box(75,412,729,60),$"Branch comparison · {MonthName(firstProjection.scenario.months[branchMonth])}",33,White,headingFont);
+            Card(Box(54,399,1017,398),Ink);
+            if (Button(Box(807,419,244,40),"Saved experiments",icon:"Back")) branchComparisonOpen = false;
+            Text(Box(75,412,729,60),$"Compare experiments · {MonthName(firstProjection.scenario.months[branchMonth])}",33,White,headingFont);
             int months = Mathf.Min(firstBranchRun.committedMonths,secondBranchRun.committedMonths);
             var a = firstProjection.scenario.months[branchMonth];
             var b = secondProjection.scenario.months[branchMonth];

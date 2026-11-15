@@ -52,7 +52,7 @@ namespace Homecoming.Field
             investigation.scenarioCall = Direction.Rise;
             int index = Array.FindIndex(data.regions, region => region.id == GuidedSoilOrigin);
             Select(index);
-            Go(View.Lab);
+            OpenWeatherLab();
             for (demoStage = 0; demoStage < 2; demoStage++)
             {
                 if (demoStage == 0) settings.rain = 100;
@@ -222,7 +222,7 @@ namespace Homecoming.Field
             CheckInvestigation(investigation.origin?.hasRate == true && investigation.origin.footprint.Contains("32.5°N") &&
                 investigation.origin.footprint.Contains("111°W") && !investigation.IsReady,"Missing historical record, area footprint or initial report gate");
             investigation.scenarioCall = Direction.Fall;
-            Go(View.Lab);
+            OpenWeatherLab();
             var beforeId = Campaign.Current.id;
             settings.rain = 100;
             yield return CaptureInvestigation(output,"00-weather-console-draft");
@@ -260,7 +260,10 @@ namespace Homecoming.Field
             CheckInvestigation(!FindPair(),"The Arizona area unexpectedly matched a point");
             FileGap("The archive has only one MERRA-2 area averaging this variable.");
             CheckInvestigation(!investigation.IsReady,"A wrong prediction had no explanation");
-            investigation.conclusion = "Additional precipitation left more water in the model bucket at the end of year one.";
+            CheckInvestigation(!TryFileSoilInterpretation(SoilInterpretation.WithinTolerance) && !investigation.IsReady,
+                "An interpretation contradicted by the monthly comparison could file the case");
+            CheckInvestigation(TryFileSoilInterpretation(SoilInterpretation.LessAtEnd),
+                "The saved temperature test did not support the expected year-end result");
             CheckInvestigation(investigation.IsReady,"An explained wrong prediction could not complete the scenario case");
             OpenCase();
             reportDetails = true;

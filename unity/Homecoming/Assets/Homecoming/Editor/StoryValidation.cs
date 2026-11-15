@@ -41,7 +41,7 @@ namespace Homecoming.Editor
                     }
                 }
             }
-            Require(Mathf.Abs(story.prologue.Sum(s => s.seconds) - 47.2f) < .001f, "Prologue matches authored cut");
+            Require(Mathf.Abs(story.prologue.Sum(s => s.seconds) - 51.843f) < .001f, "Prologue matches authored cut");
             Require(File.Exists(Path.Combine(Application.streamingAssetsPath, IntroPlayback.VideoFile)),
                 "The original AUK movie is bundled as a streaming asset");
             Require(Mathf.Abs(story.ending.Sum(s => s.seconds) - 10.2f) < .001f, "Ending matches shared cut");

@@ -3,107 +3,133 @@
   "takes": [
     {
       "id": "reveal.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/reveal.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/reveal.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/reveal.01"
     },
     {
       "id": "correction.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/correction.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/correction.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/correction.01"
     },
     {
       "id": "correction.02",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/correction.02"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/correction.02",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/correction.02"
     },
     {
       "id": "party.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/party.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/party.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/party.01"
     },
     {
       "id": "jam.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/jam.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/jam.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/jam.01"
     },
     {
       "id": "years.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/years.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/years.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/years.01"
     },
     {
       "id": "years.02",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/years.02"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/years.02",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/years.02"
     },
     {
       "id": "return.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/return.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/return.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/return.01"
     },
     {
       "id": "return.02",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/return.02"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/return.02",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/return.02"
     },
     {
       "id": "earth.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/earth.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/earth.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/earth.01"
     },
     {
       "id": "earth.02",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/earth.02"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/earth.02",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/earth.02"
     },
     {
       "id": "launch.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/launch.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/launch.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/launch.01"
     },
     {
       "id": "lab.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/lab.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/lab.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/lab.01"
     },
     {
       "id": "lab.02",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/lab.02"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/lab.02",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/lab.02"
     },
     {
       "id": "hearing.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/hearing.01"
     },
     {
       "id": "hearing.02.scenario",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.scenario"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.scenario",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/hearing.02.scenario"
     },
     {
       "id": "hearing.02.historical",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.historical"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.historical",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/hearing.02.historical"
     },
     {
       "id": "hearing.02.mixed",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.mixed"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/hearing.02.mixed",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/hearing.02.mixed"
     },
     {
       "id": "deflate.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/deflate.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/deflate.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/deflate.01"
     },
     {
       "id": "drought-alert.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-alert.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-alert.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/drought-alert.01"
     },
     {
       "id": "drought-welcome.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-welcome.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-welcome.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/drought-welcome.01"
     },
     {
       "id": "drought-count.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-count.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-count.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/drought-count.01"
     },
     {
       "id": "drought-none.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-none.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-none.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/drought-none.01"
     },
     {
       "id": "drought-how-many.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-how-many.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-how-many.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/drought-how-many.01"
     },
     {
       "id": "drought-all.01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-all.01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/drought-all.01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/drought-all.01"
     },
     {
       "id": "recruit-zorvax-01",
-      "fallbackClip": "HomecomingAudio/VoiceFallback/recruit-zorvax-01"
+      "fallbackClip": "HomecomingAudio/VoiceFallback/recruit-zorvax-01",
+      "unityClip": "HomecomingAudio/VoiceElevenLabs/recruit-zorvax-01"
     }
   ]
 }

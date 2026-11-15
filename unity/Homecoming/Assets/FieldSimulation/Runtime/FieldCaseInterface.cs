@@ -5,8 +5,35 @@ namespace Homecoming.Field
 {
     public sealed partial class FieldSimulation
     {
+        bool casePickerOpen;
+        static readonly (string Icon, string Label)[] HistoricalSteps =
+            { ("Rise","Predict"), ("Chart","Check data"), ("Journal","Report") };
+        static readonly (string Icon, string Label)[] WeatherSteps =
+            { ("Archive","Rainfall"), ("Weather","Test weather"), ("Chart","Compare"), ("Soil","Explain"), ("Journal","Report") };
+        static readonly (string Icon, string Label)[] OpenSteps =
+            { ("Archive","Find a record"), ("Chart","Compare"), ("Journal","Report") };
+
+        static string CaseTitle(InvestigationKind kind) => kind switch
+        {
+            InvestigationKind.Rainfall => "Rainfall in two places",
+            InvestigationKind.Temperature => "Is Phoenix warming?",
+            InvestigationKind.Soil => "Weather and soil",
+            _ => "Your own investigation"
+        };
+
+        void OpenCasePicker()
+        {
+            OpenCase();
+            casePickerOpen = true;
+        }
+
         void DrawInvestigation()
         {
+            if (CascadeReportOpen)
+            {
+                DrawCascadeReport();
+                return;
+            }
             if (orbitOpen)
             {
                 DrawComparison();
@@ -17,33 +44,25 @@ namespace Homecoming.Field
                 DrawTemperatureEvidence();
                 return;
             }
-            Sheet("EARTH SYSTEM TREND DETECTIVE", reportDetails ? "Mission report" : "Investigation desk");
+            if (casePickerOpen || investigation == null)
+            {
+                DrawCasePicker();
+                return;
+            }
+            Sheet("EARTH SCIENCE CASE", reportDetails ? "Mission report" : CaseTitle(investigation.kind));
             if (reportDetails && investigation != null)
             {
+                DrawCaseProgress(Box(979,115,534,73),investigation.kind);
                 DrawReportDetails();
                 return;
             }
-            if (Button(Box(56,215,354,53),"Two places, one measurement",false,investigation?.kind == InvestigationKind.Rainfall,true,22) &&
-                investigation?.kind != InvestigationKind.Rainfall) NewInvestigation(InvestigationKind.Rainfall);
-            if (Button(Box(434,215,354,53),"Phoenix temperature",false,investigation?.kind == InvestigationKind.Temperature,true,22) &&
-                investigation?.kind != InvestigationKind.Temperature) NewInvestigation(InvestigationKind.Temperature);
-            if (Button(Box(812,215,354,53),"Same weather, different ground",false,investigation?.kind == InvestigationKind.Soil,true,22) &&
-                investigation?.kind != InvestigationKind.Soil) NewInvestigation(InvestigationKind.Soil);
-            if (Button(Box(1190,215,354,53),"Free investigation",false,investigation?.kind == InvestigationKind.Free,true,22) &&
-                investigation?.kind != InvestigationKind.Free) NewInvestigation(InvestigationKind.Free);
-            if (investigation == null && !demoActive && Button(Box(56,558,230,41),"Watch rainfall demo",false,false,investigation == null,19))
-                WatchCase(InvestigationKind.Rainfall);
-            if (investigation == null && !demoActive && Button(Box(812,558,230,41),"Watch soil demo",false,false,investigation == null,19))
-                WatchCase(InvestigationKind.Soil);
-            if (investigation == null)
+            DrawCaseProgress(Box(979,115,534,73),investigation.kind);
+            Text(Box(56,207,1215,71),CaseQuestion,29,Dim,bodyFont,TextAnchor.UpperLeft,true);
+            if (!demoActive && Button(Box(1312,212,232,42),"Browse cases",icon:"Search"))
             {
-                CaseCard(56,291,354,261,"Rainfall comparison","Compare the same rainfall measure at the Sahel and central Chile points. Make a direction call for each.");
-                CaseCard(434,291,354,261,"Temperature record","Inspect 45 complete years of 2 m air temperature across Phoenix and central Arizona.");
-                CaseCard(812,291,354,261,"Soil simulation","Predict how root-zone water will respond. Advance a year, then test one weather edit from the resulting state.");
-                CaseCard(1190,291,354,261,"Open case","Choose evidence from the archive. File a comparison or describe what evidence is missing.");
+                casePickerOpen = true;
                 return;
             }
-            Text(Box(56,292,1488,54),CaseQuestion,30,White,headingFont,TextAnchor.MiddleLeft,true);
             switch (investigation.kind)
             {
                 case InvestigationKind.Rainfall: DrawRainChecklist(); break;
@@ -51,15 +70,107 @@ namespace Homecoming.Field
                 case InvestigationKind.Soil: DrawSoilChecklist(); break;
                 default: DrawFreeChecklist(); break;
             }
-            if (Button(Box(56,830,253,43),"Read mission report",true,false,investigation.origin != null,21))
+            bool reportAvailable = investigation.origin != null &&
+                (investigation.kind != InvestigationKind.Soil || investigation.second != null);
+            if (reportAvailable && Button(Box(56,820,281,51),"Read mission report",true,size:23,icon:"Journal"))
             {
                 reportDetails = true;
             }
             if (!demoActive && investigation.kind is (InvestigationKind.Rainfall or InvestigationKind.Soil) &&
-                Button(Box(1000,830,176,43),"Watch demo",false,false,true,19))
+                Button(Box(1355,827,189,43),"Watch demo",icon:"Play"))
                 WatchCase(investigation.kind);
-            if (Button(Box(1190,830,354,43),"Open saved reports",false,false,System.IO.Directory.Exists(FieldCaseStore.Folder),18))
+        }
+
+        void DrawCasePicker()
+        {
+            Sheet("FIELD ASSIGNMENTS","Choose a case");
+            if (investigation != null && Button(Box(1304,214,240,42),"Back to current case",icon:"Back"))
+            {
+                casePickerOpen = false;
+                return;
+            }
+            ChooseCase(Box(56,288,728,200),InvestigationKind.Rainfall,"Rain","Compare rainfall in the Sahel and central Chile.");
+            ChooseCase(Box(816,288,728,200),InvestigationKind.Temperature,"Temperature",
+                "Explore 45 years of Phoenix temperatures.");
+            ChooseCase(Box(56,512,728,200),InvestigationKind.Soil,"Soil",
+                "Change the weather and see how much water stays in the soil.");
+            ChooseCase(Box(816,512,728,200),InvestigationKind.Free,"Search",
+                "Look for a trend anywhere in the Earth archive.");
+            if (System.IO.Directory.Exists(FieldCaseStore.Folder) &&
+                Button(Box(56,824,246,45),"Open saved reports",icon:"Archive"))
                 Application.OpenURL(new Uri(FieldCaseStore.Folder + System.IO.Path.DirectorySeparatorChar).AbsoluteUri);
+        }
+
+        void ChooseCase(Rect rect, InvestigationKind kind, string icon, string summary)
+        {
+            bool current = investigation?.kind == kind;
+            bool starter = kind == InvestigationKind.Rainfall;
+            Color background = ButtonBackground(rect,false,current,true);
+            var state = ButtonInput(rect);
+            Color tint = kind switch { InvestigationKind.Rainfall => Aqua, InvestigationKind.Temperature => Yellow,
+                InvestigationKind.Soil => Rgb("#e6b18f"), _ => Mint };
+            Fill(rect,background);
+            DrawButtonEdge(rect,state.focused ? Yellow : starter || current ? tint : Line);
+            var emblem = Box(rect.x+12,rect.y+12,175,rect.height-24);
+            Fill(emblem,Ink);
+            for (int i = 1; i <= 5; i++)
+            {
+                float offset = i*emblem.width/6;
+                Fill(Box(emblem.x+offset,emblem.y+1,1,emblem.height-2),Alpha(tint,.12f));
+                Fill(Box(emblem.x+1,emblem.y+offset,emblem.width-2,1),Alpha(tint,.12f));
+            }
+            DrawIcon(icon,emblem.center,tint,5.4f);
+            Text(Box(rect.x+215,rect.y+42,rect.width-271,53),CaseTitle(kind),39,White,headingFont);
+            Text(Box(rect.x+216,rect.y+110,rect.width-276,66),summary,24,Dim,bodyFont,TextAnchor.UpperLeft,true);
+            DrawIcon("Next",new Vector2(rect.xMax-35,rect.center.y),tint,1.3f);
+            if (state.pressed)
+            {
+                if (kind == InvestigationKind.Soil)
+                {
+                    OpenSoilMission();
+                    return;
+                }
+                if (!current) NewInvestigation(kind);
+                OpenCase();
+            }
+        }
+
+        void DrawCaseProgress(Rect rect, InvestigationKind kind)
+        {
+            var file = investigation?.kind == kind ? investigation : null;
+            var steps = kind switch
+            {
+                InvestigationKind.Soil => WeatherSteps,
+                InvestigationKind.Free => OpenSteps,
+                _ => HistoricalSteps
+            };
+            int stage = file == null ? 0 : kind switch
+            {
+                InvestigationKind.Soil => file.origin == null ? 0 : file.second == null ? 1 :
+                    file.relationship == null ? 2 : file.HasSoilInterpretation ? 4 : 3,
+                InvestigationKind.Free => file.origin == null ? 0 : file.relationship == null ? 1 : 2,
+                _ => file.origin != null ? 2 : file.originCall != Direction.Unset &&
+                    (kind != InvestigationKind.Rainfall || file.otherCall != Direction.Unset) ? 1 : 0
+            };
+            if (!string.IsNullOrEmpty(file?.submittedUtc)) stage = steps.Length;
+            DrawProgress(rect,steps,stage);
+        }
+
+        void DrawProgress(Rect rect, (string Icon, string Label)[] steps, int stage)
+        {
+            float width = rect.width/steps.Length;
+            for (int i = 0; i < steps.Length-1; i++)
+                Fill(Box(rect.x+width*(i+.5f),rect.y+21,width,2),i < stage ? Mint : Line);
+            for (int i = 0; i < steps.Length; i++)
+            {
+                float x = rect.x+i*width;
+                var node = Box(x+width/2-23,rect.y,46,44);
+                bool current = i == stage, complete = i < stage;
+                Fill(node,current ? Mint : complete ? ChoiceFace : Ink);
+                DrawButtonEdge(node,current || complete ? Mint : Line);
+                DrawIcon(complete ? "Check" : steps[i].Icon,node.center,current ? Ink : complete ? Mint : Dim,1.25f);
+                Text(Box(x,rect.y+46,width,24),steps[i].Label,17,current ? White : Dim,strongFont,TextAnchor.MiddleCenter);
+            }
         }
 
         void CaseCard(float x, float y, float width, float height, string label, string body)
@@ -72,7 +183,8 @@ namespace Homecoming.Field
         void Step(float y, bool done, string label, string description)
         {
             Card(Box(56,y,1488,77),Panel);
-            Text(Box(76,y+8,44,58),done ? "✓" : "·",30,done ? Mint : Yellow,headingFont,TextAnchor.MiddleCenter);
+            if (done) Text(Box(76,y+8,44,58),"✓",30,Mint,headingFont,TextAnchor.MiddleCenter);
+            else DrawIcon("Next",new Vector2(98,y+38),Mint);
             Text(Box(132,y+7,442,60),label,27,White,headingFont);
             Text(Box(569,y+7,621,60),description,20,Dim,bodyFont,TextAnchor.MiddleLeft,true);
         }
@@ -82,27 +194,52 @@ namespace Homecoming.Field
             CheckGuidedRecords();
             if (guidedRain == null)
             {
-                Step(375,false,"Reviewed pair unavailable","This case needs the packaged 1991–2025 Sahel and central Chile pair. Open Free investigation to browse available records.");
+                Step(324,false,"Rainfall records unavailable","Choose another case to keep playing.");
                 return;
             }
             bool madeCalls = investigation.originCall != Direction.Unset && investigation.otherCall != Direction.Unset;
-            Step(364,madeCalls,"Make a call","Guess the direction of the historical rainfall trend at each site. “Little change” means within ±0.1 mm/month per decade.");
-            Text(Box(77,469,722,27),ArchiveFootprint(guidedSahel),23,White,strongFont);
-            Text(Box(817,469,722,27),ArchiveFootprint(guidedChile),23,White,strongFont);
-            DrawCall(77,504,ref investigation.originCall,investigation.callsRevealed || investigation.other != null);
-            DrawCall(817,504,ref investigation.otherCall,investigation.callsRevealed || investigation.other != null);
-            Step(571,investigation.callsRevealed,"Check the two sites",$"Compare {guidedSahel.years.Length} matched years, {Period(guidedSahel)}. Keep or revise your calls.");
-            if (Button(Box(1203,591,321,40),"Reveal comparison",true,false,madeCalls,21)) StartComparison();
-            Step(659,investigation.IsReady,"Submit report","File both descriptive rates and the reviewed test on the paired difference.");
+            bool filed = investigation.other != null;
+            bool revealed = investigation.callsRevealed || filed;
+            Step(324,madeCalls,madeCalls ? "Predictions ready" : "Predict the change",
+                madeCalls ? $"Compare rainfall over {Period(guidedSahel)}." : "Pick a direction for each place before you see the data.");
+            Card(Box(56,420,728,180),Panel);
+            Card(Box(816,420,728,180),Panel);
+            Text(Box(80,441,678,54),"Central Sahel",34,White,headingFont);
+            Text(Box(840,441,678,54),"Central Chile",34,White,headingFont);
+            DrawCall(80,503,ref investigation.originCall,revealed,large:true);
+            DrawCall(840,503,ref investigation.otherCall,revealed,large:true);
+            if (Button(Box(56,632,311,52),revealed ? "Review the data" : "Check the data",
+                !filed,false,madeCalls,23,icon:"Next")) StartComparison();
+            if (!madeCalls)
+                Text(Box(388,632,1148,52),"Choose one answer for each place to continue.",22,Dim);
+            else if (filed)
+                Text(Box(388,632,1148,52),"Findings saved. Read your mission report to send them to the crew.",22,Mint);
+            if (!revealed)
+                Text(Box(56,699,1488,36),"Little change means within ±0.1 mm of monthly rainfall per decade.",19,Dim);
         }
 
-        void DrawCall(float x, float y, ref Direction value, bool locked, Direction original = Direction.Unset)
+        void DrawCall(float x, float y, ref Direction value, bool locked, Direction original = Direction.Unset, bool large = false)
         {
             for (int i = 1; i <= 3; i++)
             {
                 var call = (Direction)i;
-                if (Button(Box(x+(i-1)*146,y,137,40),CallName(call),false,
-                    (value == Direction.Unset ? original : value) == call,!locked,18))
+                string label = CallName(call);
+                bool selected = (value == Direction.Unset ? original : value) == call;
+                Rect rect = Box(x+(i-1)*158,y,150,large ? 84 : 40);
+                if (locked)
+                {
+                    if (selected)
+                    {
+                        Fill(rect,ChoiceFace);
+                        if (large) DrawDirectionTile(rect,label,true,false);
+                        else
+                        {
+                            DrawIcon(label,new Vector2(rect.x+23,rect.center.y),Mint);
+                            Text(Box(rect.x+43,rect.y,rect.width-43,rect.height),label,18,White,strongFont);
+                        }
+                    }
+                }
+                else if (large ? DrawDirectionTile(rect,label,selected,true) : Button(rect,label,active:selected,size:18,icon:label))
                 {
                     value = call == original ? Direction.Unset : call;
                     SaveInvestigation();
@@ -110,21 +247,38 @@ namespace Homecoming.Field
             }
         }
 
+        bool DrawDirectionTile(Rect rect, string label, bool selected, bool interactive)
+        {
+            var background = interactive ? ButtonBackground(rect,selected,false,true) : ChoiceFace;
+            var state = interactive ? ButtonInput(rect) : (pressed:false,focused:false);
+            Fill(rect,background);
+            DrawButtonEdge(rect,state.focused ? Yellow : selected ? Mint : Line);
+            Color foreground = interactive && selected ? Ink : White;
+            DrawIcon(label,new Vector2(rect.center.x,rect.y+30),foreground,2.3f);
+            Text(Box(rect.x,rect.yMax-28,rect.width,24),label,18,foreground,strongFont,TextAnchor.MiddleCenter);
+            return state.pressed;
+        }
+
         void DrawTemperatureChecklist()
         {
             CheckGuidedRecords();
             if (guidedTemperature == null)
             {
-                Step(375,false,"Reviewed record unavailable","This case needs the packaged 1981–2025 Arizona temperature record.");
+                Step(324,false,"Temperature record unavailable","Choose another case to keep playing.");
                 return;
             }
-            Step(364,investigation.originCall != Direction.Unset,"Make a call","How did mean 2 m air temperature change? Little change means within ±0.1 °C per decade.");
-            Text(Box(77,469,1340,30),$"{ArchiveFootprint(guidedTemperature)} · {Period(guidedTemperature)}",23,White,strongFont);
-            DrawCall(77,504,ref investigation.originCall,investigation.callsRevealed || investigation.origin != null);
-            Step(571,investigation.callsRevealed,"Check the record","Inspect the annual series and the reviewed slope test. Keep or revise your call.");
-            if (Button(Box(1203,591,321,40),"Reveal temperature record",true,false,investigation.originCall != Direction.Unset,20))
-                RevealTemperature();
-            Step(659,investigation.IsReady,"Submit report","File the temperature trend with the OLS estimate, confidence interval and source.");
+            bool filed = investigation.origin != null;
+            bool revealed = investigation.callsRevealed || filed;
+            bool madeCall = investigation.originCall != Direction.Unset;
+            Step(324,madeCall,madeCall ? "Prediction ready" : "Predict the change",
+                madeCall ? "Open the record to see how temperature changed." : "Did the average air temperature rise, fall or change very little?");
+            Card(Box(56,420,1488,180),Panel);
+            Text(Box(80,441,1420,54),$"Phoenix and central Arizona · {Period(guidedTemperature)}",34,White,headingFont);
+            DrawCall(80,503,ref investigation.originCall,revealed,large:true);
+            if (Button(Box(56,632,311,52),revealed ? "Review the record" : "Check the record",!filed,false,
+                investigation.originCall != Direction.Unset,23,icon:"Next")) RevealTemperature();
+            if (filed) Text(Box(388,632,1148,52),"Finding saved. Read your mission report to send it to the crew.",22,Mint);
+            if (!revealed) Text(Box(56,699,1488,36),"Little change means within ±0.1 °C per decade.",19,Dim);
         }
 
         void DrawTemperatureEvidence()
@@ -133,7 +287,8 @@ namespace Homecoming.Field
             var trend = Exported(record).finding;
             var finding = MakeFinding(record,trend);
             Sheet("HISTORICAL RECORD","Phoenix temperature");
-            if (Button(Box(56,212,205,42),"Investigation desk")) OpenCase();
+            DrawCaseProgress(Box(979,115,534,73),InvestigationKind.Temperature);
+            if (Button(Box(56,212,205,42),"Back to case",icon:"Back")) OpenCase();
             if (Button(Box(278,212,202,42),"Open data source",false,false,!string.IsNullOrEmpty(finding.url)))
                 Application.OpenURL(finding.url);
             if (Button(Box(1320,212,224,42),showArchiveValues ? "Show chart" : "Inspect values")) showArchiveValues = !showArchiveValues;
@@ -146,42 +301,67 @@ namespace Homecoming.Field
             Text(Box(82,642,1420,33),$"{SignificanceLabel(finding,false)} · {finding.hypothesis}",22,Mint);
             Text(Box(82,678,1420,32),TestSummary(finding),20,White);
             Text(Box(82,721,1420,62),finding.reviewRationale,20,Dim,bodyFont,TextAnchor.UpperLeft,true);
-            Text(Box(56,831,240,42),"Revise your call (optional)",19,White,strongFont);
-            DrawCall(303,831,ref investigation.revisedOriginCall,false,investigation.originCall);
+            if (Button(Box(56,829,221,43),showPredictionEdits ? "Hide prediction" : "Change prediction",size:19))
+                showPredictionEdits = !showPredictionEdits;
+            if (showPredictionEdits) DrawCall(303,831,ref investigation.revisedOriginCall,false,investigation.originCall);
             if (Button(Box(1192,829,352,43),"File temperature finding",true,false,true,22)) FileTemperature();
         }
 
         void DrawSoilChecklist()
         {
-            Step(364,investigation.origin != null,"Open the Arizona rainfall record","File a historical rainfall finding, including its significance status.");
-            if (Button(Box(1203,384,321,40),"Open rainfall record",true,false,true,21))
+            if (investigation.origin == null)
             {
-                int index = Array.FindIndex(data.regions, region => region.id == GuidedSoilOrigin);
-                if (index >= 0) Select(index);
-                OpenArchive("rain");
+                Step(324,false,"Start with rainfall","Open the Arizona rainfall record and save a finding for your report.");
+                if (Button(Box(56,424,290,50),"Open rainfall record",accent:true,icon:"Next"))
+                {
+                    SelectArizona();
+                    OpenArchive("rain");
+                }
+                return;
             }
-            Step(452,investigation.scenarioCall != Direction.Unset,"Make a prediction",$"At the end of the first year, will root-zone water rise or fall relative to inherited weather? {PredictionToleranceLabel()}");
-            DrawCall(1067,529,ref investigation.scenarioCall,investigation.first != null || HasGuidedPreview());
-            Step(578,investigation.first != null && investigation.second != null,"Run the two tests",
-                investigation.first == null ? "Change rainfall, preview twelve months, then advance." :
-                investigation.second == null ? "Change one weather input from the new land state, then advance again." :
-                $"{ScenarioResult(investigation.first)} · Follow-up {Signed(investigation.second.delta,"0.##")} {investigation.second.unit}.");
-            if (Button(Box(1203,598,321,40),"Open field lab",true,false,investigation.origin != null && investigation.scenarioCall != Direction.Unset,21))
+            if (investigation.first == null)
             {
-                int index = Array.FindIndex(data.regions, region => region.id == GuidedSoilOrigin);
-                if (index >= 0) Select(index);
-                Go(View.Lab);
+                Step(324,false,"Predict the change","When you change only precipitation, will the soil hold more or less water after a year?");
+                DrawCall(56,424,ref investigation.scenarioCall,HasGuidedPreview(),large:true);
+                Text(Box(56,515,1420,29),PredictionToleranceLabel(),19,Dim);
             }
-            DrawSecondPlace(666);
+            else if (investigation.second == null)
+            {
+                Step(324,false,"Run a follow-up test","Change only temperature. Keep the rain and ground state from your first test.");
+                if (Button(Box(358,424,250,50),"Inspect first test",icon:"Chart")) OpenSoilRunReport(investigation.first);
+                Text(Box(56,502,1488,40),FirstSoilCrewReaction(),22,Mint);
+            }
+            else
+            {
+                Step(308,true,"Both tests saved","Compare the edited and inherited tracks for each test.");
+                DrawSecondPlace(402);
+                DrawSoilInterpretation();
+                if (Button(Box(352,820,239,51),"Inspect first test",icon:"Chart")) OpenSoilRunReport(investigation.first);
+                if (Button(Box(604,820,245,51),"Inspect follow-up",icon:"Chart")) OpenSoilRunReport(investigation.second);
+                if (Button(Box(862,820,255,51),"Revisit weather lab",icon:"Weather")) OpenWeatherLab();
+                return;
+            }
+            if (investigation.scenarioCall != Direction.Unset &&
+                Button(Box(56,investigation.first == null ? 566 : 424,286,50),
+                    "Open weather lab",accent:true,icon:"Weather"))
+            {
+                SelectArizona();
+                OpenWeatherLab();
+            }
+        }
+
+        void SelectArizona()
+        {
+            int index = Array.FindIndex(data.regions, region => region.id == GuidedSoilOrigin);
+            if (index >= 0) Select(index);
         }
 
         void DrawFreeChecklist()
         {
-            Step(364,investigation.origin != null,"Open record",investigation.origin == null ?
-                "Choose a site, variable and product and file its historical rate." : investigation.origin.place + " · " + FindingRate(investigation.origin));
-            if (Button(Box(1203,384,321,40),"Browse Earth archive",true,false,true,21)) OpenArchive(null);
-            DrawSecondPlace(452);
-            Step(640,investigation.IsReady,"Submit report","Bring the rate, footprint, fitted change and significance status to the hearing.");
+            Step(324,investigation.origin != null,"Find an Earth record",investigation.origin == null ?
+                "Choose a place and a measurement, then save a finding for your report." : investigation.origin.place + " · " + FindingRate(investigation.origin));
+            if (Button(Box(1203,344,321,40),"Browse Earth archive",investigation.origin == null,icon:"Archive")) OpenArchive(null);
+            if (investigation.origin != null) DrawSecondPlace(424);
         }
 
         void DrawSecondPlace(float y)
@@ -217,8 +397,19 @@ namespace Homecoming.Field
             availableControls.Add(index);
             string control = "case-text-" + index;
             GUI.SetNextControlName(control);
-            var style = new GUIStyle(GUI.skin.textField) { font = bodyFont, fontSize = 21, wordWrap = false };
-            string result = GUI.TextField(rect,value ?? "",maxLength,style);
+            if (caseInputStyle == null)
+            {
+                caseInputStyle = new GUIStyle
+                {
+                    font = bodyFont, fontSize = 21, alignment = TextAnchor.MiddleLeft,
+                    clipping = TextClipping.Clip, padding = new RectOffset(12,12,0,0)
+                };
+                caseInputStyle.normal.textColor = caseInputStyle.hover.textColor =
+                    caseInputStyle.active.textColor = caseInputStyle.focused.textColor = White;
+            }
+            Fill(rect,ButtonFace);
+            DrawButtonEdge(rect,keyboardFocus && focusIndex == index ? Yellow : Line);
+            string result = GUI.TextField(rect,value ?? "",maxLength,caseInputStyle);
             if (tabMoved && focusIndex == index) GUI.FocusControl(control);
             if (GUI.GetNameOfFocusedControl() == control)
             {
@@ -227,6 +418,8 @@ namespace Homecoming.Field
             }
             return result;
         }
+
+        GUIStyle caseInputStyle;
 
         void DrawReportDetails()
         {
@@ -256,7 +449,8 @@ namespace Homecoming.Field
                 : investigation.gap ?? investigation.relationship ?? "Check a second place from the investigation desk.";
             Text(Box(56,604,1488,32),extra,20,White,bodyFont,TextAnchor.MiddleLeft,true);
             if (investigation.kind == InvestigationKind.Soil && investigation.relationship != null)
-                Text(Box(56,652,1488,27),investigation.gap ?? investigation.relationship,19,Mint);
+                Text(Box(56,634,1488,49),investigation.HasSoilInterpretation ? investigation.soilInterpretation :
+                    investigation.gap ?? investigation.relationship,19,Mint,bodyFont,TextAnchor.MiddleLeft,true);
             if (investigation.difference != null)
             {
                 Text(Box(56,636,1488,25),$"Sahel minus Chile · Theil–Sen {Magnitude(investigation.difference)}",19,Mint);
@@ -264,7 +458,8 @@ namespace Homecoming.Field
             }
             else if (origin.hasPValue)
                 Text(Box(56,652,1488,27),TestSummary(origin),19,Mint);
-            string prompt = investigation.first != null && investigation.first.result != investigation.scenarioCall
+            bool missedCall = investigation.first != null && investigation.first.result != investigation.scenarioCall;
+            string prompt = missedCall
                 ? "Explain why the result differed from your prediction" : "Your conclusion (optional)";
             Text(Box(56,687,1488,29),prompt,22,Dim,strongFont);
             string conclusion = CaseText(Box(56,723,1488,40),investigation.conclusion,300);
@@ -273,8 +468,13 @@ namespace Homecoming.Field
                 investigation.conclusion = conclusion;
                 SaveInvestigation();
             }
-            Text(Box(56,775,1488,35),reportStatus ?? (investigation.IsReady ? "The report is ready for the hearing." : "Finish the steps on the investigation desk to submit."),22,White);
-            if (Button(Box(56,830,280,43),"Back to investigation")) reportDetails = false;
+            Text(Box(56,775,1488,35),reportStatus ?? (investigation.IsReady ? "The report is ready for the hearing." :
+                investigation.kind == InvestigationKind.Soil && !investigation.HasSoilInterpretation
+                    ? "Interpret the follow-up in your case before sending the report."
+                    : missedCall && string.IsNullOrWhiteSpace(investigation.conclusion)
+                        ? "Add a first-test explanation before sending the report."
+                        : "Finish the steps in your case to send the report."),22,White);
+            if (Button(Box(56,830,233,43),"Back to case",icon:"Back")) reportDetails = false;
             if (Button(Box(1214,830,330,43),"Submit to the hearing",true,false,investigation.IsReady && !hearingRequested && !demoActive,23)) SubmitInvestigation();
         }
 

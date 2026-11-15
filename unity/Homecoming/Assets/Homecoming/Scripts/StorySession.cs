@@ -58,6 +58,20 @@ namespace Homecoming
         const string Prefix = "homecoming.unity.";
         public const string StoryScene = "Story";
         public const string SimulationScene = "Simulation";
+        public const string BroadcastProgressKey = Prefix + "broadcast.v1";
+        static bool pendingBroadcast;
+        public static void OpenBroadcast(string scene)
+        {
+            pendingBroadcast = true;
+            SceneManager.LoadSceneAsync(scene);
+        }
+
+        public static bool ConsumeBroadcastRequest()
+        {
+            bool requested = pendingBroadcast;
+            pendingBroadcast = false;
+            return requested;
+        }
         public static string RecruitName
         {
             get => PlayerPrefs.GetString(Prefix + "recruit", "");
@@ -106,12 +120,23 @@ namespace Homecoming
             pendingCutscene = null;
             return pending;
         }
+        internal static void StartNewOperation()
+        {
+            Field.FieldCampaign.ClearSavedCampaign(Field.FieldCampaign.SavePath);
+            PlayerPrefs.DeleteKey(Field.FieldSimulation.SaveKey);
+            Field.FieldCaseStore.ClearSavedCases();
+            Reset();
+        }
+
         public static void Reset()
         {
             PlayerPrefs.DeleteKey(Prefix + "recruit");
             PlayerPrefs.DeleteKey(Prefix + "briefing");
             PlayerPrefs.DeleteKey(Prefix + "ending");
+            PlayerPrefs.DeleteKey(BroadcastProgressKey);
+            pendingBroadcast = false;
             pendingHearing = false;
+            HearingEvidence = StoryEvidence.Mixed;
             pendingCutscene = null;
             PlayerPrefs.Save();
         }

@@ -47,10 +47,10 @@ namespace Homecoming.Field
 
         string CaseQuestion => investigation?.kind switch
         {
-            InvestigationKind.Rainfall => "Did rainfall change at the same rate at the Sahel and central Chile points?",
-            InvestigationKind.Temperature => "How did 2 m air temperature change across Phoenix and central Arizona?",
-            InvestigationKind.Soil => "How does a year of changed rainfall affect root-zone water? What happens when you make one more weather edit?",
-            _ => "What changed in the Earth record, and where can you check it?"
+            InvestigationKind.Rainfall => "Did rainfall change the same way in the Sahel and central Chile?",
+            InvestigationKind.Temperature => "How has the air temperature around Phoenix changed over time?",
+            InvestigationKind.Soil => "How do rainfall and temperature change the water stored in Central Arizona's soil?",
+            _ => "Find something that changed over time and see where else it changed."
         };
 
         void NewInvestigation(InvestigationKind kind)
@@ -63,6 +63,8 @@ namespace Homecoming.Field
                 investigation.first = investigation.second = null;
                 investigation.scenarioCall = Direction.Unset;
                 investigation.committingRunId = null;
+                investigation.soilInterpretation = investigation.soilInterpretationRevisionId = null;
+                investigation.conclusion = investigation.submittedUtc = null;
                 investigation.campaignId = Campaign?.Id;
             }
             reportDetails = temperatureOpen = false;
@@ -217,7 +219,7 @@ namespace Homecoming.Field
             Go(View.Report);
             temperatureOpen = investigation.callsRevealed = true;
             archiveValuePage = 0;
-            showArchiveValues = false;
+            showArchiveValues = showPredictionEdits = false;
             SaveInvestigation();
             return true;
         }
@@ -236,7 +238,8 @@ namespace Homecoming.Field
         {
             LoadInvestigation();
             Go(View.Report);
-            orbitOpen = reportDetails = temperatureOpen = false;
+            orbitOpen = reportDetails = temperatureOpen = casePickerOpen = false;
+            soilInterpretationCorrection = false;
         }
 
         bool StartComparison()

@@ -3,6 +3,14 @@
 Open **`unity/Homecoming`** in Unity Hub with **6000.6.9f1**. Open
 `Assets/Scenes/Intro.unity` and press **Play**. The Unity macOS player is the Homecoming release.
 
+On another computer, clone the repository and add the `unity/Homecoming` folder
+in Unity Hub using **6000.6.9f1**. Allow the first import and Package Manager restore
+to finish (internet is needed to download registry dependencies). The repository
+includes `Assets/` with its `.meta` files, `ProjectSettings/`, and `Packages/`,
+including any embedded packages. Unity regenerates `Library/` and other local
+caches; copying those folders or installing the website's Node dependencies is
+not required to open the Unity project.
+
 The game opens in a separate 2D scene with the first 17 seconds of the AUK Space Apps title film.
 The story scene loads in the background and activates at the cutoff. The 14-shot story follows
 Apollo 11, the crew's misunderstanding, the party,
@@ -212,8 +220,9 @@ crew models and planet textures. Edit the Unity timeline in `Resources/Story.jso
 The project uses the Built-in Render Pipeline. The official glTFast **6.21.0**
 package is pinned in `Packages/manifest.json` and restored from Unity's registry
 by Package Manager, along with the other dependencies. Keep the manifest and
-`packages-lock.json` in Git. Downloaded package contents, Unity caches, local
-editor settings and build output are ignored. Keep `Assets/`, `ProjectSettings/`
+`packages-lock.json` in Git. Downloaded registry packages inside `Library/`, Unity
+caches, local editor settings and build output are ignored. Embedded package source
+inside `Packages/` is included in version control. Keep `Assets/`, `ProjectSettings/`
 and asset `.meta` files in Git so scene references remain intact.
 
 ## Source material
